@@ -1,0 +1,15 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+rootProject.name = 'sparbot'
+
+// Pure-Java brain: no Minecraft or Fabric on its classpath, so it cannot import them.
+include 'sparbot-core'

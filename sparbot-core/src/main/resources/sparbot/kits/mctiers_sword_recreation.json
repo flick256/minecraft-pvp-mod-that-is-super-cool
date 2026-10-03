@@ -1,0 +1,27 @@
+{
+  "id": "mctiers_sword_recreation",
+  "displayName": "Sword (MCTiers-style, unverified)",
+  "mode": "sword",
+  "provenance": {
+    "source": "third-party recreation: HelixCraft/Minecraft-PVP-Kits kits.txt (GPL-3.0), stated to be based on MCTiers default layouts",
+    "server": "MCTiers-affiliated servers (e.g. PvP Club / mcpvp.club)",
+    "mode": "sword",
+    "minecraftVersion": "unknown (1.21.x era)",
+    "confidence": "low",
+    "verified": false,
+    "reference": "https://github.com/HelixCraft/Minecraft-PVP-Kits",
+    "notes": "Not checked against the live server. Replace with a user-supplied layout when available.",
+    "deviations": ["none: item ids and enchantments exist unchanged in 26.2"]
+  },
+  "armor": {
+    "head": {"id": "minecraft:diamond_helmet", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}},
+    "chest": {"id": "minecraft:diamond_chestplate", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}},
+    "legs": {"id": "minecraft:diamond_leggings", "enchantments": {"minecraft:protection": 3, "minecraft:unbreaking": 3}},
+    "feet": {"id": "minecraft:diamond_boots", "enchantments": {"minecraft:protection": 3, "minecraft:unbreaking": 3}}
+  },
+  "offhand": null,
+  "slots": {
+    "0": {"id": "minecraft:diamond_sword", "enchantments": {"minecraft:unbreaking": 3}}
+  },
+  "effects": []
+}

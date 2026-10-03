@@ -1,0 +1,36 @@
+// The SparBot "brain": decision making, skill profiles, input constraints, kits, stats.
+// It deliberately has NO Minecraft or Fabric dependency so it stays unit-testable and
+// reusable for offline training. NoGameImportsTest additionally scans the bytecode.
+plugins {
+	id 'java-library'
+}
+
+group = rootProject.group
+version = rootProject.version
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Gson for the JSON profile/kit formats (Minecraft 26.2 ships gson 2.14.0 at runtime; we compile against the same version).
+	api 'com.google.code.gson:gson:2.14.0'
+
+	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = 'UTF-8'
+}
+
+test {
+	useJUnitPlatform()
+}

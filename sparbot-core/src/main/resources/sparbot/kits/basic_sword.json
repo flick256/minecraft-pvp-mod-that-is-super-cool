@@ -1,0 +1,27 @@
+{
+  "id": "basic_sword",
+  "displayName": "SparBot Basic Sword",
+  "mode": "sword",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "sword",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own milestone-1 duel kit: unenchanted diamond gear so fights are decided by mechanics, not enchant luck.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {"id": "minecraft:diamond_helmet"},
+    "chest": {"id": "minecraft:diamond_chestplate"},
+    "legs": {"id": "minecraft:diamond_leggings"},
+    "feet": {"id": "minecraft:diamond_boots"}
+  },
+  "offhand": null,
+  "slots": {
+    "0": {"id": "minecraft:diamond_sword"}
+  },
+  "effects": []
+}

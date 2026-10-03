@@ -1,0 +1,52 @@
+{
+  "id": "pro",
+  "displayName": "Pro",
+  "description": "Near-optimal human play: fast reactions within human limits, precise reach judgement, almost every technique executed.",
+  "reactionTimeMs": {
+    "mean": 165,
+    "stdDev": 25,
+    "min": 130,
+    "max": 260
+  },
+  "pingMs": {
+    "mean": 20,
+    "stdDev": 8,
+    "min": 5,
+    "max": 60
+  },
+  "aim": {
+    "maxTurnDegPerTick": 40,
+    "smoothing": 0.65,
+    "jitterDeg": 0.5,
+    "overshootChance": 0.08,
+    "overshootFactor": 0.12,
+    "trackingLead": 0.85
+  },
+  "clicking": {
+    "cps": {
+      "mean": 13,
+      "stdDev": 1.5,
+      "min": 10,
+      "max": 17
+    },
+    "cooldownDiscipline": 0.95
+  },
+  "reach": {
+    "rangeErrorBlocks": {
+      "mean": -0.02,
+      "stdDev": 0.08,
+      "min": -0.3,
+      "max": 0.3
+    }
+  },
+  "technique": {
+    "critSkill": 0.9,
+    "wTapSkill": 0.85,
+    "sTapSkill": 0.6,
+    "strafeSkill": 0.9,
+    "jumpResetSkill": 0.8,
+    "spacingSkill": 0.9
+  },
+  "mistakeRate": 0.015,
+  "panicHealthFraction": 0.2
+}

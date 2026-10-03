@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "sparbot",
+	"version": "${version}",
+	"name": "SparBot",
+	"description": "A mortal, fair PvP sparring bot that imitates player skill levels and playstyles.",
+	"authors": ["flick256"],
+	"license": "All-Rights-Reserved",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["io.github.flick256.sparbot.SparBot"],
+		"client": ["io.github.flick256.sparbot.client.SparBotClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

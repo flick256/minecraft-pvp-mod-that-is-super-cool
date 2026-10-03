@@ -1,0 +1,52 @@
+{
+  "id": "beginner",
+  "displayName": "Beginner",
+  "description": "Slow reactions, shaky aim, spam-clicks without respecting the attack cooldown and often swings out of reach.",
+  "reactionTimeMs": {
+    "mean": 380,
+    "stdDev": 80,
+    "min": 250,
+    "max": 700
+  },
+  "pingMs": {
+    "mean": 90,
+    "stdDev": 30,
+    "min": 30,
+    "max": 250
+  },
+  "aim": {
+    "maxTurnDegPerTick": 12,
+    "smoothing": 0.18,
+    "jitterDeg": 2.5,
+    "overshootChance": 0.35,
+    "overshootFactor": 0.35,
+    "trackingLead": 0.0
+  },
+  "clicking": {
+    "cps": {
+      "mean": 5.5,
+      "stdDev": 1.5,
+      "min": 3,
+      "max": 9
+    },
+    "cooldownDiscipline": 0.15
+  },
+  "reach": {
+    "rangeErrorBlocks": {
+      "mean": 0.6,
+      "stdDev": 0.5,
+      "min": -1,
+      "max": 1.5
+    }
+  },
+  "technique": {
+    "critSkill": 0.05,
+    "wTapSkill": 0.0,
+    "sTapSkill": 0.0,
+    "strafeSkill": 0.1,
+    "jumpResetSkill": 0.0,
+    "spacingSkill": 0.05
+  },
+  "mistakeRate": 0.25,
+  "panicHealthFraction": 0.3
+}

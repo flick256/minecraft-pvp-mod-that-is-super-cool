@@ -1,0 +1,52 @@
+{
+  "id": "intermediate",
+  "displayName": "Intermediate",
+  "description": "Consistent cooldown timing, regular crits and W-taps, decent tracking.",
+  "reactionTimeMs": {
+    "mean": 240,
+    "stdDev": 45,
+    "min": 170,
+    "max": 420
+  },
+  "pingMs": {
+    "mean": 50,
+    "stdDev": 20,
+    "min": 10,
+    "max": 150
+  },
+  "aim": {
+    "maxTurnDegPerTick": 22,
+    "smoothing": 0.35,
+    "jitterDeg": 1.2,
+    "overshootChance": 0.18,
+    "overshootFactor": 0.25,
+    "trackingLead": 0.45
+  },
+  "clicking": {
+    "cps": {
+      "mean": 9,
+      "stdDev": 1.5,
+      "min": 6,
+      "max": 13
+    },
+    "cooldownDiscipline": 0.6
+  },
+  "reach": {
+    "rangeErrorBlocks": {
+      "mean": 0.15,
+      "stdDev": 0.25,
+      "min": -0.8,
+      "max": 0.9
+    }
+  },
+  "technique": {
+    "critSkill": 0.45,
+    "wTapSkill": 0.35,
+    "sTapSkill": 0.2,
+    "strafeSkill": 0.55,
+    "jumpResetSkill": 0.25,
+    "spacingSkill": 0.45
+  },
+  "mistakeRate": 0.08,
+  "panicHealthFraction": 0.25
+}
