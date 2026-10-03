@@ -54,9 +54,11 @@ final class BrainHarness {
 			useTicks > 5 && usingKind() == ItemKind.SHIELD, hookOut, hookOnTarget);
 	}
 
+	List<io.github.flick256.sparbot.core.sense.EffectInfo> effects = new ArrayList<>();
+
 	Inputs tick() {
 		SelfState self = new SelfState(Vec3.ZERO, new Vec3(0, 1.62, 0), Vec3.ZERO, yaw, pitch, health, 20, 0, 20, true, false, false, false, 0,
-			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), List.of());
+			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects);
 		Inputs in = brain.act(new Observation(history.size(), self, target));
 		history.add(in);
 		if (in.inventoryOpen()) {
@@ -65,6 +67,13 @@ final class BrainHarness {
 				ItemInfo moved = slots[in.inventoryClick().slot()];
 				slots[in.inventoryClick().slot()] = offhand;
 				offhand = moved;
+			} else if (in.inventoryClick() != null) {
+				// Number key over a stack: swap it with that hotbar slot (vanilla SWAP container input).
+				int from = in.inventoryClick().slot();
+				int to = in.inventoryClick().button();
+				ItemInfo moved = slots[from];
+				slots[from] = slots[to];
+				slots[to] = moved;
 			}
 			return in;
 		}
@@ -83,6 +92,20 @@ final class BrainHarness {
 		if (in.use() && (mainUsable || isUsable(offhand))) {
 			usingOffhand = !mainUsable;
 			useTicks++;
+			ItemInfo used = usingOffhand ? offhand : slots[selected];
+			boolean drinkOrFood = used.kind() == ItemKind.DRINK_POTION || used.kind().isFood();
+			if (drinkOrFood && useTicks >= 32) {
+				// Vanilla consumes food and drinks after 1.6 s of use.
+				ItemInfo less = new ItemInfo(used.kind(), used.id(), used.count() - 1, used.attackDamage(), used.durability(), used.onCooldown(),
+					used.charged(), used.potion());
+				ItemInfo after = less.count() <= 0 ? ItemInfo.EMPTY : less;
+				if (usingOffhand) {
+					offhand = after;
+				} else {
+					slots[selected] = after;
+				}
+				useTicks = 0;
+			}
 		} else {
 			useTicks = 0;
 		}
@@ -91,7 +114,7 @@ final class BrainHarness {
 
 	private static boolean isUsable(ItemInfo item) {
 		return switch (item.kind()) {
-			case BOW, CROSSBOW, SHIELD, GOLDEN_APPLE, FOOD, ENDER_PEARL, FISHING_ROD -> true;
+			case BOW, CROSSBOW, SHIELD, GOLDEN_APPLE, FOOD, ENDER_PEARL, FISHING_ROD, SPLASH_POTION, DRINK_POTION -> true;
 			default -> false;
 		};
 	}

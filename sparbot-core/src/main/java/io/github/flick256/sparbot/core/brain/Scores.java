@@ -9,6 +9,8 @@ final class Scores {
 	static final double MELEE = 0.6;
 	/** Situational tactics (bow, rod, shield guard, pearl) that should replace melee when chosen. */
 	static final double SPECIALIST = 0.7;
+	/** Staying alive: healing, re-totem, retreat. */
+	static final double SURVIVAL = 0.8;
 
 	private Scores() {
 	}

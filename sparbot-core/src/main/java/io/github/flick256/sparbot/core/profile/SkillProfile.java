@@ -69,6 +69,7 @@ public record SkillProfile(
 	 * @param bowSkill using bows/crossbows at range, and how well the shot is aimed
 	 * @param pearlSkill using ender pearls to close distance or escape
 	 * @param rodSkill using a fishing rod to pull a fleeing opponent
+	 * @param potHealthFraction throw a splash healing potion below this health fraction
 	 */
 	public record ItemSkills(
 		Distribution hotbarSwitchMs,
@@ -80,7 +81,8 @@ public record SkillProfile(
 		double axeSkill,
 		double bowSkill,
 		double pearlSkill,
-		double rodSkill
+		double rodSkill,
+		double potHealthFraction
 	) {
 	}
 
@@ -126,6 +128,7 @@ public record SkillProfile(
 		range("items.bowSkill", items.bowSkill(), 0, 1, errors);
 		range("items.pearlSkill", items.pearlSkill(), 0, 1, errors);
 		range("items.rodSkill", items.rodSkill(), 0, 1, errors);
+		range("items.potHealthFraction", items.potHealthFraction(), 0, 1, errors);
 		range("mistakeRate", mistakeRate, 0, 1, errors);
 		range("panicHealthFraction", panicHealthFraction, 0, 1, errors);
 		return errors;

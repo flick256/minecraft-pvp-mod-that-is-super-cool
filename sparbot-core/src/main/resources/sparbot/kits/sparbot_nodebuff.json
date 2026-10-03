@@ -1,0 +1,198 @@
+{
+  "id": "sparbot_nodebuff",
+  "displayName": "SparBot NoDebuff",
+  "mode": "nodebuff",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "nodebuff",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own NoDebuff-style kit (not a copy of any server's layout): splash Healing II as the only healing, Speed II and Fire Resistance to drink, pearls and steak.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:diamond_helmet",
+      "enchantments": {
+        "minecraft:protection": 2,
+        "minecraft:unbreaking": 3
+      }
+    },
+    "chest": {
+      "id": "minecraft:diamond_chestplate",
+      "enchantments": {
+        "minecraft:protection": 2,
+        "minecraft:unbreaking": 3
+      }
+    },
+    "legs": {
+      "id": "minecraft:diamond_leggings",
+      "enchantments": {
+        "minecraft:protection": 2,
+        "minecraft:unbreaking": 3
+      }
+    },
+    "feet": {
+      "id": "minecraft:diamond_boots",
+      "enchantments": {
+        "minecraft:protection": 2,
+        "minecraft:unbreaking": 3
+      }
+    }
+  },
+  "offhand": null,
+  "slots": {
+    "0": {
+      "id": "minecraft:diamond_sword",
+      "enchantments": {
+        "minecraft:sharpness": 3,
+        "minecraft:fire_aspect": 2,
+        "minecraft:unbreaking": 3
+      }
+    },
+    "1": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "2": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "3": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:long_fire_resistance"
+    },
+    "8": {
+      "id": "minecraft:cooked_beef",
+      "count": 64
+    },
+    "4": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "5": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "6": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "7": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "9": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "10": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "11": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "12": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "13": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "14": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "15": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "16": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "17": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "18": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "19": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "20": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "21": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "22": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "23": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "24": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "25": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "26": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "27": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "28": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "29": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "30": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "31": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "32": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "33": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "34": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_healing"
+    },
+    "35": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    }
+  },
+  "effects": []
+}

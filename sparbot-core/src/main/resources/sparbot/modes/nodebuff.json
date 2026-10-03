@@ -1,0 +1,10 @@
+{
+  "id": "nodebuff",
+  "displayName": "NoDebuff",
+  "description": "Healing II splash potions are the only healing; Speed II and Fire Resistance to keep up. One long round.",
+  "kit": "sparbot_nodebuff",
+  "roundsToWin": 1,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

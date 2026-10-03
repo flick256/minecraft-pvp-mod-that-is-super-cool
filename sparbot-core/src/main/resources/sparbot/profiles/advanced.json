@@ -67,7 +67,8 @@
     "axeSkill": 0.7,
     "bowSkill": 0.7,
     "pearlSkill": 0.6,
-    "rodSkill": 0.5
+    "rodSkill": 0.5,
+    "potHealthFraction": 0.6
   },
   "mistakeRate": 0.04,
   "panicHealthFraction": 0.22

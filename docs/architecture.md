@@ -78,7 +78,7 @@ the profile's skill once per decision window (`Decision`), not every tick.
 A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
 brain is built, so the same brain plays every style.
 
-Tactics: kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+Tactics: pot, refill, buff (NoDebuff), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
 rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
@@ -92,7 +92,7 @@ uses, to find the pitch that lands on target.
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
-| M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | next |
+| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges, Spear, Crystal, Cart PvP, UHC | in progress |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |
@@ -106,5 +106,4 @@ uses, to find the pitch that lands on target.
   the item's use logic locally; the bot predicts the same outcome from the item's data components.
 - **No spears.** A bot holding a spear never clicks; spear attacks arrive in M6.
 - **No dodging.** The bot raises its shield against a drawn bow but doesn't sidestep arrows in flight.
-- **No splash potions yet.** They're in kits and recognised as items, but potion use comes with NoDebuff (M6).
 - **One playstyle:** a general duel brain. Playstyles arrive in M4.
