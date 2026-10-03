@@ -4,17 +4,19 @@ import io.github.flick256.sparbot.bot.BotManager;
 import io.github.flick256.sparbot.command.SparBotCommand;
 import io.github.flick256.sparbot.config.SparBotConfig;
 import io.github.flick256.sparbot.debug.DebugOverlay;
-import io.github.flick256.sparbot.match.MatchManager;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import io.github.flick256.sparbot.style.PlaystyleRegistry;
 import io.github.flick256.sparbot.kit.KitRegistry;
+import io.github.flick256.sparbot.match.MatchManager;
 import io.github.flick256.sparbot.profile.ProfileRegistry;
+import io.github.flick256.sparbot.record.Recorder;
+import io.github.flick256.sparbot.record.ReplayManager;
 import io.github.flick256.sparbot.stats.StatsTracker;
+import io.github.flick256.sparbot.style.PlaystyleRegistry;
 import java.nio.file.Path;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
@@ -35,6 +37,8 @@ public final class SparBot implements ModInitializer {
 	private static final PlaystyleRegistry STYLES = new PlaystyleRegistry();
 	private static final DebugOverlay DEBUG = new DebugOverlay();
 	private static final MatchManager MATCHES = new MatchManager();
+	private static final Recorder RECORDER = new Recorder();
+	private static final ReplayManager REPLAYS = new ReplayManager();
 
 	@Override
 	public void onInitialize() {
@@ -48,9 +52,13 @@ public final class SparBot implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(BOTS::tick);
 		ServerTickEvents.END_SERVER_TICK.register(DEBUG::tick);
 		ServerTickEvents.END_SERVER_TICK.register(MATCHES::tick);
+		ServerTickEvents.END_SERVER_TICK.register(RECORDER::tick);
+		ServerTickEvents.END_SERVER_TICK.register(REPLAYS::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> MATCHES.onJoin(handler.player));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			MATCHES.stopAll(server);
+			RECORDER.stopAll();
+			REPLAYS.stopAll();
 			BOTS.removeAll("server stopping");
 		});
 		LOGGER.info("SparBot initialised: {} skill profiles, enabled={}", PROFILES.ids().size(), config.enabled);
@@ -60,6 +68,7 @@ public final class SparBot implements ModInitializer {
 		config = SparBotConfig.load(configDir().resolve("sparbot.json"));
 		PROFILES.reload(configDir().resolve("sparbot").resolve("profiles"));
 		STYLES.reload(configDir().resolve("sparbot").resolve("playstyles"));
+		RECORDER.setDirectory(configDir().resolve("sparbot").resolve("recordings"));
 	}
 
 	public static void reloadKits(MinecraftServer server) {
@@ -85,6 +94,14 @@ public final class SparBot implements ModInitializer {
 
 	public static PlaystyleRegistry playstyles() {
 		return STYLES;
+	}
+
+	public static Recorder recorder() {
+		return RECORDER;
+	}
+
+	public static ReplayManager replays() {
+		return REPLAYS;
 	}
 
 	public static MatchManager matches() {

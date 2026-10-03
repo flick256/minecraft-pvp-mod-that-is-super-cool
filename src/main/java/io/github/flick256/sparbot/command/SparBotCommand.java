@@ -227,6 +227,7 @@ public final class SparBotCommand {
 		}));
 
 		MatchCommands.addTo(root);
+		RecordCommands.addTo(root);
 		dispatcher.register(root);
 	}
 

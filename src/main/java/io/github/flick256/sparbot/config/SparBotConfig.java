@@ -45,6 +45,8 @@ public final class SparBotConfig {
 	public String defaultPlaystyle = "balanced";
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
+	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */
+	public boolean recordMatches = false;
 
 	public enum RespawnMode {
 		OFF,

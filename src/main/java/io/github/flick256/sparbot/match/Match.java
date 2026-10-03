@@ -7,6 +7,8 @@ import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.match.GameMode;
 import io.github.flick256.sparbot.core.match.MatchState;
 import io.github.flick256.sparbot.kit.KitApplier;
+import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -31,6 +33,8 @@ public final class Match {
 	private final MatchManager manager;
 	private boolean roundPrepared;
 	private MatchState.Event result = MatchState.Event.NONE;
+	private final long startedAt = System.currentTimeMillis();
+	private boolean recording;
 
 	Match(Arena arena, GameMode mode, Kit kit, Fighter a, Fighter b, MatchManager manager) {
 		this.arena = arena;
@@ -42,6 +46,11 @@ public final class Match {
 		this.manager = manager;
 		MatchRules.withoutRegeneration(a.uuid(), !mode.regenerates());
 		MatchRules.withoutRegeneration(b.uuid(), !mode.regenerates());
+	}
+
+	/** The recording of this match, while {@code recordMatches} is on. */
+	private String recordingLabel() {
+		return ("match-" + arena.id() + "-" + startedAt).toLowerCase().replaceAll("[^a-z0-9_\\-]", "_");
 	}
 
 	/** Returns true once the match has finished and cleaned up. */
@@ -123,6 +132,14 @@ public final class Match {
 
 	private void prepareRound(MinecraftServer server, ServerPlayer pa, ServerPlayer pb) {
 		manager.arenas().reset(server, arena);
+		if (!recording && SparBot.config().recordMatches) {
+			try {
+				SparBot.recorder().start(recordingLabel(), mode.id(), List.of(pa, pb));
+				recording = true;
+			} catch (IllegalArgumentException | IllegalStateException e) {
+				SparBot.LOGGER.warn("Could not record the match in {}: {}", arena.id(), e.getMessage());
+			}
+		}
 		ServerLevel level = manager.arenas().level(server, arena);
 		if (level == null) {
 			return;
@@ -209,6 +226,13 @@ public final class Match {
 			}
 		}
 		manager.arenas().reset(server, arena);
+		if (recording) {
+			try {
+				SparBot.recorder().stop(recordingLabel());
+			} catch (IOException | IllegalStateException e) {
+				SparBot.LOGGER.error("Could not save the recording of the match in {}", arena.id(), e);
+			}
+		}
 		SparBot.LOGGER.info("Match in arena {} finished: {} {} {} ({})", arena.id(), a.name(), state.score(), b.name(), event);
 	}
 

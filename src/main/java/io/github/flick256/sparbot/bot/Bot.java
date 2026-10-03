@@ -51,6 +51,7 @@ public final class Bot {
 	private int attackTargetId = -1;
 	private boolean attackWouldCrit;
 	private boolean stabbing;
+	private Inputs lastInputs = Inputs.IDLE;
 	private @Nullable List<String> violations;
 	private boolean brainPaused;
 	private boolean inMatch;
@@ -99,6 +100,7 @@ public final class Bot {
 		}
 
 		if (brainPaused) {
+			lastInputs = Inputs.IDLE;
 			return;
 		}
 		SparBotConfig config = SparBot.config();
@@ -107,12 +109,18 @@ public final class Bot {
 		Inputs desired = policy.act(observation);
 		Inputs actual = shaper.shape(desired);
 		client.apply(player, this, actual);
+		lastInputs = actual;
 
 		String tactic = policy.lastTrace().tactic();
 		if (config.logDecisions && !tactic.equals(lastTactic)) {
 			SparBot.LOGGER.info("[{}] {} -> {} {}", name, lastTactic, tactic, policy.lastTrace().scores());
 		}
 		lastTactic = tactic;
+	}
+
+	/** The inputs the bot's brain pressed this tick, after the human limits (what a recording stores). */
+	public Inputs lastInputs() {
+		return lastInputs;
 	}
 
 	/** A paused bot keeps its body (physics, damage, guard) but its brain presses nothing. */

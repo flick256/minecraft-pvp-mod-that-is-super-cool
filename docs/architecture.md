@@ -23,12 +23,14 @@ sparbot-core/        pure Java, no Minecraft/Fabric on the classpath (enforced b
   style/             Playstyle (tactic weights, skill biases, preferred range), presets, mixing
   match/             GameMode (JSON rules), MatchState (pure round/countdown/best-of engine)
   stats/             FightStats, Elo, EloLadder
+  record/            Recording, Frame, Sample (state + inputs per fighter per tick), RecordingIO (.spbr format)
 src/main/            the Fabric mod (server side)
   bot/               BotPlayer body, BotConnection, ClientEmulator, Perception, MortalityGuard, BotManager
   kit/ profile/      registries; KitApplier validates kits against the live registries
   match/             Arena + ArenaRegistry (snapshots, reset, cleanup), Match, MatchManager, Benchmark,
                      EloStore, PlayerBackup (humans' inventories on disk during matches)
   style/ debug/       PlaystyleRegistry; DebugOverlay (action bar and crosshair particles for one viewer)
+  record/            Recorder (bots' shaped inputs, humans' inputs read back from their packets), ReplayManager
   command/ config/ stats/ mixin/
 src/gametest/        in-game tests run by `./gradlew build`
 ```
@@ -77,6 +79,9 @@ mostly the bot's own placements, which a player knows about without reacting to 
   did nothing, uses the item in the air. The bot sends the same packets in the same order.
 - **UHC regeneration:** game rules are server-wide, so `FoodDataMixin` makes the regeneration check
   return false only for the two fighters of a match whose mode turns natural regeneration off.
+- **Recording humans:** the server knows a human's movement keys (`ServerboundPlayerInputPacket`),
+  rotation, item use and hotbar slot; left clicks are seen through the arm-swing packet
+  (`ServerGamePacketListenerImplMixin`). Opening their own inventory never reaches the server.
 - **Join protection:** players are invulnerable until their client reports it has loaded. The bot sends
   `ServerboundPlayerLoadedPacket` immediately after joining and respawning.
 - **Disconnecting:** vanilla only closes a connection after the disconnect packet is delivered, so
@@ -111,7 +116,7 @@ uses, to find the pitch that lands on target.
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
 | M6 | Mode packs: NoDebuff (pot, refill, buff), Mace and wind charges, Spear, Crystal, Cart PvP, UHC (lava, water, webs, no natural regeneration) | done |
-| M7 | Recording and replay, config GUI | |
+| M7 | Recording and replay (done), config GUI | in progress |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |
 | M10 | Training-world pack | |

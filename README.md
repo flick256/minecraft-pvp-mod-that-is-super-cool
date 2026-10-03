@@ -91,6 +91,8 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot match stop <arena>` / `match list` | Stops a match (unrated) / shows running matches |
 | `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `spear_duel`, `crystal_duel`, `cart_duel`, `uhc_duel`, `benchmark`, plus your own) |
 | `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
+| `/sparbot record start <name> <players>` / `stop <name>` / `list` | Records a fight (bots or humans) to `config/sparbot/recordings/<name>.spbr`: every tick, each fighter's position, state and inputs |
+| `/sparbot replay <name>` / `replay stop <name>` | Plays a recording back where it was recorded, with mannequins standing in for the fighters |
 | `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
@@ -224,6 +226,7 @@ These rules never relax, and the build fails if any of them breaks:
 | `kitOnRespawn` | `true` | Re-equip the kit on respawn (start of a new round) |
 | `defaultProfile` / `defaultKit` | `intermediate` / `basic_sword` | Used when `/sparbot spawn` omits them |
 | `logDecisions` | `false` | Log every tactic change |
+| `recordMatches` | `false` | Record every match (for replays, and later for Super Mode training) |
 
 ## Building
 
