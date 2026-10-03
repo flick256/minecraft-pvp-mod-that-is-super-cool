@@ -13,36 +13,53 @@ import io.github.flick256.sparbot.core.sense.TargetState;
 public final class BrainContext {
 	public final Observation observation;
 	public final SelfState self;
+	/** The opponent as of one reaction time ago: used for decisions (what to do next). */
 	public final TargetState target;
+	/**
+	 * The opponent as the eyes currently track it: only network and visual-motor delay. Humans
+	 * follow a moving target continuously; reaction time delays decisions, not tracking.
+	 */
+	public final TargetState tracked;
+	/** How many ticks old {@link #tracked} is, used to lead the aim. */
+	public final int trackingDelayTicks;
 	public final SkillProfile profile;
 	public final Rng rng;
 	public final AimController aim;
 	public final DuelMemory memory;
 
-	BrainContext(Observation observation, SkillProfile profile, Rng rng, AimController aim, DuelMemory memory) {
+	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Rng rng, AimController aim, DuelMemory memory) {
 		this.observation = observation;
 		this.self = observation.self();
 		this.target = observation.target();
+		this.tracked = tracked;
+		this.trackingDelayTicks = trackingDelayTicks;
 		this.profile = profile;
 		this.rng = rng;
 		this.aim = aim;
 		this.memory = memory;
 	}
 
-	/** Distance from the bot's eyes to the target's hitbox, as the bot perceives it. */
-	public double targetDistance() {
-		return target == null ? Double.POSITIVE_INFINITY : target.hitboxDistance(self.eyePosition());
+	/** The freshest view of the opponent the bot has (tracking view, else the decision view). */
+	public TargetState seen() {
+		return tracked != null ? tracked : target;
 	}
 
-	/** Whether the bot's crosshair ray, as it perceives things, passes through the target's hitbox. */
+	/** Distance from the bot's eyes to the target's hitbox, as the bot currently sees it. */
+	public double targetDistance() {
+		TargetState t = seen();
+		return t == null ? Double.POSITIVE_INFINITY : t.hitboxDistance(self.eyePosition());
+	}
+
+	/** Whether the bot's crosshair ray, as it currently sees things, passes through the target's hitbox. */
 	public boolean crosshairOnTarget(double maxDistance) {
-		if (target == null) {
+		TargetState t = seen();
+		if (t == null) {
 			return false;
 		}
 		Vec3 eye = self.eyePosition();
 		Vec3 dir = Angles.lookVector(self.yaw(), self.pitch());
-		Vec3 min = new Vec3(target.position().x() - target.halfWidth(), target.position().y(), target.position().z() - target.halfWidth());
-		Vec3 max = new Vec3(target.position().x() + target.halfWidth(), target.position().y() + target.height(), target.position().z() + target.halfWidth());
+		Vec3 min = new Vec3(t.position().x() - t.halfWidth(), t.position().y(), t.position().z() - t.halfWidth());
+		Vec3 max = new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth());
 		return rayHitsBox(eye, dir, min, max, maxDistance);
 	}
 

@@ -27,22 +27,26 @@ public final class EngageTactic implements Tactic {
 
 	@Override
 	public double score(BrainContext c) {
-		if (c.target == null || c.target.ticksSinceSeen() > 100) {
+		TargetState t = c.seen();
+		if (c.target == null || t == null || t.ticksSinceSeen() > 100) {
 			return 0;
 		}
-		return c.target.visible() ? 0.6 : 0.4;
+		return t.visible() ? 0.6 : 0.4;
 	}
 
 	@Override
 	public Inputs act(BrainContext c) {
 		SelfState self = c.self;
+		// Events (our hit landing) are noticed one reaction time late.
 		TargetState target = c.target;
 		SkillProfile.Technique tech = c.profile.technique();
 		DuelMemory m = c.memory;
 
-		// Aim at the chest, leading by a fraction of the target's velocity.
-		Vec3 lead = target.velocity().scale(c.profile.aim().trackingLead() * 2.0);
-		Vec3 goal = target.chest().add(lead);
+		// Aim at the chest of the opponent as currently tracked, leading by a skill-dependent fraction
+		// of how far it moves during the tracking delay (+1 tick for the time until the click lands).
+		TargetState aimAt = c.seen();
+		Vec3 lead = aimAt.velocity().scale(c.profile.aim().trackingLead() * (c.trackingDelayTicks + 1));
+		Vec3 goal = aimAt.chest().add(lead);
 		float goalYaw = Angles.yawTowards(self.eyePosition(), goal);
 		float goalPitch = Angles.pitchTowards(self.eyePosition(), goal);
 		float[] look = c.aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);

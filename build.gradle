@@ -7,12 +7,10 @@ base {
 }
 
 loom {
-	splitEnvironmentSourceSets()
-
+	// Server-side only for now; a client source set returns with the debug overlay (milestone 4).
 	mods {
 		"sparbot" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 }

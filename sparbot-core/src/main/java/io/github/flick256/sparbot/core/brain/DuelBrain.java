@@ -20,6 +20,8 @@ public final class DuelBrain implements Policy {
 	private static final double HYSTERESIS = 0.05;
 	private static final int MISTAKE_WINDOW_TICKS = 20;
 	private static final int REACTION_RESAMPLE_TICKS = 20;
+	/** Visual-motor latency of continuous tracking (about one tick on top of network delay). */
+	private static final int TRACKING_BASE_DELAY_TICKS = 1;
 
 	private final SkillProfile profile;
 	private final Rng rng;
@@ -48,11 +50,13 @@ public final class DuelBrain implements Policy {
 	public Inputs act(Observation raw) {
 		perception.push(raw.target());
 		if (--memory.ticksUntilReactionResample <= 0) {
-			double delayMs = profile.reactionTimeMs().sample(rng) + profile.pingMs().sample(rng) / 2.0;
-			memory.reactionDelayTicks = (int) Math.round(delayMs / 50.0);
+			double networkMs = profile.pingMs().sample(rng) / 2.0;
+			memory.reactionDelayTicks = (int) Math.round((profile.reactionTimeMs().sample(rng) + networkMs) / 50.0);
+			memory.trackingDelayTicks = TRACKING_BASE_DELAY_TICKS + (int) Math.round(networkMs / 50.0);
 			memory.ticksUntilReactionResample = REACTION_RESAMPLE_TICKS;
 		}
 		TargetState seen = perception.delayed(memory.reactionDelayTicks);
+		TargetState tracked = perception.delayed(memory.trackingDelayTicks);
 		Observation observation = new Observation(raw.tick(), raw.self(), seen);
 
 		if (--memory.ticksUntilMistakeRoll <= 0) {
@@ -60,7 +64,7 @@ public final class DuelBrain implements Policy {
 			memory.mistake = rng.chance(profile.mistakeRate()) ? pickMistake() : Mistake.NONE;
 		}
 
-		BrainContext context = new BrainContext(observation, profile, rng, aim, memory);
+		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, rng, aim, memory);
 		Map<String, Double> scores = new LinkedHashMap<>();
 		Tactic best = null;
 		double bestScore = Double.NEGATIVE_INFINITY;
@@ -115,7 +119,7 @@ public final class DuelBrain implements Policy {
 	}
 
 	private String describe() {
-		return "mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks
+		return "mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks + " trackTicks=" + memory.trackingDelayTicks
 			+ " clickAt=" + String.format("%.2f", memory.cooldownThreshold);
 	}
 }

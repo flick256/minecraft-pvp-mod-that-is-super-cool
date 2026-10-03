@@ -50,7 +50,7 @@ public final class RetreatTactic implements Tactic {
 			// Running has failed: commit back to the fight for a while.
 			c.memory.retreatCooldown = RETREAT_COOLDOWN_TICKS;
 		}
-		float away = Angles.wrapDegrees(Angles.yawTowards(c.self.eyePosition(), c.target.position()) + 180.0F);
+		float away = Angles.wrapDegrees(Angles.yawTowards(c.self.eyePosition(), c.seen().position()) + 180.0F);
 		// Run in a slight zig-zag so the chaser cannot line up easy hits.
 		float wobble = (float) Math.sin(c.memory.retreatTicks / 6.0) * 25.0F;
 		float[] look = c.aim.step(c.self.yaw(), c.self.pitch(), away + wobble, 0.0F);

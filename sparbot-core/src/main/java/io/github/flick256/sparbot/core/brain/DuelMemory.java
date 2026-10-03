@@ -21,6 +21,7 @@ public final class DuelMemory {
 	int retreatTicks;
 	int retreatCooldown;
 	int reactionDelayTicks;
+	int trackingDelayTicks;
 	int ticksUntilReactionResample;
 
 	enum CritPhase {

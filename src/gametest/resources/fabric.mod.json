@@ -1,0 +1,14 @@
+{
+	"schemaVersion": 1,
+	"id": "sparbot-gametest",
+	"version": "1.0.0",
+	"name": "SparBot GameTests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": ["io.github.flick256.sparbot.gametest.SparBotGameTests"]
+	},
+	"depends": {
+		"sparbot": "*",
+		"fabric-gametest-api-v1": "*"
+	}
+}
