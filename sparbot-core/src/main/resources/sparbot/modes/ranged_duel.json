@@ -1,0 +1,10 @@
+{
+  "id": "ranged_duel",
+  "displayName": "Ranged Duel",
+  "description": "Bows and crossbows in iron armor, first to 3.",
+  "kit": "sparbot_ranged",
+  "roundsToWin": 3,
+  "roundSeconds": 150,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

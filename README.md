@@ -7,7 +7,8 @@ and fall damage through the same vanilla code as a human, uses up totems, drops 
 The mod is server-side only. It works in singleplayer (the integrated server), on LAN and on dedicated
 servers, and players don't need to install anything.
 
-> Status: **milestone 4**: bots fight with the full modern toolset (sword, axe against shields,
+> Status: **milestone 5**: matches in arenas (best-of-N, arena reset between rounds, player inventory
+> safety), bot-vs-bot benchmarks and an Elo ladder, on top of milestone 4: bots fight with the full modern toolset (sword, axe against shields,
 > block-hitting, bow, crossbow, fishing rod, ender pearls, golden apples, totems) at a chosen skill
 > level and **playstyle**, using a full kit system with capture and personal layouts. A debug view shows
 > what a bot is thinking.
@@ -73,6 +74,14 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot layout set <bot> <layout>` / `clear <bot>` | Makes a bot copy a layout, or go back to the kit's default |
 | `/sparbot style set <bot> <style or mix>` | Changes how the bot fights, e.g. `kiter` or `aggressive_rusher:0.7,kiter:0.3` |
 | `/sparbot debug <bot>` / `debug off` | Shows the bot's tactic, top scores, distance, health and charge on **your** action bar, and a spark where its crosshair points |
+| `/sparbot arena create <id> <from> <to>` | Saves an arena (and a snapshot of its blocks, used to reset it between rounds) |
+| `/sparbot arena spawn <id> a\|b` | Sets a side's spawn to where you stand, facing where you look |
+| `/sparbot arena reset <id>` / `arena list` | Restores an arena's blocks and clears drops, arrows and pearls |
+| `/sparbot match start <mode> <arena> <a> <b>` | Starts a match; `a` and `b` are bot names or online players |
+| `/sparbot match stop <arena>` / `match list` | Stops a match (unrated) / shows running matches |
+| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `benchmark`, plus your own) |
+| `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
+| `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
 | `/sparbot reload` | Reloads the config, profiles and kits |
@@ -91,6 +100,26 @@ that sets:
 To add your own, copy a preset from
 `sparbot-core/src/main/resources/sparbot/profiles/` into `config/sparbot/profiles/`, change it, then run
 `/sparbot reload`. The validator rejects profiles beyond human limits, such as reactions under 100 ms or more than 20 CPS.
+
+## Matches
+
+1. Build or pick an area, then run `/sparbot arena create myarena ~-10 ~-1 ~-10 ~10 ~6 ~10`.
+2. Stand where each side starts and run `/sparbot arena spawn myarena a`, then `... b`.
+3. Run `/sparbot match start sword_duel myarena Bob <you>` (or two bot names).
+
+**How a round works:**
+- **Start:** the arena is reset, both sides are teleported to their spawns with a fresh kit, and a
+  countdown holds them in place.
+- **End:** a death, or falling out of the arena, ends the round.
+- **Timeout:** decided by health, or a draw, depending on the mode.
+
+**Your inventory is safe.** It's saved to disk before the kit replaces it, and given back when the match
+ends, or on your next join if the server stops mid-match.
+
+**Elo:** every finished match is rated. Bots are rated per profile and playstyle (for example
+`bot:pro/wtap_combo`) and humans per name, so `/sparbot elo` tells you how strong each level really is.
+Add your own modes in `config/sparbot/modes/*.json` (kit, rounds to win, round length, countdown,
+timeout rule).
 
 ## Playstyles
 

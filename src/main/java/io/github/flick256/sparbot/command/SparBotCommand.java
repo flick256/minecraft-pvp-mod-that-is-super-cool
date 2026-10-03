@@ -226,6 +226,7 @@ public final class SparBotCommand {
 			return ok(ctx, "Reloaded config, " + SparBot.profiles().ids().size() + " profiles and " + SparBot.kits().ids().size() + " kits");
 		}));
 
+		MatchCommands.addTo(root);
 		dispatcher.register(root);
 	}
 

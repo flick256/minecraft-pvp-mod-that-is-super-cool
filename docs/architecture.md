@@ -21,10 +21,13 @@ sparbot-core/        pure Java, no Minecraft/Fabric on the classpath (enforced b
   item/              ItemKind, ItemInfo, InventoryState (what the bot knows about its items)
   kit/               Kit model with provenance, KitValidator, Layout, bundled kits
   style/             Playstyle (tactic weights, skill biases, preferred range), presets, mixing
-  stats/             FightStats, Elo
+  match/             GameMode (JSON rules), MatchState (pure round/countdown/best-of engine)
+  stats/             FightStats, Elo, EloLadder
 src/main/            the Fabric mod (server side)
   bot/               BotPlayer body, BotConnection, ClientEmulator, Perception, MortalityGuard, BotManager
   kit/ profile/      registries; KitApplier validates kits against the live registries
+  match/             Arena + ArenaRegistry (snapshots, reset, cleanup), Match, MatchManager, Benchmark,
+                     EloStore, PlayerBackup (humans' inventories on disk during matches)
   style/ debug/       PlaystyleRegistry; DebugOverlay (action bar and crosshair particles for one viewer)
   command/ config/ stats/ mixin/
 src/gametest/        in-game tests run by `./gradlew build`
@@ -88,8 +91,8 @@ uses, to find the pitch that lands on target.
 | M2 | Full kit system: slot-for-slot JSON with any item component, provenance, validator, kit and layout capture, eating, hotbar and offhand swaps, inventory clicks | done |
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
-| M5 | Matches: game-mode modules, arenas, rounds, cleanup, bot-vs-bot, Elo benchmark, training-world extension points | next |
-| M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | |
+| M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
+| M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | next |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |

@@ -50,6 +50,7 @@ public final class Bot {
 	private boolean attackWouldCrit;
 	private @Nullable List<String> violations;
 	private boolean brainPaused;
+	private boolean inMatch;
 	private final ConsumptionTracker consumption = new ConsumptionTracker();
 
 	Bot(String name, UUID uuid, BotConnection connection, SkillProfile profile, Kit kit, ResourceKey<Level> dimension, Vec3 home, float homeYaw, long seed) {
@@ -107,11 +108,25 @@ public final class Bot {
 	}
 
 	/** A paused bot keeps its body (physics, damage, guard) but its brain presses nothing. */
-	void setBrainPaused(boolean paused) {
+	public void setBrainPaused(boolean paused) {
 		this.brainPaused = paused;
-		if (paused) {
+		if (paused && body != null) {
 			client.apply(body, this, io.github.flick256.sparbot.core.act.Inputs.IDLE);
 		}
+	}
+
+	/** While in a match, the match (not the respawn config) decides when the bot respawns. */
+	public void setInMatch(boolean inMatch) {
+		this.inMatch = inMatch;
+	}
+
+	public boolean inMatch() {
+		return inMatch;
+	}
+
+	/** Start of a new round: forget the last round's fight (stats are kept). */
+	public void resetMindForRound() {
+		resetMind();
 	}
 
 	public boolean brainPaused() {

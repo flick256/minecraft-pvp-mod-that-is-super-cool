@@ -164,7 +164,7 @@ public final class BotManager {
 				remove(bot, "mortality rule violated: " + String.join(", ", violations));
 				continue;
 			}
-			if (player.isDeadOrDying()) {
+			if (player.isDeadOrDying() && !bot.inMatch()) {
 				int dead = bot.incrementDeadTicks();
 				switch (config.respawnModeEnum()) {
 					case AUTO -> {

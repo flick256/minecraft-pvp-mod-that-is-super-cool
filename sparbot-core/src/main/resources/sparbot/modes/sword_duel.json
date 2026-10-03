@@ -1,0 +1,10 @@
+{
+  "id": "sword_duel",
+  "displayName": "Sword Duel",
+  "description": "Unenchanted diamond gear, swords only, first to 3.",
+  "kit": "basic_sword",
+  "roundsToWin": 3,
+  "roundSeconds": 120,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

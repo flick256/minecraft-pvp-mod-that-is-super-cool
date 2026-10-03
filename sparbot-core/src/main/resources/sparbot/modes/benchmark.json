@@ -1,0 +1,10 @@
+{
+  "id": "benchmark",
+  "displayName": "Benchmark",
+  "description": "Fast single-round sword fights for measuring skill levels.",
+  "kit": "basic_sword",
+  "roundsToWin": 1,
+  "roundSeconds": 90,
+  "countdownSeconds": 1,
+  "timeoutRule": "health"
+}
