@@ -20,11 +20,11 @@ import java.util.Set;
 public record Playstyle(String id, String displayName, String description, Map<String, Double> tacticWeights, Map<String, Double> skillBias,
 	double preferredRange) {
 	/** Tactic names a weight can refer to (see the brain's tactic list). */
-	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "rod", "kite", "pot", "refill", "buff", "mace", "spear");
+	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "rod", "kite", "pot", "refill", "buff", "mace", "spear", "crystal");
 	/** Skills a bias can refer to. */
 	public static final Set<String> SKILLS = Set.of("critSkill", "wTapSkill", "sTapSkill", "strafeSkill", "jumpResetSkill", "spacingSkill",
 		"retotemSkill", "shieldSkill", "axeSkill", "bowSkill", "pearlSkill", "rodSkill", "gappleHealthFraction", "panicHealthFraction",
-		"cooldownDiscipline", "potHealthFraction", "maceSkill", "spearSkill");
+		"cooldownDiscipline", "potHealthFraction", "maceSkill", "spearSkill", "crystalSkill");
 
 	public static final Playstyle BALANCED = new Playstyle("balanced", "Balanced", "No preferences: every tactic at face value.", Map.of(), Map.of(), 0);
 
@@ -76,7 +76,7 @@ public record Playstyle(String id, String displayName, String description, Map<S
 		SkillProfile.ItemSkills items = new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), b("retotemSkill", i.retotemSkill()),
 			b("gappleHealthFraction", i.gappleHealthFraction()), i.eatHungerBelow(), b("shieldSkill", i.shieldSkill()), b("axeSkill", i.axeSkill()),
 			b("bowSkill", i.bowSkill()), b("pearlSkill", i.pearlSkill()), b("rodSkill", i.rodSkill()), b("potHealthFraction", i.potHealthFraction()), b("maceSkill", i.maceSkill()),
-			b("spearSkill", i.spearSkill()));
+			b("spearSkill", i.spearSkill()), b("crystalSkill", i.crystalSkill()));
 		SkillProfile.Clicking clicking = new SkillProfile.Clicking(p.clicking().cps(), b("cooldownDiscipline", p.clicking().cooldownDiscipline()));
 		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), clicking, p.reach(), technique,
 			items, p.mistakeRate(), b("panicHealthFraction", p.panicHealthFraction()));

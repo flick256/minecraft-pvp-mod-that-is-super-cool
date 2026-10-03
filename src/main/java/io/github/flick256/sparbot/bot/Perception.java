@@ -2,24 +2,33 @@ package io.github.flick256.sparbot.bot;
 
 import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Vec3;
+import io.github.flick256.sparbot.core.sense.BlockSpot;
 import io.github.flick256.sparbot.core.sense.EffectInfo;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.SelfState;
+import io.github.flick256.sparbot.core.sense.Surroundings;
 import io.github.flick256.sparbot.core.sense.TargetState;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.AttackRange;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -31,6 +40,8 @@ import org.jspecify.annotations.Nullable;
 public final class Perception {
 	/** Columns deeper than this count as a void / lethal drop. */
 	private static final int MAX_DROP_SCAN = 24;
+	/** How far around its feet the bot looks for blocks to put crystals or obsidian on. */
+	private static final int BLOCK_SCAN = 5;
 	/** Forget an opponent not seen for this long (10 s). */
 	private static final int FORGET_AFTER_TICKS = 200;
 
@@ -41,7 +52,7 @@ public final class Perception {
 
 	Observation observe(Bot bot, BotPlayer self, long tick, double awarenessRadius, boolean autoTarget, boolean autoTargetBots) {
 		LivingEntity target = chooseTarget(bot, self, awarenessRadius, autoTarget, autoTargetBots);
-		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius));
+		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius), surroundings(self, awarenessRadius));
 	}
 
 	void reset() {
@@ -155,6 +166,51 @@ public final class Perception {
 				effect.isInfiniteDuration() ? -1 : effect.getDuration()));
 		}
 		return effects;
+	}
+
+	/**
+	 * Crystals in sight, and blocks within reach that a crystal or a block of obsidian could go on.
+	 * Only scanned while the bot carries end crystals: nothing else uses it.
+	 */
+	private static Surroundings surroundings(BotPlayer self, double awarenessRadius) {
+		if (!self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL))) {
+			return Surroundings.EMPTY;
+		}
+		ServerLevel level = self.level();
+		List<Vec3> crystals = new ArrayList<>();
+		for (EndCrystal crystal : level.getEntitiesOfClass(EndCrystal.class, self.getBoundingBox().inflate(awarenessRadius),
+			c -> c.isAlive() && self.hasLineOfSight(c))) {
+			crystals.add(new Vec3(crystal.getX(), crystal.getY(), crystal.getZ()));
+		}
+		List<BlockSpot> bases = new ArrayList<>();
+		List<BlockSpot> obsidianSpots = new ArrayList<>();
+		BlockPos feet = self.blockPosition();
+		for (int dx = -BLOCK_SCAN; dx <= BLOCK_SCAN; dx++) {
+			for (int dz = -BLOCK_SCAN; dz <= BLOCK_SCAN; dz++) {
+				for (int dy = -3; dy <= 1; dy++) {
+					BlockPos pos = feet.offset(dx, dy, dz);
+					if (!self.isWithinBlockInteractionRange(pos, 0.0)) {
+						continue;
+					}
+					BlockState state = level.getBlockState(pos);
+					BlockPos above = pos.above();
+					if (!level.isEmptyBlock(above)) {
+						continue;
+					}
+					if (state.is(Blocks.OBSIDIAN) || state.is(Blocks.BEDROCK)) {
+						// EndCrystalItem#useOn: no entity may be in the 1x2x1 space the crystal fills.
+						AABB space = new AABB(above.getX(), above.getY(), above.getZ(), above.getX() + 1.0, above.getY() + 2.0, above.getZ() + 1.0);
+						if (level.getEntities((Entity) null, space).isEmpty()) {
+							bases.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
+						}
+					} else if (state.isFaceSturdy(level, pos, Direction.UP) && level.isEmptyBlock(above.above())
+						&& level.isUnobstructed(Blocks.OBSIDIAN.defaultBlockState(), above, CollisionContext.empty())) {
+						obsidianSpots.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
+					}
+				}
+			}
+		}
+		return new Surroundings(crystals, bases, obsidianSpots);
 	}
 
 	/**

@@ -31,7 +31,7 @@ public final class DuelBrain implements Policy {
 	private final PerceptionDelay perception = new PerceptionDelay();
 	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic(),
 		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new RodTactic(), new KiteTactic(),
-		new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic());
+		new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic());
 	private DuelMemory memory = new DuelMemory();
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
@@ -72,7 +72,7 @@ public final class DuelBrain implements Policy {
 		}
 		TargetState seen = perception.delayed(memory.reactionDelayTicks);
 		TargetState tracked = perception.delayed(memory.trackingDelayTicks);
-		Observation observation = new Observation(raw.tick(), raw.self(), seen);
+		Observation observation = new Observation(raw.tick(), raw.self(), seen, raw.surroundings());
 
 		if (--memory.ticksUntilMistakeRoll <= 0) {
 			memory.ticksUntilMistakeRoll = MISTAKE_WINDOW_TICKS;
@@ -140,6 +140,6 @@ public final class DuelBrain implements Policy {
 
 	private String describe() {
 		return "style=" + style.id() + " mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks + " trackTicks=" + memory.trackingDelayTicks
-			+ " clickAt=" + String.format("%.2f", memory.cooldownThreshold);
+			+ " clickAt=" + String.format("%.2f", memory.cooldownThreshold) + (active == null || active.detail().isEmpty() ? "" : " step=" + active.detail());
 	}
 }

@@ -7,6 +7,7 @@ import io.github.flick256.sparbot.core.math.Vec3;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.SelfState;
+import io.github.flick256.sparbot.core.sense.Surroundings;
 import io.github.flick256.sparbot.core.sense.TargetState;
 import io.github.flick256.sparbot.core.style.Playstyle;
 
@@ -29,11 +30,14 @@ public final class BrainContext {
 	public final DuelMemory memory;
 	/** The playstyle the bot fights with (weights are already applied to scores by the brain). */
 	public final Playstyle style;
+	/** Crystals and placeable blocks around the bot (empty unless it carries crystals). */
+	public final Surroundings world;
 
 	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Playstyle style, Rng rng, AimController aim,
 		DuelMemory memory) {
 		this.style = style;
 		this.observation = observation;
+		this.world = observation.surroundings();
 		this.self = observation.self();
 		this.target = observation.target();
 		this.tracked = tracked;
@@ -85,6 +89,11 @@ public final class BrainContext {
 	}
 
 	static boolean rayHitsBox(Vec3 origin, Vec3 dir, Vec3 min, Vec3 max, double maxDistance) {
+		return rayEntry(origin, dir, min, max, maxDistance) >= 0;
+	}
+
+	/** Distance along the ray at which it enters the box (0 if it starts inside), or -1 if it misses within {@code maxDistance}. */
+	static double rayEntry(Vec3 origin, Vec3 dir, Vec3 min, Vec3 max, double maxDistance) {
 		double tMin = 0;
 		double tMax = maxDistance;
 		double[] o = {origin.x(), origin.y(), origin.z()};
@@ -94,7 +103,7 @@ public final class BrainContext {
 		for (int axis = 0; axis < 3; axis++) {
 			if (Math.abs(d[axis]) < 1e-9) {
 				if (o[axis] < lo[axis] || o[axis] > hi[axis]) {
-					return false;
+					return -1;
 				}
 			} else {
 				double t1 = (lo[axis] - o[axis]) / d[axis];
@@ -102,10 +111,10 @@ public final class BrainContext {
 				tMin = Math.max(tMin, Math.min(t1, t2));
 				tMax = Math.min(tMax, Math.max(t1, t2));
 				if (tMin > tMax) {
-					return false;
+					return -1;
 				}
 			}
 		}
-		return true;
+		return tMin;
 	}
 }

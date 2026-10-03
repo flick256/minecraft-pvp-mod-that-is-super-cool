@@ -32,6 +32,7 @@ final class BrainHarness {
 	boolean hookOut;
 	boolean hookOnTarget;
 	TargetState target;
+	io.github.flick256.sparbot.core.sense.Surroundings world = io.github.flick256.sparbot.core.sense.Surroundings.EMPTY;
 	final List<Inputs> history = new ArrayList<>();
 
 	BrainHarness(SkillProfile profile, InventoryState inventory, TargetState target) {
@@ -59,7 +60,7 @@ final class BrainHarness {
 	Inputs tick() {
 		SelfState self = new SelfState(Vec3.ZERO, new Vec3(0, 1.62, 0), Vec3.ZERO, yaw, pitch, health, 20, 0, 20, true, false, false, false, 0,
 			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects);
-		Inputs in = brain.act(new Observation(history.size(), self, target));
+		Inputs in = brain.act(new Observation(history.size(), self, target, world));
 		history.add(in);
 		if (in.inventoryOpen()) {
 			useTicks = 0;

@@ -1,0 +1,10 @@
+{
+  "id": "crystal_duel",
+  "displayName": "Crystal Duel",
+  "description": "End crystals and obsidian in netherite, five totems: place, detonate, re-totem. First to 2.",
+  "kit": "sparbot_crystal",
+  "roundsToWin": 2,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

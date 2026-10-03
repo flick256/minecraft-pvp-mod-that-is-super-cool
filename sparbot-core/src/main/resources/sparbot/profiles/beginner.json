@@ -70,7 +70,8 @@
     "rodSkill": 0.05,
     "potHealthFraction": 0.35,
     "maceSkill": 0.05,
-    "spearSkill": 0.05
+    "spearSkill": 0.05,
+    "crystalSkill": 0.05
   },
   "mistakeRate": 0.25,
   "panicHealthFraction": 0.3

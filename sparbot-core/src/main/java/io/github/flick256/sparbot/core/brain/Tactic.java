@@ -16,6 +16,11 @@ public interface Tactic {
 	default void onExit(BrainContext context) {
 	}
 
+	/** What the tactic is doing right now, for the decision trace (empty when there is nothing to add). */
+	default String detail() {
+		return "";
+	}
+
 	/** Forget any per-fight state held by the tactic itself (respawn, new round). */
 	default void reset() {
 	}

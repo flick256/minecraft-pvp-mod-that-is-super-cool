@@ -23,11 +23,16 @@ import org.jspecify.annotations.Nullable;
  * frame. Explosion knockback is different: vanilla already pushes the player's server-side velocity
  * (ServerExplosion#hurtEntities) and the client copy in ClientboundExplodePacket must not be applied
  * a second time, so it is ignored here.
+ *
+ * <p>A client also confirms every teleport (ClientboundPlayerPositionPacket) with
+ * ServerboundAcceptTeleportationPacket. Until it does, the server ignores its block interactions and
+ * movement, so the teleport id is queued and the bot confirms it on its next tick.
  */
 public final class BotConnection extends Connection {
 	private final EmbeddedChannel channel;
 	private int selfEntityId = -1;
 	private @Nullable Vec3 pendingMotion;
+	private int pendingTeleport = -1;
 
 	public BotConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -46,13 +51,21 @@ public final class BotConnection extends Connection {
 		return motion;
 	}
 
+	/** Returns and clears the id of the latest teleport not yet confirmed, or -1. */
+	int takePendingTeleport() {
+		int id = pendingTeleport;
+		pendingTeleport = -1;
+		return id;
+	}
+
 	@Override
 	public void send(Packet<?> packet, @Nullable ChannelFutureListener listener, boolean flush) {
 		if (packet instanceof ClientboundSetEntityMotionPacket motion && motion.id() == selfEntityId) {
 			pendingMotion = motion.movement();
-		} else if (packet instanceof ClientboundPlayerPositionPacket) {
+		} else if (packet instanceof ClientboundPlayerPositionPacket position) {
 			// The teleport already set position and velocity server-side and supersedes earlier motion.
 			pendingMotion = null;
+			pendingTeleport = position.id();
 		}
 		// Everything else would go to the client's screen; there is no screen, so drop it, but report
 		// it as delivered: vanilla chains follow-up work on delivery (e.g. disconnecting only after the

@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 
@@ -16,7 +17,8 @@ import net.minecraft.world.entity.projectile.Projectile;
  *
  * <p>Fabric's AFTER_DAMAGE reports the amount <i>before</i> armor, enchantments and absorption are
  * applied, so the real damage is measured as the health (plus absorption) the victim actually lost,
- * snapshotted in ALLOW_DAMAGE. This listener only observes: it always allows the damage.
+ * snapshotted in ALLOW_DAMAGE. AFTER_DAMAGE doesn't fire for a killing blow, so AFTER_DEATH records
+ * that hit instead. This listener only observes: it always allows the damage.
  */
 public final class StatsTracker {
 	private static final Map<LivingEntity, Float> HEALTH_BEFORE = new IdentityHashMap<>();
@@ -42,7 +44,10 @@ public final class StatsTracker {
 		if (before == null) {
 			return;
 		}
-		float lost = Math.max(0, before - Math.max(0, victim.getHealth()) - victim.getAbsorptionAmount());
+		recordDamage(victim, source, Math.max(0, before - Math.max(0, victim.getHealth()) - victim.getAbsorptionAmount()));
+	}
+
+	private static void recordDamage(LivingEntity victim, DamageSource source, float lost) {
 		if (victim instanceof BotPlayer bot) {
 			bot.bot().stats().recordDamageTaken(lost);
 		}
@@ -54,10 +59,18 @@ public final class StatsTracker {
 		if (source.getEntity() instanceof BotPlayer shooter && source.getDirectEntity() instanceof Projectile && victim != shooter && lost > 0) {
 			shooter.bot().stats().recordRangedHit(lost);
 		}
+		// EndCrystal#hurtServer blames the explosion on whoever hit the crystal.
+		if (source.getEntity() instanceof BotPlayer bomber && source.getDirectEntity() instanceof EndCrystal && victim != bomber && lost > 0) {
+			bomber.bot().stats().recordCrystalHit(lost);
+		}
 	}
 
 	private static void afterDeath(LivingEntity victim, DamageSource source) {
-		HEALTH_BEFORE.remove(victim);
+		Float before = HEALTH_BEFORE.remove(victim);
+		if (before != null) {
+			// The killing blow took everything that was left.
+			recordDamage(victim, source, before);
+		}
 		if (victim instanceof BotPlayer bot) {
 			bot.bot().stats().recordDeath();
 			SparBot.LOGGER.info("Bot {} died: {}", bot.bot().name(), source.getLocalizedDeathMessage(victim).getString());

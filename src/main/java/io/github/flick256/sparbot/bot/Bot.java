@@ -17,6 +17,7 @@ import io.github.flick256.sparbot.core.style.Playstyle;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -77,6 +78,11 @@ public final class Bot {
 		connection.drain();
 		if (player.isDeadOrDying() || player.isRemoved()) {
 			return;
+		}
+		// ClientPacketListener#handleMovePlayer: a client confirms each teleport (see BotConnection).
+		int teleport = connection.takePendingTeleport();
+		if (teleport >= 0 && player.connection != null) {
+			player.connection.handleAcceptTeleportPacket(new ServerboundAcceptTeleportationPacket(teleport));
 		}
 		// Knockback the "client" received since last tick (see BotConnection).
 		net.minecraft.world.phys.Vec3 motion = connection.takePendingMotion();

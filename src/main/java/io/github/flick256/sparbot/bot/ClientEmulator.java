@@ -3,31 +3,24 @@ package io.github.flick256.sparbot.bot;
 import io.github.flick256.sparbot.core.act.Inputs;
 import io.github.flick256.sparbot.core.act.InventoryClick;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.network.HashedStack;
-import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
-import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.inventory.ContainerInput;
-import net.minecraft.world.item.CrossbowItem;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.player.Player;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.HashedStack;
 import net.minecraft.network.protocol.game.ServerboundAttackPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -35,10 +28,19 @@ import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.component.AttackRange;
 import net.minecraft.world.item.component.UseEffects;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -144,13 +146,28 @@ public final class ClientEmulator {
 	}
 
 	/**
-	 * Minecraft#startUseItem: try the main hand, then the offhand. The client decides by running the
-	 * item's use logic locally; the bot predicts the same outcome from the item's components.
+	 * Minecraft#startUseItem: try the main hand, then the offhand. With the crosshair on a block, an
+	 * item that can be used on blocks (blocks, end crystals, potions) is first used on it
+	 * (ServerboundUseItemOnPacket); if that did nothing, as when a splash potion is thrown at the
+	 * ground, the item is then used in the air, the same two packets a client sends. The client decides
+	 * by running the item's use logic locally; the bot predicts the same outcome from the item's class
+	 * and components, and from whether the block use changed the stack.
 	 */
 	private void startUseItem(BotPlayer player, ServerGamePacketListenerImpl listener) {
 		rightClickDelay = RIGHT_CLICK_DELAY_TICKS;
+		HitResult hit = raycast(player);
 		for (InteractionHand hand : InteractionHand.values()) {
-			if (usable(player, player.getItemInHand(hand))) {
+			ItemStack stack = player.getItemInHand(hand);
+			if (hit.getType() == HitResult.Type.BLOCK && usedOnBlocks(stack)) {
+				int countBefore = stack.getCount();
+				listener.handleUseItemOn(new ServerboundUseItemOnPacket(hand, (BlockHitResult) hit, ++useSequence));
+				// A successful placement swings the arm on the client, which tells the server.
+				if (player.getItemInHand(hand) != stack || stack.getCount() < countBefore) {
+					listener.handleAnimate(new ServerboundSwingPacket(hand));
+					return;
+				}
+			}
+			if (usable(player, stack)) {
 				listener.handleUseItem(new ServerboundUseItemPacket(hand, ++useSequence, player.getYRot(), player.getXRot()));
 				return;
 			}
@@ -159,6 +176,21 @@ public final class ClientEmulator {
 
 	/** Item classes that override vanilla's Item#use, i.e. that have a right-click action of their own. */
 	private static final Map<Class<?>, Boolean> CUSTOM_USE = new ConcurrentHashMap<>();
+	/** Item classes that override Item#useOn, i.e. that do something when right-clicked on a block. */
+	private static final Map<Class<?>, Boolean> CUSTOM_USE_ON = new ConcurrentHashMap<>();
+
+	/** Blocks and items like end crystals, which a client places on the block under the crosshair. */
+	static boolean usedOnBlocks(ItemStack stack) {
+		return !stack.isEmpty() && CUSTOM_USE_ON.computeIfAbsent(stack.getItem().getClass(), ClientEmulator::overridesUseOn);
+	}
+
+	private static boolean overridesUseOn(Class<?> itemClass) {
+		try {
+			return itemClass.getMethod("useOn", UseOnContext.class).getDeclaringClass() != Item.class;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+	}
 
 	/**
 	 * Whether right-clicking this stack in the air does something, so the client would not fall through

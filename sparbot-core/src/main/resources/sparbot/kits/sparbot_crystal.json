@@ -1,0 +1,83 @@
+{
+  "id": "sparbot_crystal",
+  "displayName": "SparBot Crystal",
+  "mode": "crystal",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "crystal",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own crystal kit: netherite armor with Blast Protection leggings, end crystals and obsidian, a sword, golden apples and spare totems. No respawn anchors or pickaxe: the bot doesn't mine or use anchors yet.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:netherite_helmet",
+      "enchantments": {
+        "minecraft:protection": 4
+      }
+    },
+    "chest": {
+      "id": "minecraft:netherite_chestplate",
+      "enchantments": {
+        "minecraft:protection": 4
+      }
+    },
+    "legs": {
+      "id": "minecraft:netherite_leggings",
+      "enchantments": {
+        "minecraft:blast_protection": 4
+      }
+    },
+    "feet": {
+      "id": "minecraft:netherite_boots",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:feather_falling": 4
+      }
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_sword",
+      "enchantments": {
+        "minecraft:sharpness": 5
+      }
+    },
+    "1": {
+      "id": "minecraft:end_crystal",
+      "count": 64
+    },
+    "2": {
+      "id": "minecraft:obsidian",
+      "count": 64
+    },
+    "3": {
+      "id": "minecraft:golden_apple",
+      "count": 32
+    },
+    "4": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "9": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "10": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "11": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "12": {
+      "id": "minecraft:end_crystal",
+      "count": 64
+    }
+  },
+  "effects": []
+}

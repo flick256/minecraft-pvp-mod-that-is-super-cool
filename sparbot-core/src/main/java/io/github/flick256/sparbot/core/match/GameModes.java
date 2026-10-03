@@ -14,7 +14,7 @@ import java.util.Map;
 
 /** Parses game modes and exposes the bundled ones. */
 public final class GameModes {
-	public static final List<String> BUNDLED_IDS = List.of("sword_duel", "combat_duel", "ranged_duel", "benchmark", "nodebuff", "mace_duel", "spear_duel");
+	public static final List<String> BUNDLED_IDS = List.of("sword_duel", "combat_duel", "ranged_duel", "benchmark", "nodebuff", "mace_duel", "spear_duel", "crystal_duel");
 	private static final Gson GSON = new Gson();
 
 	private GameModes() {
