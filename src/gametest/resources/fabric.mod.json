@@ -11,7 +11,8 @@
 			"io.github.flick256.sparbot.gametest.CombatGameTests",
 			"io.github.flick256.sparbot.gametest.StyleGameTests",
 			"io.github.flick256.sparbot.gametest.MatchGameTests",
-			"io.github.flick256.sparbot.gametest.NoDebuffGameTests"
+			"io.github.flick256.sparbot.gametest.NoDebuffGameTests",
+			"io.github.flick256.sparbot.gametest.MaceGameTests"
 		]
 	},
 	"depends": {

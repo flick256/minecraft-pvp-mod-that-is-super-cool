@@ -29,12 +29,13 @@ servers, and players don't need to install anything.
 | Splash healing (NoDebuff) | Pots down at its own feet below the profile's pot threshold, and double-pots if still low (26.2: the heal scales with distance from the impact) |
 | Hotbar refill | When safe, opens the inventory and number-keys pots, pearls and golden apples into empty hotbar slots; gives up if the opponent closes in |
 | Buffs | Drinks or splashes Speed, Fire Resistance and Strength again when they wear off and the opponent is not close |
+| Mace and wind charges | Looks straight down and throws a wind charge at its feet to launch, swaps to the mace, then smashes on the way down (26.2: +4 damage per block fallen up to 3, +2 up to 8, +1 after; the wind charge's own launch causes no fall damage) |
 
 How often each tool is used depends on the profile's item skills, so a Beginner rarely re-totems or
 pearls and a Pro almost always does.
 
 Bundled kits for trying it out: `sparbot_combat` (everything above), `sparbot_ranged` (bow focus) and
-`sparbot_nodebuff` (splash healing, speed, fire resistance). All are SparBot originals, not copies of any
+`sparbot_nodebuff` (splash healing, speed, fire resistance) and `sparbot_mace` (mace, wind charges). All are SparBot originals, not copies of any
 server's layout.
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
@@ -84,7 +85,7 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot arena reset <id>` / `arena list` | Restores an arena's blocks and clears drops, arrows and pearls |
 | `/sparbot match start <mode> <arena> <a> <b>` | Starts a match; `a` and `b` are bot names or online players |
 | `/sparbot match stop <arena>` / `match list` | Stops a match (unrated) / shows running matches |
-| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `benchmark`, plus your own) |
+| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `benchmark`, plus your own) |
 | `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
 | `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
@@ -145,8 +146,8 @@ A style is JSON with:
 - `skillBias`: shifts to profile skills, such as `wTapSkill: +0.3`
 - an optional `preferredRange`
 
-Put your own in `config/sparbot/playstyles/`. Crystal, mace/spear/wind-charge and cart styles arrive with
-their game modes (M6), because those mechanics are not in the bot yet.
+Put your own in `config/sparbot/playstyles/`. Crystal, spear and cart styles arrive with their game modes (M6),
+because those mechanics are not in the bot yet.
 
 ## Kits
 

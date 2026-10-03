@@ -1,0 +1,10 @@
+{
+  "id": "mace_duel",
+  "displayName": "Mace Duel",
+  "description": "Wind charges and a mace in netherite: launch, smash, re-totem. First to 2.",
+  "kit": "sparbot_mace",
+  "roundsToWin": 2,
+  "roundSeconds": 240,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}
