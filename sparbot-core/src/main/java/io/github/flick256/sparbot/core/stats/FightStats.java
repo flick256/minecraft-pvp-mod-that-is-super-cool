@@ -13,7 +13,7 @@ public final class FightStats {
 	private int deaths;
 	private int rangedHits;
 	private double rangedDamage;
-	private int crystalHits;
+	private int blastHits;
 	private int totemPops;
 	private int gapplesEaten;
 	private int pearlsThrown;
@@ -47,14 +47,14 @@ public final class FightStats {
 		damageDealt += damage;
 	}
 
-	/** An end crystal the bot detonated damaged someone else. */
-	public void recordCrystalHit(double damage) {
-		crystalHits++;
+	/** An explosion the bot set off (end crystal, TNT minecart) damaged someone else. */
+	public void recordBlastHit(double damage) {
+		blastHits++;
 		damageDealt += damage;
 	}
 
-	public int crystalHits() {
-		return crystalHits;
+	public int blastHits() {
+		return blastHits;
 	}
 
 	public void recordTotemPop() {
@@ -135,8 +135,8 @@ public final class FightStats {
 	}
 
 	public String summary() {
-		return String.format("swings=%d hits=%d (%.0f%%) crits=%d (%.0f%%) ranged=%d crystals=%d dealt=%.1f taken=%.1f bestCombo=%d pops=%d gapples=%d pearls=%d K/D=%d/%d",
-			swings, hits, hitRate() * 100, crits, critRate() * 100, rangedHits, crystalHits, damageDealt, damageTaken, longestCombo, totemPops, gapplesEaten,
+		return String.format("swings=%d hits=%d (%.0f%%) crits=%d (%.0f%%) ranged=%d blasts=%d dealt=%.1f taken=%.1f bestCombo=%d pops=%d gapples=%d pearls=%d K/D=%d/%d",
+			swings, hits, hitRate() * 100, crits, critRate() * 100, rangedHits, blastHits, damageDealt, damageTaken, longestCombo, totemPops, gapplesEaten,
 			pearlsThrown, kills, deaths);
 	}
 }

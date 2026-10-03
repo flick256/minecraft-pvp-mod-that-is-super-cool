@@ -10,6 +10,7 @@ public enum ItemKind {
 	TRIDENT,
 	SHIELD,
 	BOW,
+	TNT_MINECART,
 	CROSSBOW,
 	ARROW,
 	FISHING_ROD,

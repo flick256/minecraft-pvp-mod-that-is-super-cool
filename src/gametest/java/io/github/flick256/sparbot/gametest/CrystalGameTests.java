@@ -28,7 +28,7 @@ public class CrystalGameTests {
 		bot.setAssignedTarget(TestSupport.body(target).getUUID());
 		int crystalsBefore = body.getInventory().countItem(Items.END_CRYSTAL);
 		helper.succeedWhen(() -> {
-			helper.assertTrue(bot.stats().crystalHits() > 0, "a crystal the bot detonated hurt the opponent");
+			helper.assertTrue(bot.stats().blastHits() > 0, "a crystal the bot detonated hurt the opponent");
 			helper.assertTrue(body.getInventory().countItem(Items.END_CRYSTAL) < crystalsBefore, "crystals were really used up");
 			SparBot.LOGGER.info("Crystal test (obsidian floor): {}", bot.stats().summary());
 			TestSupport.remove(bot, target);
@@ -45,7 +45,7 @@ public class CrystalGameTests {
 		int obsidianBefore = body.getInventory().countItem(Items.OBSIDIAN);
 		helper.succeedWhen(() -> {
 			helper.assertTrue(body.getInventory().countItem(Items.OBSIDIAN) < obsidianBefore, "obsidian was placed");
-			helper.assertTrue(bot.stats().crystalHits() > 0, "then a crystal on it hurt the opponent");
+			helper.assertTrue(bot.stats().blastHits() > 0, "then a crystal on it hurt the opponent");
 			SparBot.LOGGER.info("Crystal test (stone floor): {}", bot.stats().summary());
 			TestSupport.remove(bot, target);
 		});

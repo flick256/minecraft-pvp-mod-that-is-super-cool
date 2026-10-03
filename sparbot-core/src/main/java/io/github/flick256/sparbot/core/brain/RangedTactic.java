@@ -94,7 +94,11 @@ public final class RangedTactic implements Tactic {
 		return Movement.guardEdges(c, inputs);
 	}
 
-	/** Yaw and pitch that lands an arrow on the target's chest, leading its movement. */
+	/**
+	 * Yaw and pitch that lands an arrow on the target's chest, leading its movement. An arrow also
+	 * carries the shooter's own horizontal motion (Projectile#shootFromRotation), so a strafing archer
+	 * aims against it, as much as their tracking skill manages.
+	 */
 	static float[] aim(BrainContext c, Ballistics.Projectile projectile) {
 		TargetState t = c.seen();
 		Vec3 eye = c.self.eyePosition();
@@ -103,7 +107,8 @@ public final class RangedTactic implements Tactic {
 		OptionalDouble pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());
 		if (pitch.isPresent()) {
 			int flight = Ballistics.flightTicks(projectile, (float) pitch.getAsDouble(), horizontal);
-			point = point.add(t.velocity().scale(flight * c.profile.aim().trackingLead()));
+			Vec3 own = new Vec3(c.self.velocity().x(), 0, c.self.velocity().z());
+			point = point.add(t.velocity().subtract(own).scale(flight * c.profile.aim().trackingLead()));
 			horizontal = point.horizontalDistanceTo(eye);
 			pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());
 		}

@@ -6,9 +6,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 
@@ -59,9 +59,10 @@ public final class StatsTracker {
 		if (source.getEntity() instanceof BotPlayer shooter && source.getDirectEntity() instanceof Projectile && victim != shooter && lost > 0) {
 			shooter.bot().stats().recordRangedHit(lost);
 		}
-		// EndCrystal#hurtServer blames the explosion on whoever hit the crystal.
-		if (source.getEntity() instanceof BotPlayer bomber && source.getDirectEntity() instanceof EndCrystal && victim != bomber && lost > 0) {
-			bomber.bot().stats().recordCrystalHit(lost);
+		// EndCrystal#hurtServer and MinecartTNT#hurtServer blame the explosion on whoever set it off.
+		if (source.getEntity() instanceof BotPlayer bomber && source.is(DamageTypeTags.IS_EXPLOSION) && source.getDirectEntity() != bomber
+			&& victim != bomber && lost > 0) {
+			bomber.bot().stats().recordBlastHit(lost);
 		}
 	}
 

@@ -31,13 +31,14 @@ servers, and players don't need to install anything.
 | Buffs | Drinks or splashes Speed, Fire Resistance and Strength again when they wear off and the opponent is not close |
 | Spear | Keeps about 3 blocks away and jabs on a full charge (26.2: a jab hits only from 2 to 4.5 blocks); from a gap, sprints in holding a charge (damage 1 + closing speed x the spear's multiplier), but not at an opponent running straight away; falls back to the sword when the opponent gets inside 2 blocks |
 | End crystals | Puts obsidian down next to the opponent, a crystal on it, and hits the crystal (26.2: power-6 blast, damage falls off over 12 blocks); only uses spots it can reach to hit (blocks reach 4.5, crystals only 3) and, when skilled, only crystals closer to the opponent than to itself |
+| TNT minecarts | Puts a rail down beside the opponent, a TNT minecart on it, and sets it off with a short Flame-bow shot (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
 | Mace and wind charges | Looks straight down and throws a wind charge at its feet to launch, swaps to the mace, then smashes on the way down (26.2: +4 damage per block fallen up to 3, +2 up to 8, +1 after; the wind charge's own launch causes no fall damage) |
 
 How often each tool is used depends on the profile's item skills, so a Beginner rarely re-totems or
 pearls and a Pro almost always does.
 
 Bundled kits for trying it out: `sparbot_combat` (everything above), `sparbot_ranged` (bow focus) and
-`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword) and `sparbot_crystal` (end crystals, obsidian, totems). All are SparBot originals, not copies of any
+`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword), `sparbot_crystal` (end crystals, obsidian, totems) and `sparbot_cart` (rails, TNT minecarts, Flame bow). All are SparBot originals, not copies of any
 server's layout.
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
@@ -87,7 +88,7 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot arena reset <id>` / `arena list` | Restores an arena's blocks and clears drops, arrows and pearls |
 | `/sparbot match start <mode> <arena> <a> <b>` | Starts a match; `a` and `b` are bot names or online players |
 | `/sparbot match stop <arena>` / `match list` | Stops a match (unrated) / shows running matches |
-| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `spear_duel`, `crystal_duel`, `benchmark`, plus your own) |
+| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `spear_duel`, `crystal_duel`, `cart_duel`, `benchmark`, plus your own) |
 | `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
 | `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
@@ -148,8 +149,7 @@ A style is JSON with:
 - `skillBias`: shifts to profile skills, such as `wTapSkill: +0.3`
 - an optional `preferredRange`
 
-Put your own in `config/sparbot/playstyles/`. Cart styles arrive with their game mode (M6),
-because those mechanics are not in the bot yet.
+Put your own in `config/sparbot/playstyles/`.
 
 ## Kits
 

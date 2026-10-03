@@ -50,8 +50,9 @@ The brain sees the opponent with two delays:
 - **Aim tracking** uses only the network delay plus one tick of visual-motor lag, with velocity lead.
   This is how humans track continuously while deciding slowly.
 
-Blocks and crystals around the bot (`Surroundings`: crystals in sight, blocks within reach that a crystal
-or obsidian could go on) are scanned only while it carries end crystals, and are not delayed: they are
+Blocks and objects around the bot (`Surroundings`: crystals and TNT minecarts in sight, rails and blocks
+within reach that a crystal, obsidian, rail or cart could go on) are scanned only while it carries end
+crystals or TNT minecarts, and are not delayed: they are
 mostly the bot's own placements, which a player knows about without reacting to them.
 
 ## Things 26.2 does that a fake player must handle
@@ -93,7 +94,7 @@ the profile's skill once per decision window (`Decision`), not every tick.
 A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
 brain is built, so the same brain plays every style.
 
-Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), cart (rail, TNT minecart, Flame arrow), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
 rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
@@ -107,7 +108,7 @@ uses, to find the pitch that lands on target.
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
-| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges (done), Spear (done), Crystal (done), Cart PvP, UHC | in progress |
+| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges (done), Spear (done), Crystal (done), Cart PvP (done), UHC | in progress |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |

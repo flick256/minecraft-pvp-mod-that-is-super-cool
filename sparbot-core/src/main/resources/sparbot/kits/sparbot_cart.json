@@ -1,0 +1,128 @@
+{
+  "id": "sparbot_cart",
+  "displayName": "SparBot Cart",
+  "mode": "cart",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "cart",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own cart kit: rails, TNT minecarts and a Flame bow to set them off, a sword, golden apples and spare totems, in netherite with Blast Protection leggings. TNT minecarts don't stack, so most wait in the inventory.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:netherite_helmet",
+      "enchantments": {
+        "minecraft:protection": 4
+      }
+    },
+    "chest": {
+      "id": "minecraft:netherite_chestplate",
+      "enchantments": {
+        "minecraft:protection": 4
+      }
+    },
+    "legs": {
+      "id": "minecraft:netherite_leggings",
+      "enchantments": {
+        "minecraft:blast_protection": 4
+      }
+    },
+    "feet": {
+      "id": "minecraft:netherite_boots",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:feather_falling": 4
+      }
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_sword",
+      "enchantments": {
+        "minecraft:sharpness": 5
+      }
+    },
+    "1": {
+      "id": "minecraft:bow",
+      "enchantments": {
+        "minecraft:flame": 1,
+        "minecraft:power": 3
+      }
+    },
+    "2": {
+      "id": "minecraft:rail",
+      "count": 64
+    },
+    "3": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "4": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "5": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "6": {
+      "id": "minecraft:golden_apple",
+      "count": 32
+    },
+    "7": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "9": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "10": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "11": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "12": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "13": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "14": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "15": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "16": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "17": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "18": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "19": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "20": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "21": {
+      "id": "minecraft:arrow",
+      "count": 64
+    },
+    "22": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "23": {
+      "id": "minecraft:totem_of_undying"
+    }
+  },
+  "effects": []
+}

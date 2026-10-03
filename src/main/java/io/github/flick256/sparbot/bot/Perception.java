@@ -17,11 +17,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.AttackRange;
@@ -169,21 +172,27 @@ public final class Perception {
 	}
 
 	/**
-	 * Crystals in sight, and blocks within reach that a crystal or a block of obsidian could go on.
-	 * Only scanned while the bot carries end crystals: nothing else uses it.
+	 * Crystals and TNT minecarts in sight, and blocks within reach that a crystal, obsidian, a rail or a
+	 * minecart could go on. Only scanned while the bot carries end crystals or TNT minecarts: nothing
+	 * else uses it.
 	 */
 	private static Surroundings surroundings(BotPlayer self, double awarenessRadius) {
-		if (!self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL))) {
+		if (!self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL) || stack.is(Items.TNT_MINECART))) {
 			return Surroundings.EMPTY;
 		}
 		ServerLevel level = self.level();
+		AABB around = self.getBoundingBox().inflate(awarenessRadius);
 		List<Vec3> crystals = new ArrayList<>();
-		for (EndCrystal crystal : level.getEntitiesOfClass(EndCrystal.class, self.getBoundingBox().inflate(awarenessRadius),
-			c -> c.isAlive() && self.hasLineOfSight(c))) {
+		for (EndCrystal crystal : level.getEntitiesOfClass(EndCrystal.class, around, c -> c.isAlive() && self.hasLineOfSight(c))) {
 			crystals.add(new Vec3(crystal.getX(), crystal.getY(), crystal.getZ()));
 		}
+		List<Vec3> carts = new ArrayList<>();
+		for (MinecartTNT cart : level.getEntitiesOfClass(MinecartTNT.class, around, c -> c.isAlive() && self.hasLineOfSight(c))) {
+			carts.add(new Vec3(cart.getX(), cart.getY(), cart.getZ()));
+		}
 		List<BlockSpot> bases = new ArrayList<>();
-		List<BlockSpot> obsidianSpots = new ArrayList<>();
+		List<BlockSpot> groundSpots = new ArrayList<>();
+		List<BlockSpot> rails = new ArrayList<>();
 		BlockPos feet = self.blockPosition();
 		for (int dx = -BLOCK_SCAN; dx <= BLOCK_SCAN; dx++) {
 			for (int dz = -BLOCK_SCAN; dz <= BLOCK_SCAN; dz++) {
@@ -193,6 +202,12 @@ public final class Perception {
 						continue;
 					}
 					BlockState state = level.getBlockState(pos);
+					if (state.is(BlockTags.RAILS)) {
+						if (level.getEntitiesOfClass(AbstractMinecart.class, new AABB(pos)).isEmpty()) {
+							rails.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
+						}
+						continue;
+					}
 					BlockPos above = pos.above();
 					if (!level.isEmptyBlock(above)) {
 						continue;
@@ -205,12 +220,12 @@ public final class Perception {
 						}
 					} else if (state.isFaceSturdy(level, pos, Direction.UP) && level.isEmptyBlock(above.above())
 						&& level.isUnobstructed(Blocks.OBSIDIAN.defaultBlockState(), above, CollisionContext.empty())) {
-						obsidianSpots.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
+						groundSpots.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
 					}
 				}
 			}
 		}
-		return new Surroundings(crystals, bases, obsidianSpots);
+		return new Surroundings(crystals, bases, groundSpots, carts, rails);
 	}
 
 	/**

@@ -3,6 +3,9 @@ package io.github.flick256.sparbot.bot;
 import io.github.flick256.sparbot.core.item.InventoryState;
 import io.github.flick256.sparbot.core.item.ItemInfo;
 import io.github.flick256.sparbot.core.item.ItemKind;
+import java.util.HashSet;
+import java.util.Set;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +23,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jspecify.annotations.Nullable;
 
 /** Maps real 26.2 item stacks to the brain's {@link ItemKind}s and {@link ItemInfo}s. */
@@ -51,6 +56,9 @@ public final class ItemClassifier {
 		}
 		if (stack.has(DataComponents.BLOCKS_ATTACKS)) {
 			return ItemKind.SHIELD;
+		}
+		if (stack.is(Items.TNT_MINECART)) {
+			return ItemKind.TNT_MINECART;
 		}
 		if (stack.is(Items.BOW)) {
 			return ItemKind.BOW;
@@ -122,7 +130,19 @@ public final class ItemClassifier {
 		PotionContents potion = stack.get(DataComponents.POTION_CONTENTS);
 		String potionId = potion != null && potion.potion().isPresent() ? potion.potion().get().getRegisteredName() : null;
 		return new ItemInfo(classify(stack), BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(), stack.getCount(), damage, durability,
-			owner.getCooldowns().isOnCooldown(stack), stack.is(Items.CROSSBOW) && CrossbowItem.isCharged(stack), potionId);
+			owner.getCooldowns().isOnCooldown(stack), stack.is(Items.CROSSBOW) && CrossbowItem.isCharged(stack), potionId, enchantments(stack));
+	}
+
+	private static Set<String> enchantments(ItemStack stack) {
+		ItemEnchantments enchantments = stack.getEnchantments();
+		if (enchantments.isEmpty()) {
+			return Set.of();
+		}
+		Set<String> ids = new HashSet<>();
+		for (Holder<Enchantment> enchantment : enchantments.keySet()) {
+			ids.add(enchantment.getRegisteredName());
+		}
+		return ids;
 	}
 
 	public static InventoryState inventory(ServerPlayer player, @Nullable Entity target) {

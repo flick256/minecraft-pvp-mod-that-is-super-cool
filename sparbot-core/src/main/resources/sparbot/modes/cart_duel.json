@@ -1,0 +1,10 @@
+{
+  "id": "cart_duel",
+  "displayName": "Cart Duel",
+  "description": "Rails, TNT minecarts and a Flame bow in netherite, four totems. First to 2.",
+  "kit": "sparbot_cart",
+  "roundsToWin": 2,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

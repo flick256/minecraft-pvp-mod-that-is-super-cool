@@ -71,7 +71,8 @@
     "potHealthFraction": 0.55,
     "maceSkill": 0.45,
     "spearSkill": 0.45,
-    "crystalSkill": 0.4
+    "crystalSkill": 0.4,
+    "cartSkill": 0.4
   },
   "mistakeRate": 0.08,
   "panicHealthFraction": 0.25

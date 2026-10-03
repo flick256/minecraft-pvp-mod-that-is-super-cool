@@ -73,6 +73,7 @@ public record SkillProfile(
 	 * @param maceSkill going for the wind-charge launch and mace smash when in range
 	 * @param spearSkill fighting with a spear: keeping jab range, timing full-charge jabs, sprint charges
 	 * @param crystalSkill crystal PvP: going for crystals, and placing them where they hurt the opponent more than itself
+	 * @param cartSkill cart PvP: rail, TNT minecart and a flaming arrow, set off where it hurts the opponent more than itself
 	 */
 	public record ItemSkills(
 		Distribution hotbarSwitchMs,
@@ -88,7 +89,8 @@ public record SkillProfile(
 		double potHealthFraction,
 		double maceSkill,
 		double spearSkill,
-		double crystalSkill
+		double crystalSkill,
+		double cartSkill
 	) {
 	}
 
@@ -138,6 +140,7 @@ public record SkillProfile(
 		range("items.maceSkill", items.maceSkill(), 0, 1, errors);
 		range("items.spearSkill", items.spearSkill(), 0, 1, errors);
 		range("items.crystalSkill", items.crystalSkill(), 0, 1, errors);
+		range("items.cartSkill", items.cartSkill(), 0, 1, errors);
 		range("mistakeRate", mistakeRate, 0, 1, errors);
 		range("panicHealthFraction", panicHealthFraction, 0, 1, errors);
 		return errors;
