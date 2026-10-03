@@ -16,6 +16,7 @@ import io.github.flick256.sparbot.core.stats.FightStats;
 import io.github.flick256.sparbot.core.style.Playstyle;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -48,6 +49,7 @@ public final class Bot {
 	private @Nullable String lastTactic;
 	private int attackTargetId = -1;
 	private boolean attackWouldCrit;
+	private boolean stabbing;
 	private @Nullable List<String> violations;
 	private boolean brainPaused;
 	private boolean inMatch;
@@ -175,9 +177,27 @@ public final class Bot {
 		attackWouldCrit = false;
 	}
 
-	/** True while this bot's own attack packet is being processed against {@code entityId}. */
+	/** A spear jab hits everything along the look ray, so every entity it damages counts as a hit. */
+	void beginStab() {
+		stabbing = true;
+	}
+
+	void endStab() {
+		stabbing = false;
+	}
+
+	/** While a spear charge is held, its hits land during the body's own tick. */
+	void beginKineticTick(BotPlayer body) {
+		stabbing = body.isUsingItem() && body.getUseItem().has(DataComponents.KINETIC_WEAPON);
+	}
+
+	void endKineticTick() {
+		stabbing = false;
+	}
+
+	/** True while this bot's own attack (a click, a spear jab or a spear charge) is being resolved against {@code entityId}. */
 	public boolean isAttacking(int entityId) {
-		return attackTargetId == entityId;
+		return stabbing || attackTargetId == entityId;
 	}
 
 	public boolean attackWouldCrit() {

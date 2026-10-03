@@ -59,6 +59,12 @@ The brain sees the opponent with two delays:
   server-side velocity (`Player#causeExtraKnockback`). `BotConnection` queues that motion packet and the
   bot applies it on its next tick, as a client would. Explosion knockback is already applied server-side,
   so the explosion packet's copy is ignored to avoid applying it twice.
+- **Reported movement:** a client tells the server how far it moved each tick, and vanilla reads that
+  (`getKnownMovement`) for spear charges and jab reach, for whether a sword hit sweeps, and for the
+  momentum a projectile inherits from its thrower. `BotPlayer` reports its own movement after each
+  physics step, so these work for the bot exactly as for a player.
+- **Spears:** a left click with a spear is not an entity attack but a `STAB` player action, which the
+  server resolves along the look ray. `ClientEmulator` sends it the way `MultiPlayerGameMode` does.
 - **Join protection:** players are invulnerable until their client reports it has loaded. The bot sends
   `ServerboundPlayerLoadedPacket` immediately after joining and respawning.
 - **Disconnecting:** vanilla only closes a connection after the disconnect packet is delivered, so
@@ -78,7 +84,7 @@ the profile's skill once per decision window (`Decision`), not every tick.
 A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
 brain is built, so the same brain plays every style.
 
-Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
 rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
@@ -92,7 +98,7 @@ uses, to find the pitch that lands on target.
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
-| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges (done), Spear, Crystal, Cart PvP, UHC | in progress |
+| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges (done), Spear (done), Crystal, Cart PvP, UHC | in progress |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |
@@ -104,6 +110,6 @@ uses, to find the pitch that lands on target.
   blocks (eating while looking at a chest doesn't open it).
 - **Right-click hand choice is predicted.** A real client decides between main hand and offhand by running
   the item's use logic locally; the bot predicts the same outcome from the item's data components.
-- **No spears.** A bot holding a spear never clicks; spear attacks arrive in M6.
+- **No Lunge planning.** A Lunge spear still lunges (vanilla applies it), but the bot doesn't plan around
+  the forward push.
 - **No dodging.** The bot raises its shield against a drawn bow but doesn't sidestep arrows in flight.
-- **One playstyle:** a general duel brain. Playstyles arrive in M4.

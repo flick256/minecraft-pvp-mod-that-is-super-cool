@@ -1,0 +1,10 @@
+{
+  "id": "spear_duel",
+  "displayName": "Spear Duel",
+  "description": "Spears in diamond armor: hold jab range, sprint in with charges, one totem. First to 2.",
+  "kit": "sparbot_spear",
+  "roundsToWin": 2,
+  "roundSeconds": 240,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

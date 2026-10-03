@@ -71,6 +71,7 @@ public record SkillProfile(
 	 * @param rodSkill using a fishing rod to pull a fleeing opponent
 	 * @param potHealthFraction throw a splash healing potion below this health fraction
 	 * @param maceSkill going for the wind-charge launch and mace smash when in range
+	 * @param spearSkill fighting with a spear: keeping jab range, timing full-charge jabs, sprint charges
 	 */
 	public record ItemSkills(
 		Distribution hotbarSwitchMs,
@@ -84,7 +85,8 @@ public record SkillProfile(
 		double pearlSkill,
 		double rodSkill,
 		double potHealthFraction,
-		double maceSkill
+		double maceSkill,
+		double spearSkill
 	) {
 	}
 
@@ -132,6 +134,7 @@ public record SkillProfile(
 		range("items.rodSkill", items.rodSkill(), 0, 1, errors);
 		range("items.potHealthFraction", items.potHealthFraction(), 0, 1, errors);
 		range("items.maceSkill", items.maceSkill(), 0, 1, errors);
+		range("items.spearSkill", items.spearSkill(), 0, 1, errors);
 		range("mistakeRate", mistakeRate, 0, 1, errors);
 		range("panicHealthFraction", panicHealthFraction, 0, 1, errors);
 		return errors;

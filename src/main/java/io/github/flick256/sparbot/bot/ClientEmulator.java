@@ -174,7 +174,7 @@ public final class ClientEmulator {
 		if (food != null) {
 			return player.canEat(food.canAlwaysEat());
 		}
-		if (stack.has(DataComponents.CONSUMABLE) || stack.has(DataComponents.BLOCKS_ATTACKS)) {
+		if (stack.has(DataComponents.CONSUMABLE) || stack.has(DataComponents.BLOCKS_ATTACKS) || stack.has(DataComponents.KINETIC_WEAPON)) {
 			return true;
 		}
 		if (stack.getItem() instanceof ProjectileWeaponItem) {
@@ -206,11 +206,19 @@ public final class ClientEmulator {
 		if (player.cannotAttackWithItem(held, 0)) {
 			return;
 		}
+		bot.stats().recordSwing();
 		if (held.has(DataComponents.PIERCING_WEAPON)) {
-			// Spear stab attacks arrive with the spear milestone; until then a bot never clicks with one.
+			// MultiPlayerGameMode#piercingAttack: a spear jab is not aimed at an entity. The server hits
+			// whatever lies 2-4.5 blocks along the look ray, so there is no miss lockout either.
+			bot.beginStab();
+			try {
+				listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STAB, BlockPos.ZERO, Direction.DOWN));
+			} finally {
+				bot.endStab();
+			}
+			listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
 			return;
 		}
-		bot.stats().recordSwing();
 		HitResult hit = raycast(player);
 		switch (hit.getType()) {
 			case ENTITY -> {

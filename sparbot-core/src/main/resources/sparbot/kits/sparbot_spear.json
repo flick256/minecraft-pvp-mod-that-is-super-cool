@@ -1,0 +1,68 @@
+{
+  "id": "sparbot_spear",
+  "displayName": "SparBot Spear",
+  "mode": "spear",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "spear",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own spear kit: a netherite spear for jabs and sprint charges, a sword for when the opponent gets inside the spear's 2-block dead zone, golden apples and a totem. No Lunge, because the bot does not plan around the lunge's forward push yet.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:diamond_helmet",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
+    },
+    "chest": {
+      "id": "minecraft:diamond_chestplate",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
+    },
+    "legs": {
+      "id": "minecraft:diamond_leggings",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
+    },
+    "feet": {
+      "id": "minecraft:diamond_boots",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_spear",
+      "enchantments": {
+        "minecraft:sharpness": 3
+      }
+    },
+    "1": {
+      "id": "minecraft:diamond_sword",
+      "enchantments": {
+        "minecraft:sharpness": 3
+      }
+    },
+    "2": {
+      "id": "minecraft:golden_apple",
+      "count": 8
+    },
+    "3": {
+      "id": "minecraft:cooked_beef",
+      "count": 32
+    }
+  },
+  "effects": []
+}

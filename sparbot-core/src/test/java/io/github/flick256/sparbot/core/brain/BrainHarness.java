@@ -114,7 +114,7 @@ final class BrainHarness {
 
 	private static boolean isUsable(ItemInfo item) {
 		return switch (item.kind()) {
-			case BOW, CROSSBOW, SHIELD, GOLDEN_APPLE, FOOD, ENDER_PEARL, FISHING_ROD, SPLASH_POTION, DRINK_POTION -> true;
+			case BOW, CROSSBOW, SHIELD, SPEAR, GOLDEN_APPLE, FOOD, ENDER_PEARL, FISHING_ROD, SPLASH_POTION, DRINK_POTION -> true;
 			default -> false;
 		};
 	}

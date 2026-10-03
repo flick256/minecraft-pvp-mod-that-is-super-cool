@@ -5,6 +5,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The bot's body: an ordinary {@link ServerPlayer} with the full vanilla player rules (inventory,
@@ -17,6 +18,9 @@ import net.minecraft.server.level.ServerPlayer;
  *       never take fall damage. Vanilla's own GameTest mock players do the same.</li>
  *   <li>{@link #tick()} also runs the per-tick movement/physics step ({@code doTick}), which vanilla
  *       only runs when a client's packets are processed, and lets the {@link Bot} brain press keys first.</li>
+ *   <li>After each movement step it reports how far it moved ({@link #setKnownMovement}), as a client's
+ *       movement packet does. Vanilla reads that for spear charges, sweep attacks and the momentum a
+ *       thrown or shot projectile inherits.</li>
  *   <li>{@link #applyInput()} turns the held keys into movement exactly like the vanilla client's
  *       LocalPlayer#applyInput.</li>
  * </ul>
@@ -49,7 +53,14 @@ public final class BotPlayer extends ServerPlayer {
 			xo = getX();
 			yo = getY();
 			zo = getZ();
-			doTick();
+			bot.beginKineticTick(this);
+			try {
+				doTick();
+			} finally {
+				bot.endKineticTick();
+			}
+			// ServerGamePacketListenerImpl#handlePlayerKnownMovement: what a client reports having moved.
+			setKnownMovement(new Vec3(getX() - xo, getY() - yo, getZ() - zo));
 			level().getChunkSource().move(this);
 		}
 	}
