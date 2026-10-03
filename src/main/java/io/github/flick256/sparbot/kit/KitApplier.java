@@ -1,10 +1,14 @@
 package io.github.flick256.sparbot.kit;
 
 import io.github.flick256.sparbot.core.kit.Kit;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.commands.arguments.item.ItemInput;
+import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
@@ -96,12 +100,22 @@ public final class KitApplier {
 		player.inventoryMenu.broadcastChanges();
 	}
 
-	private static ItemStack build(Kit.KitItem spec, HolderLookup.Provider registries) {
+	/** Builds the stack exactly as specified. The kit must already have passed {@link #resolveErrors}. */
+	public static ItemStack build(Kit.KitItem spec, HolderLookup.Provider registries) {
 		if (spec == null) {
 			return ItemStack.EMPTY;
 		}
-		Item item = BuiltInRegistries.ITEM.get(Identifier.parse(spec.id())).orElseThrow().value();
-		ItemStack stack = new ItemStack(item, spec.countOrDefault());
+		ItemStack stack;
+		if (spec.components() != null && !spec.components().isBlank()) {
+			try {
+				stack = parseWithComponents(spec, registries).createItemStack(spec.countOrDefault());
+			} catch (CommandSyntaxException e) {
+				throw new IllegalStateException("Kit item " + spec.id() + " has invalid components: " + e.getMessage(), e);
+			}
+		} else {
+			Item item = BuiltInRegistries.ITEM.get(Identifier.parse(spec.id())).orElseThrow().value();
+			stack = new ItemStack(item, spec.countOrDefault());
+		}
 		if (spec.enchantments() != null) {
 			HolderLookup.RegistryLookup<Enchantment> enchantments = registries.lookupOrThrow(Registries.ENCHANTMENT);
 			spec.enchantments().forEach((id, level) ->
@@ -112,6 +126,11 @@ public final class KitApplier {
 			stack.set(DataComponents.POTION_CONTENTS, new PotionContents(potion));
 		}
 		return stack;
+	}
+
+	/** Parses {@code id[components]} with vanilla's /give item parser. */
+	private static ItemInput parseWithComponents(Kit.KitItem spec, HolderLookup.Provider registries) throws CommandSyntaxException {
+		return new ItemParser(registries).parse(new StringReader(spec.id() + "[" + spec.components() + "]"));
 	}
 
 	private static void resolve(String where, Kit.KitItem spec, HolderLookup.Provider registries, List<String> errors) {
@@ -134,6 +153,13 @@ public final class KitApplier {
 		}
 		if (spec.potion() != null && BuiltInRegistries.POTION.get(Identifier.parse(spec.potion())).isEmpty()) {
 			errors.add(where + ": unknown potion " + spec.potion());
+		}
+		if (spec.components() != null && !spec.components().isBlank()) {
+			try {
+				parseWithComponents(spec, registries).createItemStack(spec.countOrDefault());
+			} catch (CommandSyntaxException e) {
+				errors.add(where + ": invalid components: " + e.getMessage());
+			}
 		}
 	}
 

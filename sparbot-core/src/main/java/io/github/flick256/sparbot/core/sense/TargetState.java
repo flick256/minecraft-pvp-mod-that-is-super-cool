@@ -1,5 +1,6 @@
 package io.github.flick256.sparbot.core.sense;
 
+import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Vec3;
 
 /**
@@ -9,6 +10,10 @@ import io.github.flick256.sparbot.core.math.Vec3;
  * @param halfWidth half of the target's hitbox width
  * @param height target hitbox height
  * @param ticksSinceSeen 0 when visible this tick
+ * @param mainHand what the opponent visibly holds
+ * @param offhand what the opponent visibly holds in the offhand
+ * @param usingKind the item the opponent is visibly using (eating, drawing a bow, blocking), or EMPTY
+ * @param armorPoints armor value of the opponent's visible armor
  */
 public record TargetState(
 	int entityId,
@@ -24,7 +29,11 @@ public record TargetState(
 	boolean visible,
 	int ticksSinceSeen,
 	double halfWidth,
-	double height
+	double height,
+	ItemKind mainHand,
+	ItemKind offhand,
+	ItemKind usingKind,
+	double armorPoints
 ) {
 	/** Closest point of the target's hitbox to {@code from}. */
 	public Vec3 closestHitboxPoint(Vec3 from) {

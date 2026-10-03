@@ -12,6 +12,9 @@ import java.util.Deque;
  *   <li>rotation per tick is capped (profile cap, never above {@link #ABSOLUTE_MAX_TURN_DEG})</li>
  *   <li>left clicks are rate-limited by the profile's CPS (never above {@link #ABSOLUTE_MAX_CPS})</li>
  *   <li>inputs arrive {@code ping / 2} late, as they would over a real connection</li>
+ *   <li>while the inventory screen is open nothing else can be pressed, the first click needs the
+ *       screen open for {@link #MIN_TICKS_OPEN_BEFORE_CLICK} ticks, and clicks / offhand swaps are
+ *       rate limited</li>
  * </ul>
  */
 public final class InputShaper {
@@ -20,6 +23,10 @@ public final class InputShaper {
 	/** Server-wide hard cap, also the most a tick-based bot can physically send (one click per tick). */
 	public static final double ABSOLUTE_MAX_CPS = 20.0;
 	private static final int PING_RESAMPLE_TICKS = 40;
+	/** Opening the inventory and moving the mouse onto a slot takes at least 100 ms. */
+	public static final int MIN_TICKS_OPEN_BEFORE_CLICK = 2;
+	/** Fastest sustained inventory clicking / swap-key pressing: one action per 2 ticks (10 per second). */
+	public static final int MIN_TICKS_BETWEEN_INVENTORY_ACTIONS = 2;
 
 	private final SkillProfile profile;
 	private final Rng rng;
@@ -31,6 +38,9 @@ public final class InputShaper {
 	private double nextClickAllowedAt;
 	private long tick;
 	private Inputs lastEmitted = Inputs.IDLE;
+	private int inventoryOpenTicks;
+	private long lastInventoryActionTick = Long.MIN_VALUE / 2;
+	private long lastSwapTick = Long.MIN_VALUE / 2;
 
 	public InputShaper(SkillProfile profile, Rng rng, double serverMaxCps) {
 		this.profile = profile;
@@ -55,6 +65,7 @@ public final class InputShaper {
 		latency.clear();
 		lastEmitted = Inputs.IDLE;
 		nextClickAllowedAt = 0;
+		inventoryOpenTicks = 0;
 	}
 
 	private Inputs delay(Inputs desired) {
@@ -73,7 +84,7 @@ public final class InputShaper {
 		if (latency.size() <= latencyTicks) {
 			// Nothing has "arrived" yet: keep holding the previous keys, no new mouse movement or clicks.
 			return new Inputs(0, 0, lastEmitted.forward(), lastEmitted.strafe(), lastEmitted.jump(), lastEmitted.sneak(),
-				lastEmitted.sprint(), false, lastEmitted.use(), -1);
+				lastEmitted.sprint(), false, lastEmitted.use(), -1, false, lastEmitted.inventoryOpen(), null);
 		}
 		Inputs out = latency.pollFirst();
 		// If latency shrank, two packets arrive in the same tick: merge them (mouse deltas add up).
@@ -81,12 +92,29 @@ public final class InputShaper {
 			Inputs next = latency.pollFirst();
 			out = new Inputs(out.yawDelta() + next.yawDelta(), out.pitchDelta() + next.pitchDelta(), next.forward(), next.strafe(),
 				next.jump(), next.sneak(), next.sprint(), out.attack() || next.attack(), next.use(),
-				next.hotbarSlot() >= 0 ? next.hotbarSlot() : out.hotbarSlot());
+				next.hotbarSlot() >= 0 ? next.hotbarSlot() : out.hotbarSlot(), out.swapOffhand() || next.swapOffhand(),
+				next.inventoryOpen(), next.inventoryClick() != null ? next.inventoryClick() : out.inventoryClick());
 		}
 		return out;
 	}
 
 	private Inputs limit(Inputs in) {
+		if (in.inventoryOpen()) {
+			inventoryOpenTicks++;
+			InventoryClick click = in.inventoryClick();
+			if (click != null && (inventoryOpenTicks <= MIN_TICKS_OPEN_BEFORE_CLICK
+				|| tick - lastInventoryActionTick < MIN_TICKS_BETWEEN_INVENTORY_ACTIONS)) {
+				click = null;
+			}
+			if (click != null) {
+				lastInventoryActionTick = tick;
+			}
+			Inputs out = Inputs.inInventory(click);
+			lastEmitted = out;
+			return out;
+		}
+		inventoryOpenTicks = 0;
+
 		float cap = (float) Math.min(ABSOLUTE_MAX_TURN_DEG, profile.aim().maxTurnDegPerTick());
 		float yaw = in.yawDelta();
 		float pitch = in.pitchDelta();
@@ -107,7 +135,13 @@ public final class InputShaper {
 			}
 		}
 
-		Inputs out = new Inputs(yaw, pitch, in.forward(), in.strafe(), in.jump(), in.sneak(), in.sprint(), attack, in.use(), in.hotbarSlot());
+		boolean swap = in.swapOffhand() && tick - lastSwapTick >= MIN_TICKS_BETWEEN_INVENTORY_ACTIONS;
+		if (swap) {
+			lastSwapTick = tick;
+		}
+
+		Inputs out = new Inputs(yaw, pitch, in.forward(), in.strafe(), in.jump(), in.sneak(), in.sprint(), attack, in.use(), in.hotbarSlot(),
+			swap, false, null);
 		lastEmitted = out;
 		return out;
 	}

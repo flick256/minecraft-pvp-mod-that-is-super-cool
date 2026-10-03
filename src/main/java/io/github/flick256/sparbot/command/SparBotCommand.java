@@ -12,14 +12,18 @@ import io.github.flick256.sparbot.bot.Bot;
 import io.github.flick256.sparbot.bot.BotPlayer;
 import io.github.flick256.sparbot.core.brain.DecisionTrace;
 import io.github.flick256.sparbot.core.kit.Kit;
+import io.github.flick256.sparbot.core.kit.Layout;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.kit.KitApplier;
+import io.github.flick256.sparbot.kit.KitCapture;
+import java.io.IOException;
 import java.util.stream.Collectors;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.PermissionCheck;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,6 +38,8 @@ public final class SparBotCommand {
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.profiles().ids(), builder);
 	private static final SuggestionProvider<CommandSourceStack> KIT_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().ids(), builder);
+	private static final SuggestionProvider<CommandSourceStack> LAYOUT_IDS =
+		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().layoutIds(), builder);
 
 	private SparBotCommand() {
 	}
@@ -97,15 +103,61 @@ public final class SparBotCommand {
 				return ok(ctx, bot.name() + " now plays as " + profile.displayName());
 			}))));
 
-		root.then(Commands.literal("kit").then(botArgument()
-			.then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
-				Bot bot = bot(ctx);
+		root.then(Commands.literal("kit")
+			.then(Commands.literal("set").then(botArgument()
+				.then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
+					Bot bot = bot(ctx);
+					Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
+					bot.setKit(kit);
+					// Re-kitting is a full kit reset, only done on an operator's request.
+					KitApplier.apply(alive(bot), bot.effectiveKit());
+					return ok(ctx, bot.name() + " re-equipped with " + kit.displayName() + provenanceNote(kit));
+				}))))
+			.then(Commands.literal("capture").then(Commands.argument("id", StringArgumentType.word())
+				.executes(ctx -> captureKit(ctx, "custom"))
+				.then(Commands.argument("mode", StringArgumentType.word()).executes(ctx -> captureKit(ctx, StringArgumentType.getString(ctx, "mode"))))))
+			.then(Commands.literal("info").then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
 				Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
-				bot.setKit(kit);
-				// Re-kitting is a full kit reset, only done on an operator's request.
-				KitApplier.apply(alive(bot), kit);
-				return ok(ctx, bot.name() + " re-equipped with " + kit.displayName() + provenanceNote(kit));
-			}))));
+				Kit.Provenance p = kit.provenance();
+				return ok(ctx, String.format("%s (%s): source=%s, server=%s, version=%s, confidence=%s, verified=%s%s%s", kit.id(), kit.displayName(),
+					p.source(), p.server(), p.minecraftVersion(), p.confidence(), p.verified(),
+					p.reference() == null ? "" : ", reference=" + p.reference(),
+					p.deviations() == null || p.deviations().isEmpty() ? "" : ", deviations=" + p.deviations()));
+			})))
+			.then(Commands.literal("list").executes(SparBotCommand::listKits)));
+
+		root.then(Commands.literal("layout")
+			.then(Commands.literal("set").then(botArgument()
+				.then(Commands.argument("layout", StringArgumentType.word()).suggests(LAYOUT_IDS).executes(ctx -> {
+					Bot bot = bot(ctx);
+					String id = StringArgumentType.getString(ctx, "layout");
+					Layout layout = SparBot.kits().layout(id)
+						.orElseThrow(() -> new SimpleCommandExceptionType(Component.literal("Unknown layout " + id)).create());
+					bot.setKit(kit(layout.kit()));
+					bot.setLayout(layout);
+					KitApplier.apply(alive(bot), bot.effectiveKit());
+					return ok(ctx, bot.name() + " now uses layout " + id + " for kit " + layout.kit());
+				}))))
+			.then(Commands.literal("clear").then(botArgument().executes(ctx -> {
+				Bot bot = bot(ctx);
+				bot.setLayout(null);
+				KitApplier.apply(alive(bot), bot.effectiveKit());
+				return ok(ctx, bot.name() + " uses the kit's default layout");
+			})))
+			.then(Commands.literal("capture").then(Commands.argument("id", StringArgumentType.word())
+				.then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
+					ServerPlayer player = ctx.getSource().getPlayerOrException();
+					Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
+					Layout layout = KitCapture.captureLayout(player, StringArgumentType.getString(ctx, "id"), kit);
+					try {
+						SparBot.kits().save(layout);
+					} catch (IOException | IllegalArgumentException e) {
+						throw new SimpleCommandExceptionType(Component.literal("Could not save layout: " + e.getMessage())).create();
+					}
+					return ok(ctx, "Saved layout " + layout.id() + " for kit " + kit.id() + " (" + layout.slots().size() + " slots"
+						+ (layout.offhand() != null ? ", offhand " + layout.offhand() : "") + ")");
+				}))))
+			.then(Commands.literal("list").executes(ctx -> ok(ctx, "Layouts: " + String.join(", ", SparBot.kits().layoutIds())))));
 
 		root.then(Commands.literal("list").executes(ctx -> {
 			if (SparBot.bots().all().isEmpty()) {
@@ -133,9 +185,7 @@ public final class SparBotCommand {
 		})));
 
 		root.then(Commands.literal("profiles").executes(ctx -> ok(ctx, "Profiles: " + String.join(", ", SparBot.profiles().ids()))));
-		root.then(Commands.literal("kits").executes(ctx -> ok(ctx, "Kits: " + SparBot.kits().ids().stream()
-			.map(id -> id + SparBot.kits().get(id).map(SparBotCommand::provenanceNote).orElse(""))
-			.collect(Collectors.joining(", ")))));
+		root.then(Commands.literal("kits").executes(SparBotCommand::listKits));
 
 		root.then(Commands.literal("reload").executes(ctx -> {
 			SparBot.reloadConfigAndProfiles();
@@ -160,6 +210,24 @@ public final class SparBotCommand {
 			throw new SimpleCommandExceptionType(Component.literal(e.getMessage())).create();
 		}
 		return ok(ctx, "Spawned " + name + " (" + profile.displayName() + ", " + kit.displayName() + provenanceNote(kit) + ")");
+	}
+
+	private static int listKits(CommandContext<CommandSourceStack> ctx) {
+		return ok(ctx, "Kits: " + SparBot.kits().ids().stream()
+			.map(id -> id + SparBot.kits().get(id).map(SparBotCommand::provenanceNote).orElse(""))
+			.collect(Collectors.joining(", ")));
+	}
+
+	private static int captureKit(CommandContext<CommandSourceStack> ctx, String mode) throws CommandSyntaxException {
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		String id = StringArgumentType.getString(ctx, "id");
+		Kit kit = KitCapture.captureKit(player, id, mode);
+		try {
+			SparBot.kits().save(kit, ctx.getSource().getServer().registryAccess());
+		} catch (IOException | IllegalArgumentException e) {
+			throw new SimpleCommandExceptionType(Component.literal("Could not save kit: " + e.getMessage())).create();
+		}
+		return ok(ctx, "Saved kit " + id + " from your inventory (" + kit.slots().size() + " stacks) to config/sparbot/kits/" + id + ".json");
 	}
 
 	private static String provenanceNote(Kit kit) {

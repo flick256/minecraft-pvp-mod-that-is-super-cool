@@ -5,7 +5,10 @@
 	"name": "SparBot GameTests",
 	"environment": "*",
 	"entrypoints": {
-		"fabric-gametest": ["io.github.flick256.sparbot.gametest.SparBotGameTests"]
+		"fabric-gametest": [
+			"io.github.flick256.sparbot.gametest.SparBotGameTests",
+			"io.github.flick256.sparbot.gametest.ItemGameTests"
+		]
 	},
 	"depends": {
 		"sparbot": "*",

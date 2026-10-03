@@ -83,14 +83,14 @@ public final class BotManager {
 	}
 
 	/** Puts the bot at its spawn point in survival with its kit. Used at spawn and when a new round starts. */
-	private static void prepareForRound(Bot bot, BotPlayer player) {
+	public static void prepareForRound(Bot bot, BotPlayer player) {
 		ServerLevel level = player.level().getServer().getLevel(bot.homeDimension());
 		if (level == null) {
 			level = player.level();
 		}
 		player.setGameMode(GameType.SURVIVAL);
 		player.teleportTo(level, bot.home().x, bot.home().y, bot.home().z, Set.of(), bot.homeYaw(), 0.0F, true);
-		KitApplier.apply(player, bot.kit());
+		KitApplier.apply(player, bot.effectiveKit());
 		bot.resetMind();
 	}
 

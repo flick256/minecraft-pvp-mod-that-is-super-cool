@@ -71,4 +71,43 @@ class InputShaperTest {
 			assertEquals(5, out.yawDelta(), 1e-6);
 		}
 	}
+
+	@Test
+	void inventoryClicksNeedTheScreenOpenFirstAndBlockEverythingElse() {
+		SkillProfile profile = TestFixtures.preset("pro");
+		InputShaper shaper = new InputShaper(profile, new Rng(9), 20);
+		InventoryClick click = new InventoryClick(20, 40);
+		int firstClickTick = -1;
+		int clicks = 0;
+		for (int t = 0; t < 40; t++) {
+			Inputs desired = new Inputs(30, 10, 1, 1, true, false, true, true, true, 3, true, true, click);
+			Inputs out = shaper.shape(desired);
+			if (out.inventoryOpen()) {
+				assertEquals(0, out.yawDelta());
+				assertEquals(0, out.forward());
+				assertFalse(out.attack() || out.use() || out.jump() || out.sprint() || out.swapOffhand());
+				assertEquals(-1, out.hotbarSlot());
+			}
+			if (out.inventoryClick() != null) {
+				clicks++;
+				if (firstClickTick < 0) {
+					firstClickTick = t;
+				}
+			}
+		}
+		assertTrue(firstClickTick >= InputShaper.MIN_TICKS_OPEN_BEFORE_CLICK, "clicked on tick " + firstClickTick);
+		assertTrue(clicks <= 40 / InputShaper.MIN_TICKS_BETWEEN_INVENTORY_ACTIONS, "too many clicks: " + clicks);
+	}
+
+	@Test
+	void swapKeyIsRateLimited() {
+		InputShaper shaper = new InputShaper(TestFixtures.preset("pro"), new Rng(10), 20);
+		int swaps = 0;
+		for (int t = 0; t < 40; t++) {
+			if (shaper.shape(Inputs.IDLE.withSwapOffhand(true)).swapOffhand()) {
+				swaps++;
+			}
+		}
+		assertTrue(swaps <= 20, "swaps " + swaps);
+	}
 }

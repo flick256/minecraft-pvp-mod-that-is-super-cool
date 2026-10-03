@@ -21,6 +21,7 @@ public record SkillProfile(
 	Clicking clicking,
 	Reach reach,
 	Technique technique,
+	ItemSkills items,
 	/** Chance per decision window (~1s) of a deliberate-looking blunder (whiff, ignoring an edge, over-chasing). */
 	double mistakeRate,
 	/** Health fraction (0-1) below which the bot starts to panic and disengage. */
@@ -55,6 +56,34 @@ public record SkillProfile(
 	public record Technique(double critSkill, double wTapSkill, double sTapSkill, double strafeSkill, double jumpResetSkill, double spacingSkill) {
 	}
 
+	/**
+	 * Item handling and resource management.
+	 *
+	 * @param hotbarSwitchMs time to pick a hotbar slot (decide + press the number key)
+	 * @param inventoryMs time from opening the inventory to moving an item (e.g. re-totem)
+	 * @param retotemSkill chance the bot refills its offhand totem at all after a pop
+	 * @param gappleHealthFraction eat a golden apple below this health fraction
+	 * @param eatHungerBelow eat ordinary food when the hunger bar drops below this (0-20)
+	 * @param shieldSkill raising the shield against threats and block-hitting between swings
+	 * @param axeSkill switching to an axe to disable a raised shield
+	 * @param bowSkill using bows/crossbows at range, and how well the shot is aimed
+	 * @param pearlSkill using ender pearls to close distance or escape
+	 * @param rodSkill using a fishing rod to pull a fleeing opponent
+	 */
+	public record ItemSkills(
+		Distribution hotbarSwitchMs,
+		Distribution inventoryMs,
+		double retotemSkill,
+		double gappleHealthFraction,
+		int eatHungerBelow,
+		double shieldSkill,
+		double axeSkill,
+		double bowSkill,
+		double pearlSkill,
+		double rodSkill
+	) {
+	}
+
 	/** Returns a list of human-readable problems; empty when the profile is valid. */
 	public List<String> validate() {
 		List<String> errors = new ArrayList<>();
@@ -64,8 +93,8 @@ public record SkillProfile(
 		if (displayName == null || displayName.isBlank()) {
 			errors.add("displayName is required");
 		}
-		if (reactionTimeMs == null || pingMs == null || aim == null || clicking == null || reach == null || technique == null) {
-			errors.add("reactionTimeMs, pingMs, aim, clicking, reach and technique are all required");
+		if (reactionTimeMs == null || pingMs == null || aim == null || clicking == null || reach == null || technique == null || items == null) {
+			errors.add("reactionTimeMs, pingMs, aim, clicking, reach, technique and items are all required");
 			return errors;
 		}
 		// 100 ms is roughly the fastest visual reaction a human can sustain.
@@ -86,6 +115,17 @@ public record SkillProfile(
 		range("technique.strafeSkill", technique.strafeSkill(), 0, 1, errors);
 		range("technique.jumpResetSkill", technique.jumpResetSkill(), 0, 1, errors);
 		range("technique.spacingSkill", technique.spacingSkill(), 0, 1, errors);
+		items.hotbarSwitchMs().validate("items.hotbarSwitchMs", 40, 2000, errors);
+		// Opening the inventory and clicking takes a human at least ~120 ms.
+		items.inventoryMs().validate("items.inventoryMs", 120, 5000, errors);
+		range("items.retotemSkill", items.retotemSkill(), 0, 1, errors);
+		range("items.gappleHealthFraction", items.gappleHealthFraction(), 0, 1, errors);
+		range("items.eatHungerBelow", items.eatHungerBelow(), 0, 20, errors);
+		range("items.shieldSkill", items.shieldSkill(), 0, 1, errors);
+		range("items.axeSkill", items.axeSkill(), 0, 1, errors);
+		range("items.bowSkill", items.bowSkill(), 0, 1, errors);
+		range("items.pearlSkill", items.pearlSkill(), 0, 1, errors);
+		range("items.rodSkill", items.rodSkill(), 0, 1, errors);
 		range("mistakeRate", mistakeRate, 0, 1, errors);
 		range("panicHealthFraction", panicHealthFraction, 0, 1, errors);
 		return errors;

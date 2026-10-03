@@ -3,6 +3,7 @@ package io.github.flick256.sparbot.kit;
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.kit.Kits;
+import io.github.flick256.sparbot.core.kit.Layout;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -22,9 +23,15 @@ import net.minecraft.core.HolderLookup;
  */
 public final class KitRegistry {
 	private final Map<String, Kit> kits = new LinkedHashMap<>();
+	private final Map<String, Layout> layouts = new LinkedHashMap<>();
+	private Path customDir;
+	private Path layoutDir;
 
-	public void reload(Path customDir, HolderLookup.Provider registries) {
+	public void reload(Path customDir, Path layoutDir, HolderLookup.Provider registries) {
+		this.customDir = customDir;
+		this.layoutDir = layoutDir;
 		kits.clear();
+		layouts.clear();
 		Kits.loadBundled().values().forEach(kit -> register(kit, "bundled", registries));
 		if (Files.isDirectory(customDir)) {
 			try (Stream<Path> files = Files.list(customDir)) {
@@ -45,6 +52,64 @@ public final class KitRegistry {
 				SparBot.LOGGER.warn("Could not create {}: {}", customDir, e.getMessage());
 			}
 		}
+		loadLayouts();
+	}
+
+	private void loadLayouts() {
+		if (!Files.isDirectory(layoutDir)) {
+			try {
+				Files.createDirectories(layoutDir);
+			} catch (IOException e) {
+				SparBot.LOGGER.warn("Could not create {}: {}", layoutDir, e.getMessage());
+			}
+			return;
+		}
+		try (Stream<Path> files = Files.list(layoutDir)) {
+			for (Path file : files.filter(p -> p.toString().endsWith(".json")).sorted().toList()) {
+				try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+					Layout layout = Kits.parseLayout(reader);
+					if (!kits.containsKey(layout.kit())) {
+						SparBot.LOGGER.error("Skipping layout {}: kit '{}' is not loaded", file.getFileName(), layout.kit());
+						continue;
+					}
+					layouts.put(layout.id(), layout);
+				} catch (IllegalArgumentException | IOException e) {
+					SparBot.LOGGER.error("Skipping layout {}: {}", file.getFileName(), e.getMessage());
+				}
+			}
+		} catch (IOException e) {
+			SparBot.LOGGER.error("Could not list {}: {}", layoutDir, e.getMessage());
+		}
+	}
+
+	/** Validates, stores and writes a new kit to {@code config/sparbot/kits/<id>.json}. */
+	public void save(Kit kit, HolderLookup.Provider registries) throws IOException {
+		List<String> errors = io.github.flick256.sparbot.core.kit.KitValidator.validate(kit);
+		errors.addAll(KitApplier.resolveErrors(kit, registries));
+		if (!errors.isEmpty()) {
+			throw new IllegalArgumentException("Kit '" + kit.id() + "' is invalid: " + errors);
+		}
+		Files.createDirectories(customDir);
+		Files.writeString(customDir.resolve(kit.id() + ".json"), Kits.toJson(kit), StandardCharsets.UTF_8);
+		kits.put(kit.id(), kit);
+	}
+
+	public void save(Layout layout) throws IOException {
+		List<String> errors = layout.validate();
+		if (!errors.isEmpty()) {
+			throw new IllegalArgumentException("Layout '" + layout.id() + "' is invalid: " + errors);
+		}
+		Files.createDirectories(layoutDir);
+		Files.writeString(layoutDir.resolve(layout.id() + ".json"), Kits.toJson(layout), StandardCharsets.UTF_8);
+		layouts.put(layout.id(), layout);
+	}
+
+	public Optional<Layout> layout(String id) {
+		return Optional.ofNullable(layouts.get(id));
+	}
+
+	public Collection<String> layoutIds() {
+		return layouts.keySet();
 	}
 
 	private void register(Kit kit, String origin, HolderLookup.Provider registries) {

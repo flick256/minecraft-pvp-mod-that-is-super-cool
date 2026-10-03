@@ -46,8 +46,8 @@ public final class SparBot implements ModInitializer {
 	}
 
 	public static void reloadKits(MinecraftServer server) {
-		KITS.reload(configDir().resolve("sparbot").resolve("kits"), server.registryAccess());
-		LOGGER.info("SparBot kits loaded: {}", KITS.ids());
+		KITS.reload(configDir().resolve("sparbot").resolve("kits"), configDir().resolve("sparbot").resolve("layouts"), server.registryAccess());
+		LOGGER.info("SparBot kits loaded: {}; layouts: {}", KITS.ids(), KITS.layoutIds());
 	}
 
 	private static Path configDir() {

@@ -1,6 +1,18 @@
 package io.github.flick256.sparbot.bot;
 
 import io.github.flick256.sparbot.core.act.Inputs;
+import io.github.flick256.sparbot.core.act.InventoryClick;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minecraft.network.HashedStack;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ProjectileItem;
+import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -40,16 +52,44 @@ public final class ClientEmulator {
 	/** Minecraft#startAttack: a survival-mode click that hits nothing blocks clicking for 10 ticks. */
 	private static final int MISS_TIME_TICKS = 10;
 
+	/** Minecraft#startUseItem: holding right click retries every 4 ticks. */
+	private static final int RIGHT_CLICK_DELAY_TICKS = 4;
+	/** The player's own inventory menu always has container id 0. */
+	private static final int INVENTORY_CONTAINER_ID = 0;
+
 	private Input keys = Input.EMPTY;
 	private boolean useHeld;
 	private int missTime;
+	private int rightClickDelay;
 	private int useSequence;
+	private boolean inventoryOpen;
 
-	/** Applies one tick of shaped inputs. Order follows the client: mouse, hotbar, clicks, keys, sprint. */
+	/** Applies one tick of shaped inputs. Order follows the client: mouse, hotbar, keys, clicks, movement, sprint. */
 	void apply(BotPlayer player, Bot bot, Inputs in) {
 		ServerGamePacketListenerImpl listener = player.connection;
 		if (missTime > 0) {
 			missTime--;
+		}
+		if (rightClickDelay > 0) {
+			rightClickDelay--;
+		}
+
+		if (in.inventoryOpen()) {
+			// Opening the player's own inventory is client-side only (no packet). While the screen is
+			// open, keyboard and mouse go to the screen: the shaper has already released every key.
+			inventoryOpen = true;
+			if (in.inventoryClick() != null) {
+				InventoryClick click = in.inventoryClick();
+				listener.handleContainerClick(new ServerboundContainerClickPacket(INVENTORY_CONTAINER_ID, player.inventoryMenu.getStateId(),
+					(short) menuSlot(click.slot()), (byte) click.button(), ContainerInput.SWAP, new Int2ObjectOpenHashMap<>(), HashedStack.EMPTY));
+			}
+			sendKeys(listener, Input.EMPTY);
+			updateSprint(player, listener);
+			return;
+		}
+		if (inventoryOpen) {
+			inventoryOpen = false;
+			listener.handleContainerClose(new ServerboundContainerClosePacket(INVENTORY_CONTAINER_ID));
 		}
 
 		// Mouse movement. Pitch is clamped like Entity#turn.
@@ -60,18 +100,76 @@ public final class ClientEmulator {
 		if (in.hotbarSlot() >= 0 && in.hotbarSlot() != player.getInventory().getSelectedSlot()) {
 			listener.handleSetCarriedItem(new ServerboundSetCarriedItemPacket(in.hotbarSlot()));
 		}
-
-		if (in.attack()) {
-			click(player, bot, listener);
+		if (in.swapOffhand()) {
+			listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ZERO, Direction.DOWN));
 		}
-		use(player, listener, in.use());
 
-		Input newKeys = new Input(in.forward() > 0, in.forward() < 0, in.strafe() > 0, in.strafe() < 0, in.jump(), in.sneak(), in.sprint());
+		// Minecraft#handleKeybinds: while an item is in use, attack clicks are swallowed and releasing
+		// the use key releases the item; otherwise clicks attack and a use press starts using.
+		if (player.isUsingItem()) {
+			if (!in.use()) {
+				listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));
+			}
+		} else {
+			if (in.attack()) {
+				click(player, bot, listener);
+			}
+			if (in.use() && !useHeld) {
+				startUseItem(player, listener);
+			}
+		}
+		if (in.use() && rightClickDelay == 0 && !player.isUsingItem()) {
+			startUseItem(player, listener);
+		}
+		useHeld = in.use();
+
+		sendKeys(listener, new Input(in.forward() > 0, in.forward() < 0, in.strafe() > 0, in.strafe() < 0, in.jump(), in.sneak(), in.sprint()));
+		updateSprint(player, listener);
+	}
+
+	private void sendKeys(ServerGamePacketListenerImpl listener, Input newKeys) {
 		if (!newKeys.equals(keys)) {
 			keys = newKeys;
 			listener.handlePlayerInput(new ServerboundPlayerInputPacket(newKeys));
 		}
-		updateSprint(player, listener);
+	}
+
+	/** InventoryMenu slot numbering: hotbar 0-8 is menu 36-44, main inventory 9-35 keeps its index. */
+	static int menuSlot(int inventoryIndex) {
+		return inventoryIndex < 9 ? inventoryIndex + 36 : inventoryIndex;
+	}
+
+	/**
+	 * Minecraft#startUseItem: try the main hand, then the offhand. The client decides by running the
+	 * item's use logic locally; the bot predicts the same outcome from the item's components.
+	 */
+	private void startUseItem(BotPlayer player, ServerGamePacketListenerImpl listener) {
+		rightClickDelay = RIGHT_CLICK_DELAY_TICKS;
+		for (InteractionHand hand : InteractionHand.values()) {
+			if (usable(player, player.getItemInHand(hand))) {
+				listener.handleUseItem(new ServerboundUseItemPacket(hand, ++useSequence, player.getYRot(), player.getXRot()));
+				return;
+			}
+		}
+	}
+
+	/** Whether right-clicking this stack in the air does something (so the client would not fall through to the other hand). */
+	static boolean usable(BotPlayer player, ItemStack stack) {
+		if (stack.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
+			return false;
+		}
+		FoodProperties food = stack.get(DataComponents.FOOD);
+		if (food != null) {
+			return player.canEat(food.canAlwaysEat());
+		}
+		if (stack.has(DataComponents.CONSUMABLE) || stack.has(DataComponents.BLOCKS_ATTACKS)) {
+			return true;
+		}
+		if (stack.getItem() instanceof ProjectileWeaponItem) {
+			return CrossbowItem.isCharged(stack) || !player.getProjectile(stack).isEmpty();
+		}
+		return stack.is(Items.FISHING_ROD) || stack.is(Items.TRIDENT)
+			|| stack.getItem() instanceof ProjectileItem && !stack.is(ItemTags.ARROWS);
 	}
 
 	/** Minecraft#startAttack. Returns without doing anything in the same cases the client does. */
@@ -108,19 +206,6 @@ public final class ClientEmulator {
 			case MISS -> missTime = MISS_TIME_TICKS;
 		}
 		listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
-	}
-
-	/** Right click: Minecraft#startUseItem on press, MultiPlayerGameMode#releaseUsingItem on release. */
-	private void use(BotPlayer player, ServerGamePacketListenerImpl listener, boolean pressed) {
-		if (pressed && !useHeld) {
-			listener.handleUseItem(new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, ++useSequence, player.getYRot(), player.getXRot()));
-			if (!player.isUsingItem() && !player.getOffhandItem().isEmpty()) {
-				listener.handleUseItem(new ServerboundUseItemPacket(InteractionHand.OFF_HAND, ++useSequence, player.getYRot(), player.getXRot()));
-			}
-		} else if (!pressed && useHeld && player.isUsingItem()) {
-			listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));
-		}
-		useHeld = pressed;
 	}
 
 	/** LocalPlayer#aiStep sprint rules (canStartSprinting / shouldStopRunSprinting / shouldStopSwimSprinting). */
@@ -267,5 +352,7 @@ public final class ClientEmulator {
 		keys = Input.EMPTY;
 		useHeld = false;
 		missTime = 0;
+		rightClickDelay = 0;
+		inventoryOpen = false;
 	}
 }

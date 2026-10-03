@@ -40,5 +40,7 @@ public final class PerceptionDelay {
 	}
 
 	// Sentinel so "no target" can be stored in an ArrayDeque (which rejects nulls).
-	private static final TargetState NONE = new TargetState(-1, "", null, null, 0, 0, 0, false, 0, false, false, 0, 0, 0);
+	private static final TargetState NONE = new TargetState(-1, "", null, null, 0, 0, 0, false, 0, false, false, 0, 0, 0,
+		io.github.flick256.sparbot.core.item.ItemKind.EMPTY, io.github.flick256.sparbot.core.item.ItemKind.EMPTY,
+		io.github.flick256.sparbot.core.item.ItemKind.EMPTY, 0);
 }

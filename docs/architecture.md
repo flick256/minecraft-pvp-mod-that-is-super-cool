@@ -18,7 +18,8 @@ sparbot-core/        pure Java, no Minecraft/Fabric on the classpath (enforced b
   act/               Inputs (human inputs only), InputShaper (turn cap, CPS cap, latency)
   aim/               AimController (smoothing, jitter, overshoot)
   brain/             Policy interface, utility AI (DuelBrain + tactics), Movement edge safety
-  kit/               Kit model with provenance, KitValidator, bundled kits
+  item/              ItemKind, ItemInfo, InventoryState (what the bot knows about its items)
+  kit/               Kit model with provenance, KitValidator, Layout, bundled kits
   stats/             FightStats, Elo
 src/main/            the Fabric mod (server side)
   bot/               BotPlayer body, BotConnection, ClientEmulator, Perception, MortalityGuard, BotManager
@@ -68,8 +69,8 @@ The brain sees the opponent with two delays:
 |---|---|---|
 | M0 | Toolchain, core/mod split, CI | done |
 | M1 | Mortal bot body, perception, constrained inputs, skill profiles, sword duel, mortality tests | done |
-| M2 | Full kit system: slot-for-slot JSON, provenance, validator, capturing a player's own layout, eating, hotbar swaps | next |
-| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | |
+| M2 | Full kit system: slot-for-slot JSON with any item component, provenance, validator, kit and layout capture, eating, hotbar and offhand swaps, inventory clicks | done |
+| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | next |
 | M4 | Playstyles (weighted tactics, mixable at runtime), client debug overlay | |
 | M5 | Matches: game-mode modules, arenas, rounds, cleanup, bot-vs-bot, Elo benchmark, training-world extension points | |
 | M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | |
@@ -78,9 +79,11 @@ The brain sees the opponent with two delays:
 | M9 | Super Mode B: headless seeded simulation, league self-play | |
 | M10 | Training-world pack | |
 
-## Known limits of milestone 1
+## Known limits so far
 
-- **Melee only.** The bot never uses items: no right-click, food, potions, pearls, shields or bows.
-- **No mining.** Clicking a block only swings the arm.
+- **No mining or block placing.** Clicking a block only swings the arm, and right-click never targets
+  blocks (eating while looking at a chest doesn't open it).
+- **Right-click hand choice is predicted.** A real client decides between main hand and offhand by running
+  the item's use logic locally; the bot predicts the same outcome from the item's data components.
 - **No spears.** A bot holding a spear never clicks; spear attacks arrive in M6.
 - **One playstyle:** a general duel brain. Playstyles arrive in M4.

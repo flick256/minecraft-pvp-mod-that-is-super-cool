@@ -47,6 +47,28 @@
     "jumpResetSkill": 0.5,
     "spacingSkill": 0.7
   },
+  "items": {
+    "hotbarSwitchMs": {
+      "mean": 120,
+      "stdDev": 30,
+      "min": 80,
+      "max": 220
+    },
+    "inventoryMs": {
+      "mean": 380,
+      "stdDev": 90,
+      "min": 220,
+      "max": 700
+    },
+    "retotemSkill": 0.9,
+    "gappleHealthFraction": 0.5,
+    "eatHungerBelow": 14,
+    "shieldSkill": 0.7,
+    "axeSkill": 0.7,
+    "bowSkill": 0.7,
+    "pearlSkill": 0.6,
+    "rodSkill": 0.5
+  },
   "mistakeRate": 0.04,
   "panicHealthFraction": 0.22
 }

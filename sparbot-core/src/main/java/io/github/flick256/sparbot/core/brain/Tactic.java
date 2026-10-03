@@ -15,4 +15,8 @@ public interface Tactic {
 
 	default void onExit(BrainContext context) {
 	}
+
+	/** Forget any per-fight state held by the tactic itself (respawn, new round). */
+	default void reset() {
+	}
 }

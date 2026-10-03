@@ -1,16 +1,21 @@
 package io.github.flick256.sparbot.bot;
 
+import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Vec3;
+import io.github.flick256.sparbot.core.sense.EffectInfo;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.SelfState;
 import io.github.flick256.sparbot.core.sense.TargetState;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.AttackRange;
@@ -36,7 +41,7 @@ public final class Perception {
 
 	Observation observe(Bot bot, BotPlayer self, long tick, double awarenessRadius, boolean autoTarget, boolean autoTargetBots) {
 		LivingEntity target = chooseTarget(bot, self, awarenessRadius, autoTarget, autoTargetBots);
-		return new Observation(tick, selfState(self), targetState(self, target, awarenessRadius));
+		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius));
 	}
 
 	void reset() {
@@ -94,7 +99,9 @@ public final class Perception {
 			lastSeenPosition = position;
 			lastSeen = new TargetState(target.getId(), target.getPlainTextName(), position, velocity, target.getYRot(),
 				target.getHealth(), target.getMaxHealth(), target.onGround(), target.hurtTime, target.isBlocking(), true, 0,
-				target.getBbWidth() / 2.0, target.getBbHeight());
+				target.getBbWidth() / 2.0, target.getBbHeight(),
+				ItemClassifier.classify(target.getMainHandItem()), ItemClassifier.classify(target.getOffhandItem()),
+				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue());
 			return lastSeen;
 		}
 		if (lastSeen == null) {
@@ -107,10 +114,11 @@ public final class Perception {
 		}
 		// Out of sight: only the stale memory, with no fresh motion information.
 		return new TargetState(lastSeen.entityId(), lastSeen.name(), lastSeen.position(), Vec3.ZERO, lastSeen.yaw(), lastSeen.health(),
-			lastSeen.maxHealth(), lastSeen.onGround(), 0, false, false, ticksSinceSeen, lastSeen.halfWidth(), lastSeen.height());
+			lastSeen.maxHealth(), lastSeen.onGround(), 0, false, false, ticksSinceSeen, lastSeen.halfWidth(), lastSeen.height(),
+			lastSeen.mainHand(), lastSeen.offhand(), ItemKind.EMPTY, lastSeen.armorPoints());
 	}
 
-	private static SelfState selfState(BotPlayer self) {
+	private static SelfState selfState(BotPlayer self, @Nullable LivingEntity target) {
 		ItemStack held = self.getMainHandItem();
 		AttackRange range = held.get(DataComponents.ATTACK_RANGE);
 		double reach = range != null ? range.effectiveMaxRange(self) : self.entityInteractionRange();
@@ -135,7 +143,18 @@ public final class Perception {
 			reach,
 			self.hurtTime,
 			!held.has(DataComponents.PIERCING_WEAPON),
-			dropDepths(self));
+			dropDepths(self),
+			ItemClassifier.inventory(self, target),
+			effects(self));
+	}
+
+	private static List<EffectInfo> effects(BotPlayer self) {
+		List<EffectInfo> effects = new ArrayList<>();
+		for (MobEffectInstance effect : self.getActiveEffects()) {
+			effects.add(new EffectInfo(effect.getEffect().getRegisteredName(), effect.getAmplifier(),
+				effect.isInfiniteDuration() ? -1 : effect.getDuration()));
+		}
+		return effects;
 	}
 
 	/**

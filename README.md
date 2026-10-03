@@ -7,7 +7,8 @@ and fall damage through the same vanilla code as a human, uses up totems, drops 
 The mod is server-side only. It works in singleplayer (the integrated server), on LAN and on dedicated
 servers, and players don't need to install anything.
 
-> Status: **milestone 1** (a bot that fights a basic sword duel at a chosen skill level).
+> Status: **milestone 2**: sword duels at a chosen skill level, a full kit system with capture and
+> personal layouts, and bots that eat and manage their hotbar.
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
 ## Requirements
@@ -44,8 +45,12 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot fight <bot> <entity>` | Assigns an opponent (another player, bot or mob) |
 | `/sparbot stop <bot>` | Clears the assigned opponent |
 | `/sparbot profile <bot> <profile>` | Changes skill level at runtime |
-| `/sparbot kit <bot> <kit>` | Re-equips a kit (a full kit reset) |
-| `/sparbot list` / `profiles` / `kits` | Lists bots, skill profiles and kits |
+| `/sparbot kit set <bot> <kit>` | Re-equips a kit (a full kit reset) |
+| `/sparbot kit capture <id> [mode]` | Saves **your current inventory** as a kit, slot for slot (marked user-supplied and verified) |
+| `/sparbot kit info <kit>` | Shows a kit's provenance (source, version, confidence, deviations) |
+| `/sparbot layout capture <id> <kit>` | Saves where **you** keep that kit's items as a personal layout |
+| `/sparbot layout set <bot> <layout>` / `clear <bot>` | Makes a bot copy a layout, or go back to the kit's default |
+| `/sparbot list` / `profiles` / `kits` / `layout list` | Lists bots, skill profiles, kits and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
 | `/sparbot reload` | Reloads the config, profiles and kits |
 
@@ -67,6 +72,12 @@ To add your own, copy a preset from
 ## Kits
 
 Kits are JSON files with exact armor, offhand and all 36 inventory slots, plus enchantments, potions and effects.
+Any other item data (durability, names, fireworks, trims and so on) goes in `components`, written in the same
+syntax as `/give`, for example `"components": "minecraft:damage=120"`.
+
+The easiest way to make a kit is to set up your own inventory and run `/sparbot kit capture <id>`.
+A **layout** keeps the kit's contents but moves items to your own preferred slots. Make one with
+`/sparbot layout capture`, then give it to a bot with `/sparbot layout set`.
 Every kit has a **provenance** block stating its source, game version, confidence and whether it is verified,
 plus every deviation made when translating it from an older version. Custom kits go in `config/sparbot/kits/`.
 
@@ -100,6 +111,12 @@ These rules never relax, and the build fails if any of them breaks:
   - clicks per second, turn speed and simulated ping are capped for every input, whatever decides it.
 - **Limited knowledge:** the bot only perceives opponents within its awareness radius and line of sight. Out
   of sight, it only remembers where it last saw them.
+- **Human item handling:**
+  - switching hotbar slots takes the profile's reaction time and, as in vanilla, resets the attack charge
+  - while the inventory screen is open the bot can't move, look around or attack
+  - clicks inside the inventory need the screen open first and are rate-limited
+  - clicks are swallowed while an item (food, shield, bow) is in use, exactly like the vanilla client
+  - food, golden apples and totems are finite and really consumed
 
 ## Configuration (`config/sparbot.json`)
 

@@ -27,7 +27,7 @@ public final class DuelBrain implements Policy {
 	private final Rng rng;
 	private final AimController aim;
 	private final PerceptionDelay perception = new PerceptionDelay();
-	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic());
+	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic());
 	private DuelMemory memory = new DuelMemory();
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
@@ -108,6 +108,7 @@ public final class DuelBrain implements Policy {
 	@Override
 	public void reset() {
 		memory = new DuelMemory();
+		tactics.forEach(Tactic::reset);
 		perception.clear();
 		active = null;
 		trace = DecisionTrace.NONE;

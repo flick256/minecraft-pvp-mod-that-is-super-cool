@@ -24,8 +24,14 @@ public record Kit(
 	 * @param count stack size, 1 when omitted
 	 * @param enchantments enchantment id to level
 	 * @param potion potion id for potions / splash potions / tipped arrows, e.g. {@code minecraft:strong_healing}
+	 * @param components any other item data in vanilla {@code /give} syntax without the brackets,
+	 *     e.g. {@code minecraft:damage=120,minecraft:custom_name='"Spare"'} (null when none)
 	 */
-	public record KitItem(String id, Integer count, Map<String, Integer> enchantments, String potion) {
+	public record KitItem(String id, Integer count, Map<String, Integer> enchantments, String potion, String components) {
+		public KitItem(String id, Integer count, Map<String, Integer> enchantments, String potion) {
+			this(id, count, enchantments, potion, null);
+		}
+
 		public int countOrDefault() {
 			return count == null ? 1 : count;
 		}

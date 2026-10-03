@@ -8,6 +8,7 @@ import io.github.flick256.sparbot.core.brain.DecisionTrace;
 import io.github.flick256.sparbot.core.brain.DuelBrain;
 import io.github.flick256.sparbot.core.brain.Policy;
 import io.github.flick256.sparbot.core.kit.Kit;
+import io.github.flick256.sparbot.core.kit.Layout;
 import io.github.flick256.sparbot.core.math.Rng;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
@@ -33,6 +34,7 @@ public final class Bot {
 	private final long seed;
 	private SkillProfile profile;
 	private Kit kit;
+	private @Nullable Layout layout;
 	private Policy policy;
 	private InputShaper shaper;
 	private @Nullable BotPlayer body;
@@ -45,6 +47,7 @@ public final class Bot {
 	private int attackTargetId = -1;
 	private boolean attackWouldCrit;
 	private @Nullable List<String> violations;
+	private boolean brainPaused;
 
 	Bot(String name, UUID uuid, BotConnection connection, SkillProfile profile, Kit kit, ResourceKey<Level> dimension, Vec3 home, float homeYaw, long seed) {
 		this.name = name;
@@ -81,6 +84,9 @@ public final class Bot {
 			return;
 		}
 
+		if (brainPaused) {
+			return;
+		}
 		SparBotConfig config = SparBot.config();
 		Observation observation = perception.observe(this, player, player.level().getGameTime(), config.awarenessRadius,
 			config.autoTarget, config.autoTargetBots);
@@ -93,6 +99,18 @@ public final class Bot {
 			SparBot.LOGGER.info("[{}] {} -> {} {}", name, lastTactic, tactic, policy.lastTrace().scores());
 		}
 		lastTactic = tactic;
+	}
+
+	/** A paused bot keeps its body (physics, damage, guard) but its brain presses nothing. */
+	void setBrainPaused(boolean paused) {
+		this.brainPaused = paused;
+		if (paused) {
+			client.apply(body, this, io.github.flick256.sparbot.core.act.Inputs.IDLE);
+		}
+	}
+
+	public boolean brainPaused() {
+		return brainPaused;
 	}
 
 	public void setProfile(SkillProfile profile) {
@@ -169,6 +187,22 @@ public final class Bot {
 
 	public void setKit(Kit kit) {
 		this.kit = kit;
+		if (layout != null && !layout.kit().equals(kit.id())) {
+			layout = null;
+		}
+	}
+
+	public @Nullable Layout layout() {
+		return layout;
+	}
+
+	public void setLayout(@Nullable Layout layout) {
+		this.layout = layout;
+	}
+
+	/** The kit as this bot carries it: rearranged by its personal layout, if it has one. */
+	public Kit effectiveKit() {
+		return layout != null ? layout.arrange(kit) : kit;
 	}
 
 	public DecisionTrace trace() {

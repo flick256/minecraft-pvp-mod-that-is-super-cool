@@ -17,7 +17,7 @@ public final class Kits {
 	/** Bundled kits. See docs/kit-research.md for why no MCPVP kit is bundled yet. */
 	public static final List<String> BUNDLED_IDS = List.of("basic_sword", "mctiers_sword_recreation");
 
-	private static final Gson GSON = new Gson();
+	private static final Gson GSON = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
 
 	private Kits() {
 	}
@@ -37,6 +37,31 @@ public final class Kits {
 			throw new IllegalArgumentException("Invalid kit '" + kit.id() + "': " + String.join("; ", errors));
 		}
 		return kit;
+	}
+
+	public static String toJson(Kit kit) {
+		return GSON.toJson(kit);
+	}
+
+	public static Layout parseLayout(Reader reader) {
+		Layout layout;
+		try {
+			layout = GSON.fromJson(reader, Layout.class);
+		} catch (JsonParseException e) {
+			throw new IllegalArgumentException("Malformed layout JSON: " + e.getMessage(), e);
+		}
+		if (layout == null) {
+			throw new IllegalArgumentException("Layout JSON is empty");
+		}
+		List<String> errors = layout.validate();
+		if (!errors.isEmpty()) {
+			throw new IllegalArgumentException("Invalid layout '" + layout.id() + "': " + String.join("; ", errors));
+		}
+		return layout;
+	}
+
+	public static String toJson(Layout layout) {
+		return GSON.toJson(layout);
 	}
 
 	public static Map<String, Kit> loadBundled() {

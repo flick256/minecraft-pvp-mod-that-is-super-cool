@@ -115,14 +115,19 @@ public final class EngageTactic implements Tactic {
 			jump = true;
 		}
 
-		boolean attack = wantsToClick(c, distance, judgedReach);
+		// Hold the best melee weapon (switching takes the profile's hotbar time and resets the charge).
+		int weaponSlot = Hands.preferredMeleeSlot(self.inventory());
+		int press = c.memory.hands.request(c, weaponSlot);
+		boolean armed = weaponSlot < 0 || self.inventory().selectedSlot() == weaponSlot;
+
+		boolean attack = armed && wantsToClick(c, distance, judgedReach);
 		if (attack) {
 			m.ticksSinceOwnClick = 0;
 			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
 			m.cooldownThreshold = sampleCooldownThreshold(c);
 		}
 
-		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, false, -1);
+		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, false, press);
 		return Movement.guardEdges(c, inputs);
 	}
 

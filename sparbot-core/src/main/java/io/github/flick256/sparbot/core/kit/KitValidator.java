@@ -131,6 +131,9 @@ public final class KitValidator {
 				}
 			}
 		}
+		if (item.components() != null && (item.components().startsWith("[") || item.components().endsWith("]"))) {
+			errors.add(where + ": components are written without the surrounding brackets");
+		}
 		if (item.potion() != null && !RESOURCE_ID.matcher(item.potion()).matches()) {
 			errors.add(where + ": potion id must be namespaced, was " + item.potion());
 		}
