@@ -15,7 +15,7 @@ import java.util.Map;
 /** Parses kits from JSON and exposes the bundled ones. */
 public final class Kits {
 	/** Bundled kits. See docs/kit-research.md for why no MCPVP kit is bundled yet. */
-	public static final List<String> BUNDLED_IDS = List.of("basic_sword", "mctiers_sword_recreation");
+	public static final List<String> BUNDLED_IDS = List.of("basic_sword", "mctiers_sword_recreation", "sparbot_combat", "sparbot_ranged");
 
 	private static final Gson GSON = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
 

@@ -1,6 +1,8 @@
 package io.github.flick256.sparbot.core.brain;
 
 import io.github.flick256.sparbot.core.act.Inputs;
+import io.github.flick256.sparbot.core.item.InventoryState;
+import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Angles;
 import io.github.flick256.sparbot.core.math.Vec3;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
@@ -19,6 +21,9 @@ import io.github.flick256.sparbot.core.sense.TargetState;
  */
 public final class EngageTactic implements Tactic {
 	private static final double FULL_CHARGE = 0.9;
+	/** Lower the block-hit shield this much attack charge before the planned swing. */
+	private static final double BLOCK_HIT_RELEASE_MARGIN = 0.2;
+	private static final double AXE_MIN_CHARGE = 0.25;
 
 	@Override
 	public String name() {
@@ -31,7 +36,7 @@ public final class EngageTactic implements Tactic {
 		if (c.target == null || t == null || t.ticksSinceSeen() > 100) {
 			return 0;
 		}
-		return t.visible() ? 0.6 : 0.4;
+		return t.visible() ? Scores.MELEE : Scores.MELEE - 0.2;
 	}
 
 	@Override
@@ -115,19 +120,56 @@ public final class EngageTactic implements Tactic {
 			jump = true;
 		}
 
-		// Hold the best melee weapon (switching takes the profile's hotbar time and resets the charge).
-		int weaponSlot = Hands.preferredMeleeSlot(self.inventory());
+		// Weapon: the best sword, or an axe while the opponent holds a shield up (an axe hit disables a
+		// raised shield for 5 s in 26.2). Switching takes the profile's hotbar time and resets the charge.
+		InventoryState inv = self.inventory();
+		TargetState seen = c.seen();
+		boolean shieldUp = seen != null && seen.blocking();
+		int axeSlot = inv.bestHotbarWeapon(ItemKind.AXE);
+		if (shieldUp && axeSlot >= 0 && !m.axeMode && m.axeDecision.get(c.rng, c.profile.items().axeSkill(), 30)) {
+			m.axeMode = true;
+			m.axeModeTicks = 0;
+		}
+		if (m.axeMode && (axeSlot < 0 || ++m.axeModeTicks > 10 && !shieldUp)) {
+			m.axeMode = false;
+		}
+		int weaponSlot = m.axeMode ? axeSlot : Hands.preferredMeleeSlot(inv);
 		int press = c.memory.hands.request(c, weaponSlot);
-		boolean armed = weaponSlot < 0 || self.inventory().selectedSlot() == weaponSlot;
+		boolean armed = weaponSlot < 0 || inv.selectedSlot() == weaponSlot;
 
-		boolean attack = armed && wantsToClick(c, distance, judgedReach);
+		// Facing a raised shield without an axe, a skilled player circles to its side instead of
+		// wasting swings on it (a shield blocks hits within 90 degrees of where its holder faces).
+		boolean inFrontOfShield = shieldUp && !m.axeMode && inFrontOf(seen, self.position());
+		boolean holdFire = inFrontOfShield && c.rng.chance(c.profile.items().shieldSkill());
+		if (inFrontOfShield) {
+			strafe = m.strafeDirection;
+		}
+
+		boolean attack = armed && !inv.usingItem() && !holdFire && wantsToClick(c, distance, judgedReach);
+		if (m.axeMode && armed && !inv.usingItem() && c.crosshairOnTarget(judgedReach + 0.5) && distance <= judgedReach
+			&& self.attackStrength() >= AXE_MIN_CHARGE) {
+			// Disabling the shield only needs the hit to land, not a full charge.
+			attack = true;
+		}
+
+		// Block-hitting: with a shield in the offhand, raise it while the sword recharges and lower it in
+		// time to swing (clicks are ignored while an item is in use, as in vanilla).
+		boolean use = false;
+		boolean shieldReady = inv.offhand().is(ItemKind.SHIELD) && !inv.offhand().onCooldown();
+		boolean axeThreat = seen != null && seen.mainHand() == ItemKind.AXE && c.rng.chance(c.profile.items().shieldSkill());
+		if (shieldReady && armed && !attack && !axeThreat && m.critPhase == DuelMemory.CritPhase.NONE && distance <= judgedReach + 1.0
+			&& self.attackStrength() < m.cooldownThreshold - BLOCK_HIT_RELEASE_MARGIN
+			&& m.blockHitDecision.get(c.rng, c.profile.items().shieldSkill(), 40)) {
+			use = true;
+			sprint = false;
+		}
 		if (attack) {
 			m.ticksSinceOwnClick = 0;
 			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
 			m.cooldownThreshold = sampleCooldownThreshold(c);
 		}
 
-		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, false, press);
+		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, use, press);
 		return Movement.guardEdges(c, inputs);
 	}
 
@@ -179,6 +221,12 @@ public final class EngageTactic implements Tactic {
 			return true;
 		}
 		return aimed && inReach && charged;
+	}
+
+	/** Whether {@code point} is within the 90-degree half-angle a target's shield covers. */
+	static boolean inFrontOf(TargetState t, Vec3 point) {
+		float toPoint = Angles.yawTowards(t.position(), point);
+		return Angles.yawDistance(toPoint, t.yaw()) <= 90.0F;
 	}
 
 	private static double sampleCooldownThreshold(BrainContext c) {

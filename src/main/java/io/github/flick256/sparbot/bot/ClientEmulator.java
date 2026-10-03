@@ -11,7 +11,11 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.ProjectileItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -153,7 +157,15 @@ public final class ClientEmulator {
 		}
 	}
 
-	/** Whether right-clicking this stack in the air does something (so the client would not fall through to the other hand). */
+	/** Item classes that override vanilla's Item#use, i.e. that have a right-click action of their own. */
+	private static final Map<Class<?>, Boolean> CUSTOM_USE = new ConcurrentHashMap<>();
+
+	/**
+	 * Whether right-clicking this stack in the air does something, so the client would not fall through
+	 * to the other hand. The client finds out by running the item's use logic; the bot predicts it: items
+	 * with their own use method (pearls, rods, bows...) and component-driven uses (food, potions,
+	 * shields) count, with vanilla's own preconditions (hunger, ammo, cooldown, elytra flight).
+	 */
 	static boolean usable(BotPlayer player, ItemStack stack) {
 		if (stack.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
 			return false;
@@ -168,8 +180,21 @@ public final class ClientEmulator {
 		if (stack.getItem() instanceof ProjectileWeaponItem) {
 			return CrossbowItem.isCharged(stack) || !player.getProjectile(stack).isEmpty();
 		}
-		return stack.is(Items.FISHING_ROD) || stack.is(Items.TRIDENT)
-			|| stack.getItem() instanceof ProjectileItem && !stack.is(ItemTags.ARROWS);
+		if (stack.is(Items.FIREWORK_ROCKET)) {
+			return player.isFallFlying();
+		}
+		if (stack.is(ItemTags.ARROWS)) {
+			return false;
+		}
+		return CUSTOM_USE.computeIfAbsent(stack.getItem().getClass(), ClientEmulator::overridesUse);
+	}
+
+	private static boolean overridesUse(Class<?> itemClass) {
+		try {
+			return itemClass.getMethod("use", Level.class, Player.class, InteractionHand.class).getDeclaringClass() != Item.class;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
 	}
 
 	/** Minecraft#startAttack. Returns without doing anything in the same cases the client does. */

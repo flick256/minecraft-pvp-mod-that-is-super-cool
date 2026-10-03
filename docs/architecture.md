@@ -63,6 +63,17 @@ The brain sees the opponent with two delays:
 - **Saved data:** bots never load saved player data (26.2 loads it in the login configuration phase,
   which bots skip), so every spawn starts clean.
 
+## Brain (utility AI)
+
+Every tick each tactic scores itself and the highest score acts. The active tactic gets a +0.05 bonus
+so the bot doesn't dither. The bands are in `Scores`: melee 0.6, specialists 0.7 (bow, rod, guard,
+pearl), and 0.8+ for survival (retreat, heal, re-totem). "Will this player use X?" is rolled from
+the profile's skill once per decision window (`Decision`), not every tick.
+
+Tactics: engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
+uses, to find the pitch that lands on target.
+
 ## Milestones
 
 | # | Milestone | Status |
@@ -70,8 +81,8 @@ The brain sees the opponent with two delays:
 | M0 | Toolchain, core/mod split, CI | done |
 | M1 | Mortal bot body, perception, constrained inputs, skill profiles, sword duel, mortality tests | done |
 | M2 | Full kit system: slot-for-slot JSON with any item component, provenance, validator, kit and layout capture, eating, hotbar and offhand swaps, inventory clicks | done |
-| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | next |
-| M4 | Playstyles (weighted tactics, mixable at runtime), client debug overlay | |
+| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
+| M4 | Playstyles (weighted tactics, mixable at runtime), client debug overlay | next |
 | M5 | Matches: game-mode modules, arenas, rounds, cleanup, bot-vs-bot, Elo benchmark, training-world extension points | |
 | M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | |
 | M7 | Recording and replay, config GUI | |
@@ -86,4 +97,6 @@ The brain sees the opponent with two delays:
 - **Right-click hand choice is predicted.** A real client decides between main hand and offhand by running
   the item's use logic locally; the bot predicts the same outcome from the item's data components.
 - **No spears.** A bot holding a spear never clicks; spear attacks arrive in M6.
+- **No dodging.** The bot raises its shield against a drawn bow but doesn't sidestep arrows in flight.
+- **No splash potions yet.** They're in kits and recognised as items, but potion use comes with NoDebuff (M6).
 - **One playstyle:** a general duel brain. Playstyles arrive in M4.

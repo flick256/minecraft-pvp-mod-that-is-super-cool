@@ -11,6 +11,11 @@ public final class FightStats {
 	private int longestCombo;
 	private int kills;
 	private int deaths;
+	private int rangedHits;
+	private double rangedDamage;
+	private int totemPops;
+	private int gapplesEaten;
+	private int pearlsThrown;
 
 	/** A left click was sent, whether or not it connected. */
 	public void recordSwing() {
@@ -32,6 +37,41 @@ public final class FightStats {
 	public void recordDamageTaken(double damage) {
 		damageTaken += damage;
 		currentCombo = 0;
+	}
+
+	/** One of the bot's projectiles damaged someone. */
+	public void recordRangedHit(double damage) {
+		rangedHits++;
+		rangedDamage += damage;
+		damageDealt += damage;
+	}
+
+	public void recordTotemPop() {
+		totemPops++;
+	}
+
+	public void recordGappleEaten() {
+		gapplesEaten++;
+	}
+
+	public void recordPearlThrown() {
+		pearlsThrown++;
+	}
+
+	public int rangedHits() {
+		return rangedHits;
+	}
+
+	public int totemPops() {
+		return totemPops;
+	}
+
+	public int gapplesEaten() {
+		return gapplesEaten;
+	}
+
+	public int pearlsThrown() {
+		return pearlsThrown;
 	}
 
 	public void recordKill() {
@@ -84,7 +124,8 @@ public final class FightStats {
 	}
 
 	public String summary() {
-		return String.format("swings=%d hits=%d (%.0f%%) crits=%d (%.0f%%) dealt=%.1f taken=%.1f bestCombo=%d K/D=%d/%d",
-			swings, hits, hitRate() * 100, crits, critRate() * 100, damageDealt, damageTaken, longestCombo, kills, deaths);
+		return String.format("swings=%d hits=%d (%.0f%%) crits=%d (%.0f%%) ranged=%d dealt=%.1f taken=%.1f bestCombo=%d pops=%d gapples=%d pearls=%d K/D=%d/%d",
+			swings, hits, hitRate() * 100, crits, critRate() * 100, rangedHits, damageDealt, damageTaken, longestCombo, totemPops, gapplesEaten,
+			pearlsThrown, kills, deaths);
 	}
 }

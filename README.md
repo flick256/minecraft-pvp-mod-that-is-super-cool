@@ -7,8 +7,28 @@ and fall damage through the same vanilla code as a human, uses up totems, drops 
 The mod is server-side only. It works in singleplayer (the integrated server), on LAN and on dedicated
 servers, and players don't need to install anything.
 
-> Status: **milestone 2**: sword duels at a chosen skill level, a full kit system with capture and
-> personal layouts, and bots that eat and manage their hotbar.
+> Status: **milestone 3**: bots fight with the full modern toolset (sword, axe against shields,
+> block-hitting, bow, crossbow, fishing rod, ender pearls, golden apples, totems) at a chosen skill
+> level, using a full kit system with capture and personal layouts.
+
+## What a bot can do (milestone 3)
+
+| Mechanic | Behaviour (26.2 rules checked in source) |
+|---|---|
+| Melee | Times hits to the attack cooldown, crits (falling, not sprinting, more than 90% charge), W-tap, S-tap, strafing, jump reset, spacing |
+| Shield | Block-hits (raises the shield while recharging, lowers it in time to swing); guards against a drawn bow; avoids blocking an axe user when skilled |
+| Axe | Switches to the axe when the opponent raises a shield (an axe hit disables it for 5 s); circles a shield if it has no axe |
+| Bow / crossbow | Used at 8-40 blocks; full 20-tick draw; crossbow charged in 25 ticks, then fired; aim solved with the real arrow physics and leading moving targets |
+| Ender pearl | Closes 16-45 block gaps (lands just short of the opponent) or escapes when low and cornered; aim solved with real pearl physics |
+| Fishing rod | Hooks an opponent who is running away, then reels them in (in 26.2 the hook does no damage or knockback) |
+| Golden apples / food | Eats a golden apple when low (not in the opponent's face unless desperate), and food when hungry and safe |
+| Totems | After a pop, puts a new totem in the offhand: the swap key from the hotbar, or opening the inventory (taking human time) |
+| Retreat | Disengages below the panic threshold (earlier with worn-out armor), eats while running, then re-engages |
+
+How often each tool is used depends on the profile's item skills, so a Beginner rarely re-totems or
+pearls and a Pro almost always does.
+
+Bundled kits for trying it out: `sparbot_combat` (everything above) and `sparbot_ranged` (bow focus).
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
 ## Requirements

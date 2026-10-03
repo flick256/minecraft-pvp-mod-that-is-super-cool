@@ -3,6 +3,10 @@ package io.github.flick256.sparbot.core.brain;
 /** State the duel brain carries between ticks. Reset on respawn / new round. */
 public final class DuelMemory {
 	final Hands hands = new Hands();
+	final Decision axeDecision = new Decision();
+	final Decision blockHitDecision = new Decision();
+	boolean axeMode;
+	int axeModeTicks;
 	Mistake mistake = Mistake.NONE;
 	int ticksUntilMistakeRoll;
 	int strafeDirection = 1;

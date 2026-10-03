@@ -27,7 +27,8 @@ public final class DuelBrain implements Policy {
 	private final Rng rng;
 	private final AimController aim;
 	private final PerceptionDelay perception = new PerceptionDelay();
-	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic());
+	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic(),
+		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new RodTactic());
 	private DuelMemory memory = new DuelMemory();
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;

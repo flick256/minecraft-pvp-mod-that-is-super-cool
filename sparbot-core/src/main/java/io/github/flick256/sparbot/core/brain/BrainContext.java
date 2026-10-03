@@ -63,6 +63,18 @@ public final class BrainContext {
 		return rayHitsBox(eye, dir, min, max, maxDistance);
 	}
 
+	/** Mouse movement this tick towards looking at the given angles (smoothed, jittered by the aim model). */
+	public float[] lookAt(float goalYaw, float goalPitch) {
+		return aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);
+	}
+
+	/** Angular distance (degrees) between where the bot looks and the given angles. */
+	public float aimError(float goalYaw, float goalPitch) {
+		float dy = Angles.wrapDegrees(goalYaw - self.yaw());
+		float dp = goalPitch - self.pitch();
+		return (float) Math.sqrt(dy * dy + dp * dp);
+	}
+
 	public boolean mistake(Mistake kind) {
 		return memory.mistake == kind;
 	}

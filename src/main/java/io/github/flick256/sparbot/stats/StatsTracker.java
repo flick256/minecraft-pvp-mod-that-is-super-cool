@@ -8,6 +8,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 
 /**
  * Feeds vanilla damage and death events into each bot's {@link io.github.flick256.sparbot.core.stats.FightStats}.
@@ -49,6 +51,9 @@ public final class StatsTracker {
 			&& attacker.bot().isAttacking(victim.getId()) && lost > 0) {
 			attacker.bot().stats().recordHit(lost, attacker.bot().attackWouldCrit());
 		}
+		if (source.getEntity() instanceof BotPlayer shooter && source.getDirectEntity() instanceof Projectile && victim != shooter && lost > 0) {
+			shooter.bot().stats().recordRangedHit(lost);
+		}
 	}
 
 	private static void afterDeath(LivingEntity victim, DamageSource source) {
@@ -57,7 +62,8 @@ public final class StatsTracker {
 			bot.bot().stats().recordDeath();
 			SparBot.LOGGER.info("Bot {} died: {}", bot.bot().name(), source.getLocalizedDeathMessage(victim).getString());
 		}
-		if (source.getEntity() instanceof BotPlayer killer && killer != victim) {
+		// PvP stats: only killing a player (or another bot) counts, not mobs caught in a sweep.
+		if (source.getEntity() instanceof BotPlayer killer && killer != victim && victim instanceof Player) {
 			killer.bot().stats().recordKill();
 		}
 	}

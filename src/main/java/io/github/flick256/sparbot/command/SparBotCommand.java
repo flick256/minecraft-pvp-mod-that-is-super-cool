@@ -111,6 +111,7 @@ public final class SparBotCommand {
 					bot.setKit(kit);
 					// Re-kitting is a full kit reset, only done on an operator's request.
 					KitApplier.apply(alive(bot), bot.effectiveKit());
+					bot.onKitReset();
 					return ok(ctx, bot.name() + " re-equipped with " + kit.displayName() + provenanceNote(kit));
 				}))))
 			.then(Commands.literal("capture").then(Commands.argument("id", StringArgumentType.word())
@@ -136,12 +137,14 @@ public final class SparBotCommand {
 					bot.setKit(kit(layout.kit()));
 					bot.setLayout(layout);
 					KitApplier.apply(alive(bot), bot.effectiveKit());
+					bot.onKitReset();
 					return ok(ctx, bot.name() + " now uses layout " + id + " for kit " + layout.kit());
 				}))))
 			.then(Commands.literal("clear").then(botArgument().executes(ctx -> {
 				Bot bot = bot(ctx);
 				bot.setLayout(null);
 				KitApplier.apply(alive(bot), bot.effectiveKit());
+				bot.onKitReset();
 				return ok(ctx, bot.name() + " uses the kit's default layout");
 			})))
 			.then(Commands.literal("capture").then(Commands.argument("id", StringArgumentType.word())

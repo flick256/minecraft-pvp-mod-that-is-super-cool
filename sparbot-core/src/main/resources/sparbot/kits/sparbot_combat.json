@@ -1,0 +1,36 @@
+{
+  "id": "sparbot_combat",
+  "displayName": "SparBot Combat",
+  "mode": "combat",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "combat",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own all-round kit exercising every milestone-3 mechanic: sword, axe vs shields, block-hitting, bow, crossbow, rod, pearls, golden apples and a spare totem.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {"id": "minecraft:diamond_helmet", "enchantments": {"minecraft:protection": 2}},
+    "chest": {"id": "minecraft:diamond_chestplate", "enchantments": {"minecraft:protection": 2}},
+    "legs": {"id": "minecraft:diamond_leggings", "enchantments": {"minecraft:protection": 2}},
+    "feet": {"id": "minecraft:diamond_boots", "enchantments": {"minecraft:protection": 2}}
+  },
+  "offhand": {"id": "minecraft:shield"},
+  "slots": {
+    "0": {"id": "minecraft:diamond_sword", "enchantments": {"minecraft:sharpness": 2}},
+    "1": {"id": "minecraft:diamond_axe"},
+    "2": {"id": "minecraft:bow", "enchantments": {"minecraft:power": 1}},
+    "3": {"id": "minecraft:crossbow"},
+    "4": {"id": "minecraft:fishing_rod"},
+    "5": {"id": "minecraft:ender_pearl", "count": 4},
+    "6": {"id": "minecraft:golden_apple", "count": 4},
+    "7": {"id": "minecraft:cooked_beef", "count": 16},
+    "8": {"id": "minecraft:totem_of_undying"},
+    "9": {"id": "minecraft:arrow", "count": 32}
+  },
+  "effects": []
+}

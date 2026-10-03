@@ -48,6 +48,7 @@ public final class Bot {
 	private boolean attackWouldCrit;
 	private @Nullable List<String> violations;
 	private boolean brainPaused;
+	private final ConsumptionTracker consumption = new ConsumptionTracker();
 
 	Bot(String name, UUID uuid, BotConnection connection, SkillProfile profile, Kit kit, ResourceKey<Level> dimension, Vec3 home, float homeYaw, long seed) {
 		this.name = name;
@@ -77,6 +78,8 @@ public final class Bot {
 		if (motion != null) {
 			player.setDeltaMovement(motion);
 		}
+
+		consumption.update(player, stats);
 
 		List<String> problems = MortalityGuard.violations(player);
 		if (!problems.isEmpty()) {
@@ -121,6 +124,7 @@ public final class Bot {
 
 	/** Forget everything about the last fight (respawn, new round). Stats are kept. */
 	void resetMind() {
+		consumption.reset();
 		policy.reset();
 		shaper.reset();
 		client.reset();
@@ -183,6 +187,11 @@ public final class Bot {
 
 	public Kit kit() {
 		return kit;
+	}
+
+	/** Call after an operator re-kits the bot so consumption stats do not count the swap as usage. */
+	public void onKitReset() {
+		consumption.reset();
 	}
 
 	public void setKit(Kit kit) {

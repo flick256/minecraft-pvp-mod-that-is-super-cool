@@ -70,6 +70,22 @@ final class TestSupport {
 		return SparBot.bots().spawn(level.getServer(), name, level, pos, yaw, SparBot.profiles().get(profileId).orElseThrow(), kit(kitId));
 	}
 
+	/**
+	 * Gives the bot a copy of its profile whose item skills are all 1: a player who always reaches for
+	 * the right tool. Mechanic tests use it so they test that the mechanic works, not a dice roll (the
+	 * probabilities themselves are covered by core unit tests).
+	 */
+	static Bot certain(Bot bot) {
+		io.github.flick256.sparbot.core.profile.SkillProfile p = bot.profile();
+		io.github.flick256.sparbot.core.profile.SkillProfile.ItemSkills i = p.items();
+		bot.setProfile(new io.github.flick256.sparbot.core.profile.SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(),
+			p.pingMs(), p.aim(), p.clicking(), p.reach(), p.technique(),
+			new io.github.flick256.sparbot.core.profile.SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), 1, i.gappleHealthFraction(),
+				i.eatHungerBelow(), 1, 1, 1, 1, 1),
+			p.mistakeRate(), p.panicHealthFraction()));
+		return bot;
+	}
+
 	static BotPlayer body(Bot bot) {
 		BotPlayer body = bot.body();
 		if (body == null) {
@@ -105,6 +121,32 @@ final class TestSupport {
 		for (Bot bot : bots) {
 			SparBot.bots().remove(bot, "test finished");
 		}
+	}
+
+	/**
+	 * A stone strip {@code width} x {@code length} (relative x, z from 0), for long-range tests. 26.2
+	 * encloses every test area in barrier blocks, so the strip also opens a corridor through the
+	 * barrier walls it crosses (use with a large {@code padding} so no neighbouring test is in the way).
+	 */
+	static void platform(GameTestHelper helper, int width, int length) {
+		for (int x = 0; x < width; x++) {
+			for (int z = 0; z < length; z++) {
+				helper.setBlock(x, 0, z, Blocks.STONE);
+				for (int y = 1; y <= 12; y++) {
+					BlockPos pos = new BlockPos(x, y, z);
+					if (helper.getLevel().getBlockState(helper.absolutePos(pos)).is(Blocks.BARRIER)) {
+						helper.setBlock(pos, Blocks.AIR);
+					}
+				}
+			}
+		}
+	}
+
+	/** Spawns a bot whose brain is switched off: a target dummy with full vanilla physics and damage. */
+	static Bot dummy(GameTestHelper helper, String prefix, double x, double y, double z, float yaw, String kitId) {
+		Bot bot = spawnBot(helper, prefix, x, y, z, yaw, "intermediate", kitId);
+		io.github.flick256.sparbot.bot.BotTestAccess.pauseBrain(bot, true);
+		return bot;
 	}
 
 	/** The whole 8x8x8 test volume in world coordinates. */

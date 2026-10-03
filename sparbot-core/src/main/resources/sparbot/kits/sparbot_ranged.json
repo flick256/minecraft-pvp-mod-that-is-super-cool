@@ -1,0 +1,31 @@
+{
+  "id": "sparbot_ranged",
+  "displayName": "SparBot Ranged",
+  "mode": "ranged",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "ranged",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "Bow-focused practice kit: iron armor so arrows matter, a bow and a crossbow, a sword for close range.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {"id": "minecraft:iron_helmet"},
+    "chest": {"id": "minecraft:iron_chestplate"},
+    "legs": {"id": "minecraft:iron_leggings"},
+    "feet": {"id": "minecraft:iron_boots"}
+  },
+  "offhand": null,
+  "slots": {
+    "0": {"id": "minecraft:iron_sword"},
+    "1": {"id": "minecraft:bow"},
+    "2": {"id": "minecraft:crossbow"},
+    "3": {"id": "minecraft:cooked_beef", "count": 16},
+    "9": {"id": "minecraft:arrow", "count": 64}
+  },
+  "effects": []
+}

@@ -28,6 +28,10 @@ public final class RetreatTactic implements Tactic {
 			return 0;
 		}
 		double panic = c.profile.panicHealthFraction();
+		// Worn-out armor makes every hit hurt more: disengage earlier.
+		if (averageArmorDurability(c) < 0.25) {
+			panic += 0.1;
+		}
 		boolean panicking = c.self.healthFraction() < panic;
 		boolean recovered = c.self.healthFraction() > panic + 0.15;
 		if (panicking) {
@@ -35,6 +39,18 @@ public final class RetreatTactic implements Tactic {
 		}
 		// Hysteresis: once retreating, keep going until health has recovered somewhat.
 		return c.memory.retreatTicks > 0 && !recovered ? 0.7 : 0;
+	}
+
+	private static double averageArmorDurability(BrainContext c) {
+		double total = 0;
+		int pieces = 0;
+		for (var piece : c.self.inventory().armor()) {
+			if (!piece.isEmpty()) {
+				total += piece.durability();
+				pieces++;
+			}
+		}
+		return pieces == 0 ? 1.0 : total / pieces;
 	}
 
 	@Override
