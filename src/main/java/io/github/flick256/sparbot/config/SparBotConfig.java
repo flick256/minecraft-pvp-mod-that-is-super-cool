@@ -41,6 +41,8 @@ public final class SparBotConfig {
 	public boolean kitOnRespawn = true;
 	public String defaultProfile = "intermediate";
 	public String defaultKit = "basic_sword";
+	/** Playstyle (or mix, e.g. "aggressive_rusher:0.7,kiter:0.3") new bots start with. */
+	public String defaultPlaystyle = "balanced";
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 

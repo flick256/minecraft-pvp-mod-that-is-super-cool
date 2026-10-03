@@ -67,6 +67,11 @@ public final class BotManager {
 		GameProfile gameProfile = new GameProfile(uuid, name);
 		BotConnection connection = new BotConnection();
 		Bot bot = new Bot(name, uuid, connection, profile, kit, level.dimension(), pos, yaw, uuid.getMostSignificantBits() ^ System.nanoTime());
+		try {
+			bot.setPlaystyle(SparBot.playstyles().resolve(config.defaultPlaystyle));
+		} catch (IllegalArgumentException e) {
+			SparBot.LOGGER.error("config defaultPlaystyle is invalid ({}); using balanced", e.getMessage());
+		}
 		BotPlayer player = new BotPlayer(server, level, gameProfile, ClientInformation.createDefault(), bot);
 		player.snapTo(pos.x, pos.y, pos.z, yaw, 0.0F);
 

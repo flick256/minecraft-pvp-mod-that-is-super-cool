@@ -8,6 +8,7 @@ import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.PerceptionDelay;
 import io.github.flick256.sparbot.core.sense.TargetState;
+import io.github.flick256.sparbot.core.style.Playstyle;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,23 +25,35 @@ public final class DuelBrain implements Policy {
 	private static final int TRACKING_BASE_DELAY_TICKS = 1;
 
 	private final SkillProfile profile;
+	private final Playstyle style;
 	private final Rng rng;
 	private final AimController aim;
 	private final PerceptionDelay perception = new PerceptionDelay();
 	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic(),
-		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new RodTactic());
+		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new RodTactic(), new KiteTactic());
 	private DuelMemory memory = new DuelMemory();
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
 
 	public DuelBrain(SkillProfile profile, long seed) {
-		this.profile = profile;
-		this.rng = new Rng(seed);
-		this.aim = new AimController(profile.aim(), rng.fork());
+		this(profile, Playstyle.BALANCED, seed);
 	}
 
+	/** @param profile how well the bot plays; @param style how it prefers to fight (biases are applied to the profile) */
+	public DuelBrain(SkillProfile profile, Playstyle style, long seed) {
+		this.profile = style.applyTo(profile);
+		this.style = style;
+		this.rng = new Rng(seed);
+		this.aim = new AimController(this.profile.aim(), rng.fork());
+	}
+
+	/** The effective profile: the skill profile with the playstyle's biases applied. */
 	public SkillProfile profile() {
 		return profile;
+	}
+
+	public Playstyle style() {
+		return style;
 	}
 
 	public DuelMemory memory() {
@@ -65,12 +78,16 @@ public final class DuelBrain implements Policy {
 			memory.mistake = rng.chance(profile.mistakeRate()) ? pickMistake() : Mistake.NONE;
 		}
 
-		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, rng, aim, memory);
+		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory);
 		Map<String, Double> scores = new LinkedHashMap<>();
 		Tactic best = null;
 		double bestScore = Double.NEGATIVE_INFINITY;
 		for (Tactic tactic : tactics) {
+			// The playstyle reshapes priorities; "search" is the idle fallback and is never weighted.
 			double score = tactic.score(context);
+			if (score > 0 && !(tactic instanceof SearchTactic)) {
+				score *= style.weight(tactic.name());
+			}
 			scores.put(tactic.name(), score);
 			double effective = tactic == active ? score + HYSTERESIS : score;
 			if (effective > bestScore) {
@@ -121,7 +138,7 @@ public final class DuelBrain implements Policy {
 	}
 
 	private String describe() {
-		return "mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks + " trackTicks=" + memory.trackingDelayTicks
+		return "style=" + style.id() + " mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks + " trackTicks=" + memory.trackingDelayTicks
 			+ " clickAt=" + String.format("%.2f", memory.cooldownThreshold);
 	}
 }

@@ -1,0 +1,8 @@
+{
+  "id": "balanced",
+  "displayName": "Balanced",
+  "description": "No preferences: every tactic at face value.",
+  "tacticWeights": {},
+  "skillBias": {},
+  "preferredRange": 0
+}

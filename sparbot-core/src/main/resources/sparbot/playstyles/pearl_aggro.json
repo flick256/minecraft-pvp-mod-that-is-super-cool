@@ -1,0 +1,15 @@
+{
+  "id": "pearl_aggro",
+  "displayName": "Pearl Aggro",
+  "description": "Closes every gap with ender pearls and fights up close.",
+  "tacticWeights": {
+    "pearl": 1.5,
+    "ranged": 0.7,
+    "engage": 1.05
+  },
+  "skillBias": {
+    "pearlSkill": 0.5,
+    "panicHealthFraction": -0.05
+  },
+  "preferredRange": 0
+}

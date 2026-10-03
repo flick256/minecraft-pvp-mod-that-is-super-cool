@@ -8,6 +8,7 @@ import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.SelfState;
 import io.github.flick256.sparbot.core.sense.TargetState;
+import io.github.flick256.sparbot.core.style.Playstyle;
 
 /** Per-tick view shared by all tactics: the (delayed) observation plus the brain's persistent memory. */
 public final class BrainContext {
@@ -26,8 +27,12 @@ public final class BrainContext {
 	public final Rng rng;
 	public final AimController aim;
 	public final DuelMemory memory;
+	/** The playstyle the bot fights with (weights are already applied to scores by the brain). */
+	public final Playstyle style;
 
-	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Rng rng, AimController aim, DuelMemory memory) {
+	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Playstyle style, Rng rng, AimController aim,
+		DuelMemory memory) {
+		this.style = style;
 		this.observation = observation;
 		this.self = observation.self();
 		this.target = observation.target();

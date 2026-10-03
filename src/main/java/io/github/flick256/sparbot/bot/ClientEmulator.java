@@ -289,7 +289,7 @@ public final class ClientEmulator {
 	}
 
 	/** LocalPlayer#raycastHitResult with partial tick 1.0 (the server has no frames between ticks). */
-	static HitResult raycast(BotPlayer player) {
+	public static HitResult raycast(BotPlayer player) {
 		ItemStack active = player.getActiveItem();
 		AttackRange range = active.get(DataComponents.ATTACK_RANGE);
 		double blockRange = player.blockInteractionRange();

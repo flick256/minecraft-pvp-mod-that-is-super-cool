@@ -7,9 +7,10 @@ and fall damage through the same vanilla code as a human, uses up totems, drops 
 The mod is server-side only. It works in singleplayer (the integrated server), on LAN and on dedicated
 servers, and players don't need to install anything.
 
-> Status: **milestone 3**: bots fight with the full modern toolset (sword, axe against shields,
+> Status: **milestone 4**: bots fight with the full modern toolset (sword, axe against shields,
 > block-hitting, bow, crossbow, fishing rod, ender pearls, golden apples, totems) at a chosen skill
-> level, using a full kit system with capture and personal layouts.
+> level and **playstyle**, using a full kit system with capture and personal layouts. A debug view shows
+> what a bot is thinking.
 
 ## What a bot can do (milestone 3)
 
@@ -70,7 +71,9 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot kit info <kit>` | Shows a kit's provenance (source, version, confidence, deviations) |
 | `/sparbot layout capture <id> <kit>` | Saves where **you** keep that kit's items as a personal layout |
 | `/sparbot layout set <bot> <layout>` / `clear <bot>` | Makes a bot copy a layout, or go back to the kit's default |
-| `/sparbot list` / `profiles` / `kits` / `layout list` | Lists bots, skill profiles, kits and layouts |
+| `/sparbot style set <bot> <style or mix>` | Changes how the bot fights, e.g. `kiter` or `aggressive_rusher:0.7,kiter:0.3` |
+| `/sparbot debug <bot>` / `debug off` | Shows the bot's tactic, top scores, distance, health and charge on **your** action bar, and a spark where its crosshair points |
+| `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
 | `/sparbot reload` | Reloads the config, profiles and kits |
 
@@ -88,6 +91,28 @@ that sets:
 To add your own, copy a preset from
 `sparbot-core/src/main/resources/sparbot/profiles/` into `config/sparbot/profiles/`, change it, then run
 `/sparbot reload`. The validator rejects profiles beyond human limits, such as reactions under 100 ms or more than 20 CPS.
+
+## Playstyles
+
+A playstyle is *how* a bot likes to fight; the skill profile is *how well*. Any profile can be combined
+with any style, and styles can be mixed by share.
+
+| Style | Plays like |
+|---|---|
+| `balanced` | No preferences |
+| `aggressive_rusher` | Always pressing; rarely retreats, pearls in, trades hits for crits |
+| `wtap_combo` | Sprint-reset combos: lots of W-taps and S-taps, keeps spacing |
+| `defensive_shield` | Turtles behind the shield, block-hits, heals early, backs off when hurt |
+| `kiter` | Keeps about 12 blocks away, shoots, rods anyone who runs |
+| `pearl_aggro` | Closes every gap with ender pearls |
+
+A style is JSON with:
+- `tacticWeights`: multipliers on the utility AI's tactic scores
+- `skillBias`: shifts to profile skills, such as `wTapSkill: +0.3`
+- an optional `preferredRange`
+
+Put your own in `config/sparbot/playstyles/`. Crystal, mace/spear/wind-charge and cart styles arrive with
+their game modes (M6), because those mechanics are not in the bot yet.
 
 ## Kits
 

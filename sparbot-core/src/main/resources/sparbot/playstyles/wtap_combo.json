@@ -1,0 +1,14 @@
+{
+  "id": "wtap_combo",
+  "displayName": "W-tap Combo",
+  "description": "Sprint-reset combos: W-taps and S-taps after every hit to keep the opponent in a knockback chain.",
+  "tacticWeights": {},
+  "skillBias": {
+    "wTapSkill": 0.3,
+    "sTapSkill": 0.15,
+    "spacingSkill": 0.2,
+    "strafeSkill": 0.1,
+    "critSkill": -0.15
+  },
+  "preferredRange": 0
+}

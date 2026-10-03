@@ -1,0 +1,20 @@
+{
+  "id": "aggressive_rusher",
+  "displayName": "Aggressive Rusher",
+  "description": "Always pressing forward: rarely backs off, pearls in, trades hits and relies on crits.",
+  "tacticWeights": {
+    "engage": 1.15,
+    "retreat": 0.5,
+    "ranged": 0.6,
+    "guard": 0.7,
+    "pearl": 1.2,
+    "heal": 0.9
+  },
+  "skillBias": {
+    "panicHealthFraction": -0.1,
+    "critSkill": 0.1,
+    "spacingSkill": -0.2,
+    "pearlSkill": 0.2
+  },
+  "preferredRange": 0
+}

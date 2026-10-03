@@ -1,0 +1,17 @@
+{
+  "id": "defensive_shield",
+  "displayName": "Defensive Shield",
+  "description": "Turtles behind the shield, block-hits, heals early and backs off when hurt.",
+  "tacticWeights": {
+    "guard": 1.2,
+    "retreat": 1.1,
+    "heal": 1.1,
+    "engage": 0.95
+  },
+  "skillBias": {
+    "shieldSkill": 0.3,
+    "panicHealthFraction": 0.1,
+    "gappleHealthFraction": 0.15
+  },
+  "preferredRange": 0
+}

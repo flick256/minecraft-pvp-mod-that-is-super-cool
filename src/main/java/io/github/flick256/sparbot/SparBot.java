@@ -3,6 +3,8 @@ package io.github.flick256.sparbot;
 import io.github.flick256.sparbot.bot.BotManager;
 import io.github.flick256.sparbot.command.SparBotCommand;
 import io.github.flick256.sparbot.config.SparBotConfig;
+import io.github.flick256.sparbot.debug.DebugOverlay;
+import io.github.flick256.sparbot.style.PlaystyleRegistry;
 import io.github.flick256.sparbot.kit.KitRegistry;
 import io.github.flick256.sparbot.profile.ProfileRegistry;
 import io.github.flick256.sparbot.stats.StatsTracker;
@@ -28,6 +30,8 @@ public final class SparBot implements ModInitializer {
 	private static final ProfileRegistry PROFILES = new ProfileRegistry();
 	private static final KitRegistry KITS = new KitRegistry();
 	private static final BotManager BOTS = new BotManager();
+	private static final PlaystyleRegistry STYLES = new PlaystyleRegistry();
+	private static final DebugOverlay DEBUG = new DebugOverlay();
 
 	@Override
 	public void onInitialize() {
@@ -36,6 +40,7 @@ public final class SparBot implements ModInitializer {
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> SparBotCommand.register(dispatcher));
 		ServerLifecycleEvents.SERVER_STARTED.register(SparBot::reloadKits);
 		ServerTickEvents.END_SERVER_TICK.register(BOTS::tick);
+		ServerTickEvents.END_SERVER_TICK.register(DEBUG::tick);
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> BOTS.removeAll("server stopping"));
 		LOGGER.info("SparBot initialised: {} skill profiles, enabled={}", PROFILES.ids().size(), config.enabled);
 	}
@@ -43,6 +48,7 @@ public final class SparBot implements ModInitializer {
 	public static void reloadConfigAndProfiles() {
 		config = SparBotConfig.load(configDir().resolve("sparbot.json"));
 		PROFILES.reload(configDir().resolve("sparbot").resolve("profiles"));
+		STYLES.reload(configDir().resolve("sparbot").resolve("playstyles"));
 	}
 
 	public static void reloadKits(MinecraftServer server) {
@@ -64,6 +70,14 @@ public final class SparBot implements ModInitializer {
 
 	public static KitRegistry kits() {
 		return KITS;
+	}
+
+	public static PlaystyleRegistry playstyles() {
+		return STYLES;
+	}
+
+	public static DebugOverlay debug() {
+		return DEBUG;
 	}
 
 	public static BotManager bots() {

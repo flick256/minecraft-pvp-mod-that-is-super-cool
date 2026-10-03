@@ -14,6 +14,7 @@ import io.github.flick256.sparbot.core.brain.DecisionTrace;
 import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.kit.Layout;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
+import io.github.flick256.sparbot.core.style.Playstyle;
 import io.github.flick256.sparbot.kit.KitApplier;
 import io.github.flick256.sparbot.kit.KitCapture;
 import java.io.IOException;
@@ -38,6 +39,8 @@ public final class SparBotCommand {
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.profiles().ids(), builder);
 	private static final SuggestionProvider<CommandSourceStack> KIT_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().ids(), builder);
+	private static final SuggestionProvider<CommandSourceStack> STYLE_IDS =
+		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.playstyles().ids(), builder);
 	private static final SuggestionProvider<CommandSourceStack> LAYOUT_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().layoutIds(), builder);
 
@@ -162,6 +165,33 @@ public final class SparBotCommand {
 				}))))
 			.then(Commands.literal("list").executes(ctx -> ok(ctx, "Layouts: " + String.join(", ", SparBot.kits().layoutIds())))));
 
+		root.then(Commands.literal("style")
+			.then(Commands.literal("set").then(botArgument()
+				.then(Commands.argument("style", StringArgumentType.greedyString()).suggests(STYLE_IDS).executes(ctx -> {
+					Bot bot = bot(ctx);
+					Playstyle style;
+					try {
+						style = SparBot.playstyles().resolve(StringArgumentType.getString(ctx, "style"));
+					} catch (IllegalArgumentException e) {
+						throw new SimpleCommandExceptionType(Component.literal(e.getMessage())).create();
+					}
+					bot.setPlaystyle(style);
+					return ok(ctx, bot.name() + " now fights as " + style.displayName() + " (" + style.id() + ")");
+				}))))
+			.then(Commands.literal("list").executes(ctx -> ok(ctx, "Playstyles: " + String.join(", ", SparBot.playstyles().ids())
+				+ " (mix them, e.g. aggressive_rusher:0.7,kiter:0.3)"))));
+
+		root.then(Commands.literal("debug")
+			.then(Commands.literal("off").executes(ctx -> {
+				boolean was = SparBot.debug().stop(ctx.getSource().getPlayerOrException());
+				return ok(ctx, was ? "Debug view off" : "Debug view was not on");
+			}))
+			.then(botArgument().executes(ctx -> {
+				Bot bot = bot(ctx);
+				SparBot.debug().watch(ctx.getSource().getPlayerOrException(), bot);
+				return ok(ctx, "Watching " + bot.name() + "'s mind on your action bar; the white spark is its crosshair. /sparbot debug off to stop");
+			})));
+
 		root.then(Commands.literal("list").executes(ctx -> {
 			if (SparBot.bots().all().isEmpty()) {
 				return ok(ctx, "No bots");
@@ -183,7 +213,7 @@ public final class SparBotCommand {
 			String scores = trace.scores().entrySet().stream()
 				.map(e -> e.getKey() + "=" + String.format("%.2f", e.getValue()))
 				.collect(Collectors.joining(" "));
-			return ok(ctx, String.format("%s [%s/%s] tactic=%s scores{%s} dist=%.2f %s", bot.name(), bot.profile().id(), bot.kit().id(),
+			return ok(ctx, String.format("%s [%s/%s/%s] tactic=%s scores{%s} dist=%.2f %s", bot.name(), bot.profile().id(), bot.playstyle().id(), bot.kit().id(),
 				trace.tactic(), scores, trace.targetDistance(), trace.note()));
 		})));
 

@@ -20,10 +20,12 @@ sparbot-core/        pure Java, no Minecraft/Fabric on the classpath (enforced b
   brain/             Policy interface, utility AI (DuelBrain + tactics), Movement edge safety
   item/              ItemKind, ItemInfo, InventoryState (what the bot knows about its items)
   kit/               Kit model with provenance, KitValidator, Layout, bundled kits
+  style/             Playstyle (tactic weights, skill biases, preferred range), presets, mixing
   stats/             FightStats, Elo
 src/main/            the Fabric mod (server side)
   bot/               BotPlayer body, BotConnection, ClientEmulator, Perception, MortalityGuard, BotManager
   kit/ profile/      registries; KitApplier validates kits against the live registries
+  style/ debug/       PlaystyleRegistry; DebugOverlay (action bar and crosshair particles for one viewer)
   command/ config/ stats/ mixin/
 src/gametest/        in-game tests run by `./gradlew build`
 ```
@@ -70,7 +72,10 @@ so the bot doesn't dither. The bands are in `Scores`: melee 0.6, specialists 0.7
 pearl), and 0.8+ for survival (retreat, heal, re-totem). "Will this player use X?" is rolled from
 the profile's skill once per decision window (`Decision`), not every tick.
 
-Tactics: engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
+brain is built, so the same brain plays every style.
+
+Tactics: kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
 rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
@@ -82,8 +87,8 @@ uses, to find the pitch that lands on target.
 | M1 | Mortal bot body, perception, constrained inputs, skill profiles, sword duel, mortality tests | done |
 | M2 | Full kit system: slot-for-slot JSON with any item component, provenance, validator, kit and layout capture, eating, hotbar and offhand swaps, inventory clicks | done |
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
-| M4 | Playstyles (weighted tactics, mixable at runtime), client debug overlay | next |
-| M5 | Matches: game-mode modules, arenas, rounds, cleanup, bot-vs-bot, Elo benchmark, training-world extension points | |
+| M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
+| M5 | Matches: game-mode modules, arenas, rounds, cleanup, bot-vs-bot, Elo benchmark, training-world extension points | next |
 | M6 | Mode packs: NoDebuff, Mace and wind charges, Spear, Crystal, Cart PvP, UHC | |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |

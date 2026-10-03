@@ -25,6 +25,8 @@ import net.minecraft.world.phys.Vec3;
 /** Shared helpers for SparBot GameTests. */
 final class TestSupport {
 	private static final AtomicInteger NAMES = new AtomicInteger();
+	/** The in-memory channel of each test "human", so tests can read what the server sent them. */
+	private static final java.util.Map<String, EmbeddedChannel> CHANNELS = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private TestSupport() {
 	}
@@ -104,7 +106,7 @@ final class TestSupport {
 		GameProfile profile = new GameProfile(UUID.randomUUID(), name);
 		ServerPlayer player = new ServerPlayer(level.getServer(), level, profile, ClientInformation.createDefault());
 		Connection connection = new Connection(PacketFlow.SERVERBOUND);
-		new EmbeddedChannel(connection);
+		CHANNELS.put(name, new EmbeddedChannel(connection));
 		level.getServer().getPlayerList().placeNewPlayer(connection, player, CommonListenerCookie.createInitial(profile, false));
 		player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
 		player.setGameMode(GameType.SURVIVAL);
@@ -113,7 +115,19 @@ final class TestSupport {
 		return player;
 	}
 
+	/** Every packet the server has sent this test player so far (drains the channel). */
+	static java.util.List<Object> sentTo(ServerPlayer player) {
+		EmbeddedChannel channel = CHANNELS.get(player.getPlainTextName());
+		java.util.List<Object> packets = new java.util.ArrayList<>();
+		Object msg;
+		while ((msg = channel.readOutbound()) != null) {
+			packets.add(msg);
+		}
+		return packets;
+	}
+
 	static void removeRealPlayer(ServerPlayer player) {
+		CHANNELS.remove(player.getPlainTextName());
 		player.level().getServer().getPlayerList().remove(player);
 	}
 

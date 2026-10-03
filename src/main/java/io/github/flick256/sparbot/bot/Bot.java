@@ -13,6 +13,7 @@ import io.github.flick256.sparbot.core.math.Rng;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.stats.FightStats;
+import io.github.flick256.sparbot.core.style.Playstyle;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
@@ -33,6 +34,7 @@ public final class Bot {
 	private final FightStats stats = new FightStats();
 	private final long seed;
 	private SkillProfile profile;
+	private Playstyle playstyle = Playstyle.BALANCED;
 	private Kit kit;
 	private @Nullable Layout layout;
 	private Policy policy;
@@ -118,8 +120,24 @@ public final class Bot {
 
 	public void setProfile(SkillProfile profile) {
 		this.profile = profile;
-		this.policy = new DuelBrain(profile, seed);
-		this.shaper = new InputShaper(profile, new Rng(seed ^ 0x5EED), SparBot.config().maxCps);
+		rebuildBrain();
+	}
+
+	/** Changes how the bot prefers to fight; its skill level stays the same. */
+	public void setPlaystyle(Playstyle playstyle) {
+		this.playstyle = playstyle;
+		rebuildBrain();
+	}
+
+	public Playstyle playstyle() {
+		return playstyle;
+	}
+
+	private void rebuildBrain() {
+		DuelBrain brain = new DuelBrain(profile, playstyle, seed);
+		this.policy = brain;
+		// The shaper enforces limits from the effective (playstyle-biased) profile.
+		this.shaper = new InputShaper(brain.profile(), new Rng(seed ^ 0x5EED), SparBot.config().maxCps);
 	}
 
 	/** Forget everything about the last fight (respawn, new round). Stats are kept. */
