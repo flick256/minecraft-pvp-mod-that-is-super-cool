@@ -11,9 +11,21 @@ import java.util.List;
  * @param roundSeconds a round still running after this long ends by timeout
  * @param countdownSeconds fighters are held at their spawns this long before each round
  * @param timeoutRule how a timed-out round is decided: "draw" or "health" (higher health fraction wins)
+ * @param naturalRegeneration false for UHC rules: the two fighters don't heal from a full hunger bar
+ *     during the match (golden apples and potions still heal). Leaving it out means true.
  */
 public record GameMode(String id, String displayName, String description, String kit, int roundsToWin, int roundSeconds, int countdownSeconds,
-	String timeoutRule) {
+	String timeoutRule, Boolean naturalRegeneration) {
+	/** A mode with natural regeneration. */
+	public GameMode(String id, String displayName, String description, String kit, int roundsToWin, int roundSeconds, int countdownSeconds,
+		String timeoutRule) {
+		this(id, displayName, description, kit, roundsToWin, roundSeconds, countdownSeconds, timeoutRule, true);
+	}
+
+	public boolean regenerates() {
+		return naturalRegeneration == null || naturalRegeneration;
+	}
+
 	public List<String> validate() {
 		List<String> errors = new ArrayList<>();
 		if (id == null || !id.matches("[a-z0-9_\\-]+")) {

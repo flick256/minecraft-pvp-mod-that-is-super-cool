@@ -15,6 +15,8 @@ import java.util.List;
  *     how many blocks the ground drops one block away; {@link #VOID_DROP} means no ground found
  * @param inventory own inventory, hotbar, offhand, armor and item-use state
  * @param effects active status effects
+ * @param onFire burning (the fire overlay on screen)
+ * @param inLava standing in lava
  */
 public record SelfState(
 	Vec3 position,
@@ -37,8 +39,18 @@ public record SelfState(
 	boolean holdingMeleeWeapon,
 	int[] dropDepth,
 	InventoryState inventory,
-	List<EffectInfo> effects
+	List<EffectInfo> effects,
+	boolean onFire,
+	boolean inLava
 ) {
+	/** Not burning and not in lava. */
+	public SelfState(Vec3 position, Vec3 eyePosition, Vec3 velocity, float yaw, float pitch, float health, float maxHealth, float absorption,
+		int foodLevel, boolean onGround, boolean sprinting, boolean inWater, boolean horizontalCollision, double fallDistance, float attackStrength,
+		double attackReach, int hurtTime, boolean holdingMeleeWeapon, int[] dropDepth, InventoryState inventory, List<EffectInfo> effects) {
+		this(position, eyePosition, velocity, yaw, pitch, health, maxHealth, absorption, foodLevel, onGround, sprinting, inWater, horizontalCollision,
+			fallDistance, attackStrength, attackReach, hurtTime, holdingMeleeWeapon, dropDepth, inventory, effects, false, false);
+	}
+
 	public static final int VOID_DROP = 64;
 	public static final int DIRECTIONS = 8;
 

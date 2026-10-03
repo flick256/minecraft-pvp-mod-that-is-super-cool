@@ -96,6 +96,9 @@ public final class ItemClassifier {
 		if (stack.is(Items.COBWEB)) {
 			return ItemKind.COBWEB;
 		}
+		if (stack.is(Items.BUCKET)) {
+			return ItemKind.BUCKET;
+		}
 		if (stack.is(Items.WATER_BUCKET)) {
 			return ItemKind.WATER_BUCKET;
 		}

@@ -40,6 +40,8 @@ public final class Match {
 		this.b = b;
 		this.state = new MatchState(mode);
 		this.manager = manager;
+		MatchRules.withoutRegeneration(a.uuid(), !mode.regenerates());
+		MatchRules.withoutRegeneration(b.uuid(), !mode.regenerates());
 	}
 
 	/** Returns true once the match has finished and cleaned up. */
@@ -192,6 +194,7 @@ public final class Match {
 			manager.elo().save();
 		}
 		for (Fighter fighter : new Fighter[] {a, b}) {
+			MatchRules.withoutRegeneration(fighter.uuid(), false);
 			ServerPlayer player = fighter == a ? pa : pb;
 			if (fighter.isBot()) {
 				Bot bot = fighter.bot();

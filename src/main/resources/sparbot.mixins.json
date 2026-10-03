@@ -3,6 +3,7 @@
 	"package": "io.github.flick256.sparbot.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"FoodDataMixin",
 		"PlayerListMixin"
 	],
 	"injectors": {

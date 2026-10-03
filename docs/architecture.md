@@ -75,6 +75,8 @@ mostly the bot's own placements, which a player knows about without reacting to 
 - **Using items on blocks:** with the crosshair on a block, the client first sends
   `ServerboundUseItemOnPacket` for items that act on blocks (blocks, end crystals, potions), then, if that
   did nothing, uses the item in the air. The bot sends the same packets in the same order.
+- **UHC regeneration:** game rules are server-wide, so `FoodDataMixin` makes the regeneration check
+  return false only for the two fighters of a match whose mode turns natural regeneration off.
 - **Join protection:** players are invulnerable until their client reports it has loaded. The bot sends
   `ServerboundPlayerLoadedPacket` immediately after joining and respawning.
 - **Disconnecting:** vanilla only closes a connection after the disconnect packet is delivered, so
@@ -94,7 +96,7 @@ the profile's skill once per decision window (`Decision`), not every tick.
 A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
 brain is built, so the same brain plays every style.
 
-Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), cart (rail, TNT minecart, Flame arrow), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), cart (rail, TNT minecart, Flame arrow), lava, web and water (UHC), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
 rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
@@ -108,7 +110,7 @@ uses, to find the pitch that lands on target.
 | M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
-| M6 | Mode packs: NoDebuff (done: pot, refill, buff tactics), Mace and wind charges (done), Spear (done), Crystal (done), Cart PvP (done), UHC | in progress |
+| M6 | Mode packs: NoDebuff (pot, refill, buff), Mace and wind charges, Spear, Crystal, Cart PvP, UHC (lava, water, webs, no natural regeneration) | done |
 | M7 | Recording and replay, config GUI | |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |

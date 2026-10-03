@@ -44,6 +44,11 @@ final class BlockPlay {
 		return spacing(c, look, press).withUse(click);
 	}
 
+	/** The block someone standing at {@code feet} stands on. */
+	static BlockSpot groundUnder(Vec3 feet) {
+		return new BlockSpot((int) Math.floor(feet.x()), (int) Math.floor(feet.y() - 1.0E-3), (int) Math.floor(feet.z()));
+	}
+
 	/** Holds 2.5-4.5 blocks from the opponent, strafing a little, with the given look and hotbar press. */
 	static Inputs spacing(BrainContext c, float[] look, int press) {
 		double d = c.targetDistance();

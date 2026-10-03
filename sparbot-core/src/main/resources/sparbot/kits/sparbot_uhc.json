@@ -1,0 +1,98 @@
+{
+  "id": "sparbot_uhc",
+  "displayName": "SparBot UHC",
+  "mode": "uhc",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "uhc",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own UHC duel kit: diamond gear, a bow and rod, two lava and two water buckets, cobwebs, golden apples and blocks. Meant for a mode without natural regeneration (uhc_duel), so golden apples are the only healing. Not a copy of any server's BuildUHC layout.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:diamond_helmet",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
+    },
+    "chest": {
+      "id": "minecraft:diamond_chestplate",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
+    },
+    "legs": {
+      "id": "minecraft:diamond_leggings",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
+    },
+    "feet": {
+      "id": "minecraft:diamond_boots",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
+    }
+  },
+  "offhand": {
+    "id": "minecraft:shield"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:diamond_sword",
+      "enchantments": {
+        "minecraft:sharpness": 3
+      }
+    },
+    "1": {
+      "id": "minecraft:diamond_axe"
+    },
+    "2": {
+      "id": "minecraft:bow",
+      "enchantments": {
+        "minecraft:power": 2
+      }
+    },
+    "3": {
+      "id": "minecraft:fishing_rod"
+    },
+    "4": {
+      "id": "minecraft:lava_bucket"
+    },
+    "5": {
+      "id": "minecraft:water_bucket"
+    },
+    "6": {
+      "id": "minecraft:cobweb",
+      "count": 8
+    },
+    "7": {
+      "id": "minecraft:golden_apple",
+      "count": 6
+    },
+    "8": {
+      "id": "minecraft:cobblestone",
+      "count": 64
+    },
+    "9": {
+      "id": "minecraft:arrow",
+      "count": 32
+    },
+    "10": {
+      "id": "minecraft:lava_bucket"
+    },
+    "11": {
+      "id": "minecraft:water_bucket"
+    },
+    "12": {
+      "id": "minecraft:cooked_beef",
+      "count": 32
+    }
+  },
+  "effects": []
+}

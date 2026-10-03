@@ -27,7 +27,7 @@ public class MatchGameTests {
 	private static final GameMode ONE_ROUND = new GameMode("test_one", "One round", "", "basic_sword", 1, 60, 1, "health");
 
 	/** Builds the walled test arena and registers it (with spawns) under a unique id. */
-	private static Arena arena(GameTestHelper helper, String prefix) throws Exception {
+	static Arena arena(GameTestHelper helper, String prefix) throws Exception {
 		TestSupport.arena(helper);
 		ServerLevel level = helper.getLevel();
 		String id = TestSupport.uniqueName(prefix).toLowerCase();

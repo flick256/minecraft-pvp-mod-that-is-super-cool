@@ -43,6 +43,8 @@ import org.jspecify.annotations.Nullable;
 public final class Perception {
 	/** Columns deeper than this count as a void / lethal drop. */
 	private static final int MAX_DROP_SCAN = 24;
+	/** How far ahead (blocks) the bot looks for lava and fire at its own level. */
+	private static final double HAZARD_LOOKAHEAD = 1.6;
 	/** How far around its feet the bot looks for blocks to put crystals or obsidian on. */
 	private static final int BLOCK_SCAN = 5;
 	/** Forget an opponent not seen for this long (10 s). */
@@ -115,7 +117,7 @@ public final class Perception {
 				target.getHealth(), target.getMaxHealth(), target.onGround(), target.hurtTime, target.isBlocking(), true, 0,
 				target.getBbWidth() / 2.0, target.getBbHeight(),
 				ItemClassifier.classify(target.getMainHandItem()), ItemClassifier.classify(target.getOffhandItem()),
-				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue());
+				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire());
 			return lastSeen;
 		}
 		if (lastSeen == null) {
@@ -159,7 +161,9 @@ public final class Perception {
 			!held.has(DataComponents.PIERCING_WEAPON),
 			dropDepths(self),
 			ItemClassifier.inventory(self, target),
-			effects(self));
+			effects(self),
+			self.isOnFire(),
+			self.isInLava());
 	}
 
 	private static List<EffectInfo> effects(BotPlayer self) {
@@ -230,8 +234,14 @@ public final class Perception {
 
 	/**
 	 * For each of 8 compass directions one block away, how far the ground drops below the bot's feet.
-	 * Lava counts as a lethal drop; water counts as ground (a safe landing).
+	 * Lava counts as a lethal drop, also lava or fire at the bot's own level; water counts as ground (a
+	 * safe landing).
 	 */
+	private static boolean burns(ServerLevel level, BlockPos pos) {
+		BlockState state = level.getBlockState(pos);
+		return state.getFluidState().is(FluidTags.LAVA) || state.is(BlockTags.FIRE);
+	}
+
 	private static int[] dropDepths(BotPlayer self) {
 		int[] depths = new int[SelfState.DIRECTIONS];
 		ServerLevel level = self.level();
@@ -241,6 +251,12 @@ public final class Perception {
 			double x = self.getX() - Math.sin(yaw);
 			double z = self.getZ() + Math.cos(yaw);
 			depths[i] = SelfState.VOID_DROP;
+			// Lava or fire at the bot's own level is as deadly as a cliff; it is looked for a little
+			// further ahead, since a sprinting player can't stop within a block.
+			if (burns(level, BlockPos.containing(x, feetY, z))
+				|| burns(level, BlockPos.containing(self.getX() - Math.sin(yaw) * HAZARD_LOOKAHEAD, feetY, self.getZ() + Math.cos(yaw) * HAZARD_LOOKAHEAD))) {
+				continue;
+			}
 			for (int drop = 0; drop <= MAX_DROP_SCAN; drop++) {
 				BlockPos pos = BlockPos.containing(x, feetY - 1 - drop, z);
 				if (pos.getY() < level.getMinY()) {

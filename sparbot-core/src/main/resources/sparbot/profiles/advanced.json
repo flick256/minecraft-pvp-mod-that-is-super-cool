@@ -72,7 +72,8 @@
     "maceSkill": 0.7,
     "spearSkill": 0.7,
     "crystalSkill": 0.7,
-    "cartSkill": 0.7
+    "cartSkill": 0.7,
+    "uhcSkill": 0.7
   },
   "mistakeRate": 0.04,
   "panicHealthFraction": 0.22

@@ -33,8 +33,17 @@ public record TargetState(
 	ItemKind mainHand,
 	ItemKind offhand,
 	ItemKind usingKind,
-	double armorPoints
+	double armorPoints,
+	boolean onFire
 ) {
+	/** A target that isn't burning. */
+	public TargetState(int entityId, String name, Vec3 position, Vec3 velocity, float yaw, float health, float maxHealth, boolean onGround,
+		int hurtTime, boolean blocking, boolean visible, int ticksSinceSeen, double halfWidth, double height, ItemKind mainHand,
+		ItemKind offhand, ItemKind usingKind, double armorPoints) {
+		this(entityId, name, position, velocity, yaw, health, maxHealth, onGround, hurtTime, blocking, visible, ticksSinceSeen, halfWidth, height,
+			mainHand, offhand, usingKind, armorPoints, false);
+	}
+
 	/** Closest point of the target's hitbox to {@code from}. */
 	public Vec3 closestHitboxPoint(Vec3 from) {
 		double x = clamp(from.x(), position.x() - halfWidth, position.x() + halfWidth);

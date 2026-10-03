@@ -27,6 +27,7 @@ final class BrainHarness {
 	float pitch;
 	float health = 20;
 	float attackStrength = 1;
+	boolean onFire;
 	int useTicks;
 	boolean usingOffhand;
 	boolean hookOut;
@@ -59,7 +60,7 @@ final class BrainHarness {
 
 	Inputs tick() {
 		SelfState self = new SelfState(Vec3.ZERO, new Vec3(0, 1.62, 0), Vec3.ZERO, yaw, pitch, health, 20, 0, 20, true, false, false, false, 0,
-			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects);
+			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects, onFire, false);
 		Inputs in = brain.act(new Observation(history.size(), self, target, world));
 		history.add(in);
 		if (in.inventoryOpen()) {
