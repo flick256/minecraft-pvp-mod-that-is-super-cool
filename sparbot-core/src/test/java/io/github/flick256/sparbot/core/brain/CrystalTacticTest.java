@@ -111,4 +111,17 @@ class CrystalTacticTest {
 		}
 		assertEquals("engage", h.brain.lastTrace().tactic());
 	}
+
+	@Test
+	void fightsWithTheSwordWhenRushedWithNothingToBlowUp() {
+		// Opponent in its face, no obsidian or crystal spot that wouldn't hurt the bot as much: sword them.
+		BrainHarness h = harness(new Vec3(0, 0, 2.0), Surroundings.EMPTY);
+		boolean hit = false;
+		for (int i = 0; i < 40 && !hit; i++) {
+			Inputs in = h.tick();
+			hit = in.attack() && h.slots[h.selected].kind() == ItemKind.SWORD;
+		}
+		assertTrue(hit, "hit back with the sword");
+		assertEquals("engage", h.brain.lastTrace().tactic());
+	}
 }

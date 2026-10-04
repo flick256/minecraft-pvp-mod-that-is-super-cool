@@ -14,11 +14,15 @@ public class FightGameTests {
 	private static final int SIZE = 16;
 	private static final int FIGHT_TICKS = 900;
 
-	/** A 16x16 stone floor with a 4-high glass ring, opened through the test's barrier walls. */
+	/**
+	 * A 16x16 stone floor on bedrock (crystals blow holes in the stone, and a single layer would drop the
+	 * fighters out of the world) with a 4-high glass ring, opened through the test's barrier walls.
+	 */
 	static void ring(GameTestHelper helper) {
 		TestSupport.platform(helper, SIZE, SIZE);
 		for (int x = 0; x < SIZE; x++) {
 			for (int z = 0; z < SIZE; z++) {
+				helper.setBlock(new BlockPos(x, -1, z), Blocks.BEDROCK);
 				if (x == 0 || z == 0 || x == SIZE - 1 || z == SIZE - 1) {
 					for (int y = 1; y <= 4; y++) {
 						helper.setBlock(new BlockPos(x, y, z), Blocks.GLASS);
