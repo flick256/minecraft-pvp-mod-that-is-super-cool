@@ -12,7 +12,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Watches a bot-vs-bot fight tick by tick: logs every change of tactic, and measures the longest
- * stretch a bot spent frozen (no movement keys, no click, no right click, not moving) while its
+ * stretch a bot spent frozen (no movement keys, no click or held attack, no right click, not moving) while its
  * opponent was alive and close. That is the "locks up until you hit it" bug, caught without a human.
  */
 final class FightDiagnostics {
@@ -65,7 +65,8 @@ final class FightDiagnostics {
 		Vec3 pos = self.position();
 		boolean moved = lastPosition != null && pos.distanceTo(lastPosition) > 0.01;
 		lastPosition = pos;
-		boolean idle = in.forward() == 0 && in.strafe() == 0 && !in.attack() && !in.use() && !in.jump() && !moved;
+		// (Holding attack is cutting through a web: slow in the air, but not frozen.)
+		boolean idle = in.forward() == 0 && in.strafe() == 0 && !in.attack() && !in.holdAttack() && !in.use() && !in.jump() && !moved;
 		if (idle && self.distanceTo(other) < CLOSE) {
 			if (++stall > longestStall) {
 				longestStall = stall;

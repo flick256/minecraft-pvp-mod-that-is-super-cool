@@ -59,16 +59,18 @@ public class CrystalGameTests {
 		for (int slot : new int[] {1, 2, 12}) {
 			body.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY); // anchors only: no crystals or obsidian
 		}
-		Bot target = TestSupport.dummy(helper, "Victim", 5.0, 1, 3.5, 90, "basic_sword");
+		// In netherite with totems, so the sword alone doesn't finish it before an anchor goes down.
+		Bot target = TestSupport.dummy(helper, "Victim", 5.0, 1, 3.5, 90, "sparbot_crystal");
 		BotPlayer victim = TestSupport.body(target);
 		bot.setAssignedTarget(victim.getUUID());
 		int anchorsBefore = body.getInventory().countItem(Items.RESPAWN_ANCHOR);
 		int glowstoneBefore = body.getInventory().countItem(Items.GLOWSTONE);
 		helper.succeedWhen(() -> {
 			helper.assertTrue(body.getInventory().countItem(Items.RESPAWN_ANCHOR) < anchorsBefore, "an anchor was placed, now " + bot.trace().tactic() + " "
-				+ bot.trace().note());
+				+ bot.trace().note() + "; victim alive " + victim.isAlive() + " at " + victim.position() + ", bot at " + body.position());
 			helper.assertTrue(body.getInventory().countItem(Items.GLOWSTONE) < glowstoneBefore, "and charged with glowstone");
-			helper.assertTrue(!victim.isAlive() || victim.getHealth() < victim.getMaxHealth(), "then set off, hurting the opponent");
+			helper.assertTrue(!victim.isAlive() || victim.getHealth() < victim.getMaxHealth() || victim.getInventory().countItem(Items.TOTEM_OF_UNDYING) < 5,
+				"then set off, hurting the opponent");
 			helper.assertTrue(body.isAlive(), "the bot survived its own anchor");
 			SparBot.LOGGER.info("Anchor test: victim health {}, bot health {}", victim.getHealth(), body.getHealth());
 			TestSupport.remove(bot, target);

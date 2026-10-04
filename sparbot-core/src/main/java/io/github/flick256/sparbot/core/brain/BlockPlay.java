@@ -103,7 +103,8 @@ final class BlockPlay {
 		if (--m.ticksUntilStrafeSwitch <= 0) {
 			m.strafeDirection = -m.strafeDirection;
 			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
-			m.strafeActive = c.rng.chance(c.skill(Technique.STRAFE) * 0.25);
+			// Block-mode players keep moving while they hold their distance (standing still gets them hit).
+			m.strafeActive = c.rng.chance(0.2 + c.skill(Technique.STRAFE) * 0.5);
 		}
 		int strafe = m.strafeActive ? m.strafeDirection : 0;
 		boolean jump = c.self.horizontalCollision() && c.self.onGround() && forward > 0;

@@ -23,7 +23,10 @@ import io.github.flick256.sparbot.core.sense.SelfState;
  * Skill decides how reliably and how fast the bot reacts.
  */
 public final class WaterTactic implements Tactic {
-	private static final int PLACE_TIMEOUT = 30;
+	/** A pour takes a practised player a few ticks; one that hasn't gone down by this is given up on. */
+	private static final int PLACE_TIMEOUT = 12;
+	/** After a pour that wouldn't go down, other ways out (the sword on a web, running) get a go first. */
+	private static final int FAILED_COOLDOWN = 40;
 	private static final int PICKUP_TIMEOUT = 40;
 	/** Looking at least this far down, the crosshair is on the ground under the bot. */
 	private static final float DOWN = 80.0F;
@@ -43,6 +46,7 @@ public final class WaterTactic implements Tactic {
 	private int ticks;
 	private int bucketSlot = -1;
 	private BlockSpot water;
+	private long failedAt = Long.MIN_VALUE / 2;
 
 	@Override
 	public String name() {
@@ -61,7 +65,7 @@ public final class WaterTactic implements Tactic {
 		}
 		SelfState self = c.self;
 		boolean burning = (self.onFire() || self.inLava()) && !self.inWater();
-		if (!(burning || self.inWeb()) || self.inventory().hotbarSlot(ItemKind.WATER_BUCKET) < 0) {
+		if (!(burning || self.inWeb()) || self.inventory().hotbarSlot(ItemKind.WATER_BUCKET) < 0 || c.observation.tick() - failedAt < FAILED_COOLDOWN) {
 			return 0;
 		}
 		return willWater.get(c.rng, c.profile.items().uhcSkill(), 40) ? Scores.SURVIVAL + 0.12 : 0;
@@ -80,6 +84,7 @@ public final class WaterTactic implements Tactic {
 	public void reset() {
 		phase = Phase.IDLE;
 		willWater.reset();
+		failedAt = Long.MIN_VALUE / 2;
 	}
 
 	@Override
@@ -102,6 +107,9 @@ public final class WaterTactic implements Tactic {
 					return new Inputs(look[0], look[1], 0, 0, false, false, false, false, false, press);
 				}
 				if (ticks > PLACE_TIMEOUT || !inv.slot(bucketSlot).is(ItemKind.WATER_BUCKET)) {
+					if (ticks > PLACE_TIMEOUT) {
+						failedAt = c.observation.tick();
+					}
 					return finish();
 				}
 				Inputs onWeb = self.inWeb() ? pourOnWeb(c, look, press, holding) : null;

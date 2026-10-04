@@ -40,6 +40,11 @@ public final class CrystalTactic implements Tactic {
 	private int hittingTicks;
 	private final java.util.Map<Vec3, Long> cantHit = new java.util.HashMap<>();
 	private static final int GIVE_UP_HIT_TICKS = 10;
+	/** A block it has been trying to click for this long (fire or another block catches the crosshair first) is left alone for a while. */
+	private static final int GIVE_UP_PLACE_TICKS = 12;
+	private BlockSpot placing;
+	private int placingTicks;
+	private final java.util.Map<BlockSpot, Long> cantPlace = new java.util.HashMap<>();
 
 	@Override
 	public String name() {
@@ -71,6 +76,8 @@ public final class CrystalTactic implements Tactic {
 	@Override
 	public void reset() {
 		cantHit.clear();
+		cantPlace.clear();
+		placing = null;
 		hitting = null;
 		willCrystal.reset();
 		step = "";
@@ -94,7 +101,7 @@ public final class CrystalTactic implements Tactic {
 		}
 		if (inv.hotbarSlot(ItemKind.END_CRYSTAL) >= 0) {
 			Optional<BlockSpot> base = c.world.crystalBases().stream()
-				.filter(b -> b.horizontalDistanceTo(t.position()) <= BlockPlay.NEAR_TARGET && b.y() + 1 < eye.y() && hittable(c, b.topCenter())
+				.filter(b -> !cantPlace.containsKey(b) && b.horizontalDistanceTo(t.position()) <= BlockPlay.NEAR_TARGET && b.y() + 1 < eye.y() && hittable(c, b.topCenter())
 					&& BlockPlay.worth(c, b.topCenter(), Explosions.CRYSTAL_POWER, skill))
 				.min(Comparator.comparingDouble(b -> -Explosions.rawDamage(b.topCenter(), t.position(), Explosions.CRYSTAL_POWER)));
 			if (base.isPresent()) {
@@ -104,6 +111,9 @@ public final class CrystalTactic implements Tactic {
 		int obsidian = obsidianSlot(inv);
 		Optional<BlockSpot> spot = obsidian < 0 ? Optional.empty() : c.world.groundSpots().stream()
 			.filter(s -> {
+				if (cantPlace.containsKey(s)) {
+					return false;
+				}
 				double d = s.horizontalDistanceTo(t.position());
 				// Next to the opponent, not under them (a block can't be placed into a player).
 				Vec3 crystalAt = new Vec3(s.x() + 0.5, s.y() + 2.0, s.z() + 0.5);
@@ -125,6 +135,7 @@ public final class CrystalTactic implements Tactic {
 	@Override
 	public Inputs act(BrainContext c) {
 		cantHit.values().removeIf(t -> c.observation.tick() - t > 100);
+		cantPlace.values().removeIf(t -> c.observation.tick() - t > 100);
 		SelfState self = c.self;
 		InventoryState inv = self.inventory();
 		TargetState t = c.seen();
@@ -134,6 +145,13 @@ public final class CrystalTactic implements Tactic {
 		Vec3 eye = self.eyePosition();
 		Choice choice = choose(c);
 		step = choice.step();
+		if (choice.block() != null) {
+			placingTicks = choice.block().equals(placing) ? placingTicks + 1 : 0;
+			placing = choice.block();
+			if (placingTicks > GIVE_UP_PLACE_TICKS) {
+				cantPlace.put(placing, c.observation.tick());
+			}
+		}
 		switch (choice.step()) {
 			case "hit" -> {
 				Vec3 p = choice.crystal();
