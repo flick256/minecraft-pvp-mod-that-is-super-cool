@@ -22,7 +22,7 @@ class SpearTacticTest {
 		SkillProfile.ItemSkills i = p.items();
 		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(), p.reach(),
 			p.technique(), new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), i.retotemSkill(), i.gappleHealthFraction(),
-				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.rodSkill(), i.potHealthFraction(), i.maceSkill(), 1.0, i.crystalSkill(), i.cartSkill(), i.uhcSkill()),
+				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.potHealthFraction(), i.maceSkill(), 1.0, i.crystalSkill(), i.cartSkill(), i.uhcSkill()),
 			p.mistakeRate(), p.panicHealthFraction());
 	}
 
@@ -90,7 +90,7 @@ class SpearTacticTest {
 		SkillProfile.ItemSkills i = p.items();
 		SkillProfile noSpear = new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(),
 			p.reach(), p.technique(), new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), i.retotemSkill(), i.gappleHealthFraction(),
-				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.rodSkill(), i.potHealthFraction(), i.maceSkill(), 0.0, i.crystalSkill(), i.cartSkill(), i.uhcSkill()),
+				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.potHealthFraction(), i.maceSkill(), 0.0, i.crystalSkill(), i.cartSkill(), i.uhcSkill()),
 			p.mistakeRate(), p.panicHealthFraction());
 		BrainHarness h = new BrainHarness(noSpear, TestFixtures.inventory(0, SPEAR, 1, TestFixtures.SWORD), TestFixtures.target(new Vec3(0, 0, 3.3), 0));
 		for (int i2 = 0; i2 < 40; i2++) {

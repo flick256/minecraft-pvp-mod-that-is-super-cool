@@ -26,7 +26,7 @@ class CrystalTacticTest {
 		SkillProfile.ItemSkills i = p.items();
 		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(), p.reach(),
 			p.technique(), new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), i.retotemSkill(), i.gappleHealthFraction(),
-				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.rodSkill(), i.potHealthFraction(), i.maceSkill(),
+				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.potHealthFraction(), i.maceSkill(),
 				i.spearSkill(), 1.0, i.cartSkill(), i.uhcSkill()),
 			p.mistakeRate(), p.panicHealthFraction());
 	}

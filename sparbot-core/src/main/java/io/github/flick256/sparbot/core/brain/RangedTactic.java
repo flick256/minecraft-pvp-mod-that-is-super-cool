@@ -19,6 +19,10 @@ public final class RangedTactic implements Tactic {
 	static final double MIN_RANGE = 8.0;
 	static final double MAX_RANGE = 40.0;
 	private static final int BOW_FULL_DRAW_TICKS = 20;
+	/** Stop strafing this many ticks before a full draw, so the release comes from standing still. */
+	private static final int STOP_BEFORE_SHOT = 4;
+	/** Blocks per tick: slower than this counts as standing still for a shot. */
+	private static final double STILL = 0.04;
 	private static final int MAX_HOLD_TICKS = 70;
 
 	private final Decision wantsRanged = new Decision();
@@ -71,12 +75,19 @@ public final class RangedTactic implements Tactic {
 		float tolerance = (float) (0.8 + (1.0 - c.profile.items().bowSkill()) * 3.0);
 		boolean aimed = c.aimError(goal[0], goal[1]) < tolerance;
 
+		// A shot carries the shooter's own motion, and a loaded crossbow doesn't slow its holder, so a
+		// skilled archer plants their feet for the shot and fires once they have stopped.
+		boolean aboutToShoot = inHand && (crossbow ? weapon.charged()
+			: inv.usingItem() && inv.usingKind() == ItemKind.BOW && inv.useTicks() >= BOW_FULL_DRAW_TICKS - STOP_BEFORE_SHOT);
+		boolean plantFeet = aboutToShoot && c.memory.plantsFeet.get(c.rng, c.profile.items().bowSkill(), 40);
+		boolean still = !plantFeet || Math.hypot(c.memory.selfMotion.x(), c.memory.selfMotion.z()) < STILL;
+
 		boolean use = false;
 		if (inHand) {
 			if (crossbow) {
 				if (weapon.charged()) {
 					// Loaded: one press fires when on target.
-					use = aimed && !crossbowFiring;
+					use = aimed && still && !crossbowFiring;
 					crossbowFiring = use;
 				} else {
 					crossbowFiring = false;
@@ -87,10 +98,14 @@ public final class RangedTactic implements Tactic {
 				boolean drawing = inv.usingItem() && inv.usingKind() == ItemKind.BOW;
 				boolean fullyDrawn = drawing && inv.useTicks() >= BOW_FULL_DRAW_TICKS;
 				// Keep drawing until full power and on target; let go if held far too long.
-				use = !(fullyDrawn && aimed) && !(drawing && inv.useTicks() > MAX_HOLD_TICKS);
+				use = !(fullyDrawn && aimed && still) && !(drawing && inv.useTicks() > MAX_HOLD_TICKS);
 			}
 		}
-		Inputs inputs = new Inputs(look[0], look[1], 0, c.memory.strafeDirection, false, false, false, false, use, press);
+		// Strafing into a wall gets nowhere: go the other way.
+		if (c.self.horizontalCollision()) {
+			c.memory.strafeDirection = -c.memory.strafeDirection;
+		}
+		Inputs inputs = new Inputs(look[0], look[1], 0, plantFeet ? 0 : c.memory.strafeDirection, false, false, false, false, use, press);
 		return Movement.guardEdges(c, inputs);
 	}
 
@@ -107,7 +122,7 @@ public final class RangedTactic implements Tactic {
 		OptionalDouble pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());
 		if (pitch.isPresent()) {
 			int flight = Ballistics.flightTicks(projectile, (float) pitch.getAsDouble(), horizontal);
-			Vec3 own = new Vec3(c.self.velocity().x(), 0, c.self.velocity().z());
+			Vec3 own = new Vec3(c.memory.selfMotion.x(), 0, c.memory.selfMotion.z());
 			point = point.add(t.velocity().subtract(own).scale(flight * c.profile.aim().trackingLead()));
 			horizontal = point.horizontalDistanceTo(eye);
 			pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());

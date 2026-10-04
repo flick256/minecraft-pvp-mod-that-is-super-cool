@@ -10,7 +10,7 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own UHC duel kit: diamond gear, a bow and rod, two lava and two water buckets, cobwebs, golden apples and blocks. Meant for a mode without natural regeneration (uhc_duel), so golden apples are the only healing. Not a copy of any server's BuildUHC layout.",
+    "notes": "SparBot's own UHC duel kit: diamond gear, a bow, two lava and two water buckets, cobwebs, golden apples and blocks. Meant for a mode without natural regeneration (uhc_duel), so golden apples are the only healing. Not a copy of any server's BuildUHC layout.",
     "deviations": []
   },
   "armor": {
@@ -57,9 +57,6 @@
       "enchantments": {
         "minecraft:power": 2
       }
-    },
-    "3": {
-      "id": "minecraft:fishing_rod"
     },
     "4": {
       "id": "minecraft:lava_bucket"

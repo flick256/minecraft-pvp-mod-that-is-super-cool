@@ -1,7 +1,7 @@
 {
   "id": "combat_duel",
   "displayName": "Combat Duel",
-  "description": "The full SparBot combat kit: shields, axes, bows, rods, pearls, gapples and a spare totem. First to 2.",
+  "description": "The full SparBot combat kit: shields, axes, bows, pearls, gapples and a spare totem. First to 2.",
   "kit": "sparbot_combat",
   "roundsToWin": 2,
   "roundSeconds": 240,

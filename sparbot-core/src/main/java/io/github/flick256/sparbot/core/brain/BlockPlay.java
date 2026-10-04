@@ -49,6 +49,32 @@ final class BlockPlay {
 		return new BlockSpot((int) Math.floor(feet.x()), (int) Math.floor(feet.y() - 1.0E-3), (int) Math.floor(feet.z()));
 	}
 
+	/**
+	 * Where a player in the air at {@code pos} moving at {@code velocity} (blocks per tick) touches down
+	 * on ground whose top is at {@code groundTop}: vanilla's airborne physics, gravity 0.08 then drag
+	 * 0.98 vertically and 0.91 horizontally per tick. Gives up after 40 ticks.
+	 */
+	static Vec3 landing(Vec3 pos, Vec3 velocity, double groundTop) {
+		double x = pos.x();
+		double y = pos.y();
+		double z = pos.z();
+		double vx = velocity.x();
+		double vy = velocity.y();
+		double vz = velocity.z();
+		for (int t = 0; t < 40; t++) {
+			x += vx;
+			y += vy;
+			z += vz;
+			vy = (vy - 0.08) * 0.98;
+			vx *= 0.91;
+			vz *= 0.91;
+			if (y <= groundTop && vy < 0) {
+				break;
+			}
+		}
+		return new Vec3(x, Math.max(y, groundTop), z);
+	}
+
 	/** Holds 2.5-4.5 blocks from the opponent, strafing a little, with the given look and hotbar press. */
 	static Inputs spacing(BrainContext c, float[] look, int press) {
 		double d = c.targetDistance();

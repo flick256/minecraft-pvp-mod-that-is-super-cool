@@ -1,12 +1,25 @@
 package io.github.flick256.sparbot.core.brain;
 
+import io.github.flick256.sparbot.core.math.Vec3;
+
 /** State the duel brain carries between ticks. Reset on respawn / new round. */
 public final class DuelMemory {
 	final Hands hands = new Hands();
 	final Decision axeDecision = new Decision();
 	final Decision blockHitDecision = new Decision();
+	/** Whether the bot stops strafing to take its shots (decided per window from bow skill). */
+	final Decision plantsFeet = new Decision();
 	boolean axeMode;
 	int axeModeTicks;
+	/** Ticks left to follow an axe hit on a raised shield (a shield stun) with the next weapon. */
+	int stunTicks;
+	/** The follow-up was planned before the axe hit, so the weapon switch is a single key press. */
+	boolean stunPlanned;
+	/** The opponent's shield was disabled by our axe this long ago counts down from 100 (5 s): no point axing it again. */
+	int shieldDisabledTicks;
+	/** How far the bot actually moved last tick (what a thrown or shot projectile inherits). */
+	Vec3 selfMotion = Vec3.ZERO;
+	Vec3 lastSelfPosition;
 	Mistake mistake = Mistake.NONE;
 	int ticksUntilMistakeRoll;
 	int strafeDirection = 1;

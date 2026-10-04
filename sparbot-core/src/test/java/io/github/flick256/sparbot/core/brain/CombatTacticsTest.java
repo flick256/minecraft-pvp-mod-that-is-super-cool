@@ -17,11 +17,6 @@ class CombatTacticsTest {
 	private static final ItemInfo BOW = TestFixtures.item(ItemKind.BOW, "minecraft:bow", 1, 1);
 	private static final ItemInfo ARROWS = TestFixtures.item(ItemKind.ARROW, "minecraft:arrow", 32, 1);
 	private static final ItemInfo PEARLS = TestFixtures.item(ItemKind.ENDER_PEARL, "minecraft:ender_pearl", 8, 1);
-	private static final ItemInfo ROD = TestFixtures.item(ItemKind.FISHING_ROD, "minecraft:fishing_rod", 1, 1);
-
-	private static TargetState fleeing(Vec3 pos, Vec3 velocity) {
-		return new TargetState(7, "Steve", pos, velocity, 0, 20, 20, true, 0, false, true, 0, 0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15);
-	}
 
 	@Test
 	void retotemsFromTheInventoryWithOneClick() {
@@ -125,18 +120,6 @@ class CombatTacticsTest {
 	}
 
 	@Test
-	void castsTheRodAtAFleeingOpponent() {
-		InventoryState inv = TestFixtures.inventory(6, ROD);
-		BrainHarness h = new BrainHarness(TestFixtures.flawless("pro"), inv, fleeing(new Vec3(0, 0, 6), new Vec3(0, 0, 0.25)));
-		boolean cast = false;
-		for (int i = 0; i < 200 && !cast; i++) {
-			Inputs in = h.tick();
-			cast = in.use() && h.slots[h.selected].is(ItemKind.FISHING_ROD);
-		}
-		assertTrue(cast, "cast the rod");
-	}
-
-	@Test
 	void wornOutArmorMakesTheBotDisengageEarlier() {
 		// Pro panics below 20% health; with near-broken armor it should already retreat at 25%.
 		ItemInfo worn = new ItemInfo(ItemKind.ARMOR, "minecraft:diamond_chestplate", 1, 1, 0.1, false, false, null);
@@ -145,7 +128,7 @@ class CombatTacticsTest {
 			InventoryState base = TestFixtures.inventory();
 			ItemInfo piece = wornOut ? worn : fresh;
 			InventoryState inv = new InventoryState(base.slots(), base.offhand(), new ItemInfo[] {piece, piece, piece, piece}, 0, false, false, 0,
-				ItemKind.EMPTY, false, false, false);
+				ItemKind.EMPTY, false);
 			DuelBrain brain = new DuelBrain(TestFixtures.flawless("pro"), 5);
 			for (int t = 0; t < 20; t++) {
 				brain.act(new io.github.flick256.sparbot.core.sense.Observation(t,

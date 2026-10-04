@@ -6,9 +6,16 @@ import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.sense.SelfState;
 
 /**
- * Putting itself out: burning or standing in lava, look straight down and empty a water bucket at its
- * own feet (BucketItem#use places it in the space above the ground it clicks), which puts the fire out at
- * once, then scoop the water back up. Skill decides how reliably and how fast the bot reacts.
+ * Water to get out of trouble, then scoop it back up:
+ * <ul>
+ *   <li>Burning or in lava: empty the bucket at its own feet (BucketItem#use places it in the space
+ *       above the ground it clicks), which puts the fire out at once.</li>
+ *   <li>Caught in a cobweb: look down and empty it onto the web. The water lands above the web and flows
+ *       into it, and flowing water washes a web away (26.2: a web doesn't block movement, so
+ *       FlowingFluid#canHoldAnyFluid lets water replace it). If the opponent drains the water, the bot
+ *       does it again with its next bucket.</li>
+ * </ul>
+ * Skill decides how reliably and how fast the bot reacts.
  */
 public final class WaterTactic implements Tactic {
 	private static final int PLACE_TIMEOUT = 30;
@@ -43,7 +50,8 @@ public final class WaterTactic implements Tactic {
 			return Scores.SURVIVAL + 0.12;
 		}
 		SelfState self = c.self;
-		if (!(self.onFire() || self.inLava()) || self.inWater() || self.inventory().hotbarSlot(ItemKind.WATER_BUCKET) < 0) {
+		boolean burning = (self.onFire() || self.inLava()) && !self.inWater();
+		if (!(burning || self.inWeb()) || self.inventory().hotbarSlot(ItemKind.WATER_BUCKET) < 0) {
 			return 0;
 		}
 		return willWater.get(c.rng, c.profile.items().uhcSkill(), 40) ? Scores.SURVIVAL + 0.12 : 0;
@@ -89,8 +97,8 @@ public final class WaterTactic implements Tactic {
 				if (bucketSlot < 0 || inv.slot(bucketSlot).is(ItemKind.WATER_BUCKET) || ticks > PICKUP_TIMEOUT) {
 					return finish();
 				}
-				// Stand in the water until the fire is out, then scoop it up.
-				boolean out = !self.onFire() && !self.inLava();
+				// Stand in the water until the fire is out (or the web is washed away), then scoop it up.
+				boolean out = !self.onFire() && !self.inLava() && !self.inWeb();
 				boolean use = out && holding && self.pitch() >= DOWN && inv.slot(bucketSlot).is(ItemKind.BUCKET);
 				return new Inputs(look[0], look[1], 0, 0, false, false, false, false, use, press);
 			}

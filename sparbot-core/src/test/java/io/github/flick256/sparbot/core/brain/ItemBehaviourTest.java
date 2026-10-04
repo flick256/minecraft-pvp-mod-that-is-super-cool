@@ -28,7 +28,7 @@ class ItemBehaviourTest {
 			last = brain.act(new Observation(t, self, target));
 			if (last.hotbarSlot() >= 0) {
 				inv = new InventoryState(inv.slots(), inv.offhand(), inv.armor(), last.hotbarSlot(), inv.usingItem(), inv.usingOffhand(),
-					inv.useTicks(), inv.usingKind(), inv.blocking(), inv.fishingHookOut(), inv.fishingHookOnTarget());
+					inv.useTicks(), inv.usingKind(), inv.blocking());
 			}
 			if (stop.test(last)) {
 				return last;
@@ -86,7 +86,7 @@ class ItemBehaviourTest {
 		slots[5] = TestFixtures.SWORD;
 		slots[1] = TestFixtures.STEAK;
 		InventoryState inv = new InventoryState(slots, ItemInfo.EMPTY, InventoryState.empty().armor(), 1, false, false, 0, ItemKind.EMPTY,
-			false, false, false);
+			false);
 		Inputs in = runUntil(brain, inv, 20, 20, TestFixtures.target(new Vec3(0, 0, 4), 0), 40, i -> i.hotbarSlot() >= 0);
 		assertEquals(5, in.hotbarSlot());
 	}
@@ -97,7 +97,7 @@ class ItemBehaviourTest {
 		ItemInfo[] slots = TestFixtures.inventory().slots().clone();
 		slots[1] = TestFixtures.STEAK;
 		InventoryState inv = new InventoryState(slots, ItemInfo.EMPTY, InventoryState.empty().armor(), 1, false, false, 0, ItemKind.EMPTY,
-			false, false, false);
+			false);
 		SelfState self = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 1.0F, true, TestFixtures.flatGround(), inv, 20);
 		for (int t = 0; t < 3; t++) {
 			Inputs in = brain.act(new Observation(t, self, TestFixtures.target(new Vec3(0, 0, 2.5), 0)));

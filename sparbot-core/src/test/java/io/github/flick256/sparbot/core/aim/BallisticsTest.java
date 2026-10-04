@@ -9,12 +9,9 @@ import org.junit.jupiter.api.Test;
 class BallisticsTest {
 	@Test
 	void solvedPitchActuallyLandsOnTarget() {
-		for (Ballistics.Projectile p : new Ballistics.Projectile[] {Ballistics.ARROW_FULL_BOW, Ballistics.ARROW_CROSSBOW, Ballistics.ENDER_PEARL, Ballistics.HOOK}) {
+		for (Ballistics.Projectile p : new Ballistics.Projectile[] {Ballistics.ARROW_FULL_BOW, Ballistics.ARROW_CROSSBOW, Ballistics.ENDER_PEARL}) {
 			double[][] shots = {{10, 0}, {20, -1.5}, {15, 3}};
 			for (double[] shot : shots) {
-				if (p == Ballistics.HOOK && shot[0] > 12) {
-					continue; // a fishing hook only reaches a dozen blocks or so
-				}
 				OptionalDouble pitch = Ballistics.solvePitch(p, shot[0], shot[1]);
 				assertTrue(pitch.isPresent(), p.name() + " should reach " + shot[0]);
 				double height = Ballistics.simulate(p, (float) pitch.getAsDouble(), shot[0]).heightAtTarget();

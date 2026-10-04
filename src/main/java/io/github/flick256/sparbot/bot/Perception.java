@@ -117,7 +117,7 @@ public final class Perception {
 				target.getHealth(), target.getMaxHealth(), target.onGround(), target.hurtTime, target.isBlocking(), true, 0,
 				target.getBbWidth() / 2.0, target.getBbHeight(),
 				ItemClassifier.classify(target.getMainHandItem()), ItemClassifier.classify(target.getOffhandItem()),
-				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire());
+				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire(), inWeb(target));
 			return lastSeen;
 		}
 		if (lastSeen == null) {
@@ -160,10 +160,11 @@ public final class Perception {
 			self.hurtTime,
 			!held.has(DataComponents.PIERCING_WEAPON),
 			dropDepths(self),
-			ItemClassifier.inventory(self, target),
+			ItemClassifier.inventory(self),
 			effects(self),
 			self.isOnFire(),
-			self.isInLava());
+			self.isInLava(),
+			inWeb(self));
 	}
 
 	private static List<EffectInfo> effects(BotPlayer self) {
@@ -237,6 +238,11 @@ public final class Perception {
 	 * Lava counts as a lethal drop, also lava or fire at the bot's own level; water counts as ground (a
 	 * safe landing).
 	 */
+	/** Whether any cobweb overlaps the entity's box (what slows it to a crawl, and what a player can see). */
+	private static boolean inWeb(LivingEntity entity) {
+		return entity.level().getBlockStates(entity.getBoundingBox().deflate(1.0E-3)).anyMatch(s -> s.is(Blocks.COBWEB));
+	}
+
 	private static boolean burns(ServerLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
 		return state.getFluidState().is(FluidTags.LAVA) || state.is(BlockTags.FIRE);

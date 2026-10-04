@@ -19,9 +19,7 @@ public record InventoryState(
 	boolean usingOffhand,
 	int useTicks,
 	ItemKind usingKind,
-	boolean blocking,
-	boolean fishingHookOut,
-	boolean fishingHookOnTarget
+	boolean blocking
 ) {
 	public static final int HOTBAR_SIZE = 9;
 	public static final int SIZE = 36;
@@ -32,7 +30,7 @@ public record InventoryState(
 		ItemInfo[] slots = new ItemInfo[SIZE];
 		java.util.Arrays.fill(slots, ItemInfo.EMPTY);
 		ItemInfo[] armor = {ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY};
-		return new InventoryState(slots, ItemInfo.EMPTY, armor, 0, false, false, 0, ItemKind.EMPTY, false, false, false);
+		return new InventoryState(slots, ItemInfo.EMPTY, armor, 0, false, false, 0, ItemKind.EMPTY, false);
 	}
 
 	public ItemInfo mainHand() {
@@ -71,9 +69,14 @@ public record InventoryState(
 	}
 
 	public int count(ItemKind kind) {
-		int total = offhand.is(kind) ? offhand.count() : 0;
+		return count(item -> item.is(kind));
+	}
+
+	/** How many matching items the bot carries (inventory and offhand). */
+	public int count(Predicate<ItemInfo> matcher) {
+		int total = !offhand.isEmpty() && matcher.test(offhand) ? offhand.count() : 0;
 		for (ItemInfo item : slots) {
-			if (item.is(kind)) {
+			if (!item.isEmpty() && matcher.test(item)) {
 				total += item.count();
 			}
 		}

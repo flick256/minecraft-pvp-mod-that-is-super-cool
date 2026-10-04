@@ -1,0 +1,39 @@
+{
+  "id": "pvphq_sword",
+  "displayName": "Sword (PvPHQ)",
+  "mode": "sword",
+  "provenance": {
+    "source": "user-supplied",
+    "server": "PvPHQ (play.pvphq.com)",
+    "mode": "sword",
+    "minecraftVersion": "26.2",
+    "confidence": "medium",
+    "verified": false,
+    "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
+    "notes": "PvPHQ's sword kit: diamond armor and a diamond sword, nothing else. Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out.",
+    "deviations": [
+      "none: transcribed from a 26.2 server"
+    ]
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:diamond_helmet"
+    },
+    "chest": {
+      "id": "minecraft:diamond_chestplate"
+    },
+    "legs": {
+      "id": "minecraft:diamond_leggings"
+    },
+    "feet": {
+      "id": "minecraft:diamond_boots"
+    }
+  },
+  "offhand": null,
+  "slots": {
+    "0": {
+      "id": "minecraft:diamond_sword"
+    }
+  },
+  "effects": []
+}

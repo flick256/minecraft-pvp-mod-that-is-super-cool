@@ -28,10 +28,9 @@ final class BrainHarness {
 	float health = 20;
 	float attackStrength = 1;
 	boolean onFire;
+	boolean inWeb;
 	int useTicks;
 	boolean usingOffhand;
-	boolean hookOut;
-	boolean hookOnTarget;
 	TargetState target;
 	io.github.flick256.sparbot.core.sense.Surroundings world = io.github.flick256.sparbot.core.sense.Surroundings.EMPTY;
 	final List<Inputs> history = new ArrayList<>();
@@ -53,14 +52,14 @@ final class BrainHarness {
 
 	InventoryState inventory() {
 		return new InventoryState(slots, offhand, InventoryState.empty().armor(), selected, useTicks > 0, usingOffhand, useTicks, usingKind(),
-			useTicks > 5 && usingKind() == ItemKind.SHIELD, hookOut, hookOnTarget);
+			useTicks > 5 && usingKind() == ItemKind.SHIELD);
 	}
 
 	List<io.github.flick256.sparbot.core.sense.EffectInfo> effects = new ArrayList<>();
 
 	Inputs tick() {
 		SelfState self = new SelfState(Vec3.ZERO, new Vec3(0, 1.62, 0), Vec3.ZERO, yaw, pitch, health, 20, 0, 20, true, false, false, false, 0,
-			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects, onFire, false);
+			attackStrength, 3.0, 0, true, TestFixtures.flatGround(), inventory(), effects, onFire, false, inWeb);
 		Inputs in = brain.act(new Observation(history.size(), self, target, world));
 		history.add(in);
 		if (in.inventoryOpen()) {

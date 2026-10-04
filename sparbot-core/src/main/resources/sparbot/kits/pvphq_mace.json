@@ -1,0 +1,168 @@
+{
+  "id": "pvphq_mace",
+  "displayName": "Mace (PvPHQ)",
+  "mode": "mace",
+  "provenance": {
+    "source": "user-supplied",
+    "server": "PvPHQ (play.pvphq.com)",
+    "mode": "mace",
+    "minecraftVersion": "26.2",
+    "confidence": "medium",
+    "verified": false,
+    "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
+    "notes": "PvPHQ's mace kit (spawns with Strength II and Speed II active, which come from the potions). Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out (the two maces are probably Density and Breach); the grey item in hotbar slot 4 is read as an elytra; hotbar slot 1 is read as a netherite axe; hotbar slot 8 (a tall purple item) and inventory slot 26 (a purple block) are not identified and are left out; yellow splash potions are read as Strength II and light blue as Swiftness II.",
+    "deviations": [
+      "none: transcribed from a 26.2 server"
+    ]
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:netherite_helmet"
+    },
+    "chest": {
+      "id": "minecraft:netherite_chestplate"
+    },
+    "legs": {
+      "id": "minecraft:netherite_leggings"
+    },
+    "feet": {
+      "id": "minecraft:netherite_boots"
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_sword"
+    },
+    "1": {
+      "id": "minecraft:netherite_axe"
+    },
+    "2": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "3": {
+      "id": "minecraft:golden_apple",
+      "count": 64
+    },
+    "4": {
+      "id": "minecraft:elytra"
+    },
+    "5": {
+      "id": "minecraft:wind_charge",
+      "count": 64
+    },
+    "6": {
+      "id": "minecraft:mace"
+    },
+    "7": {
+      "id": "minecraft:mace"
+    },
+    "9": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "10": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "11": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "12": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "13": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "14": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "15": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "16": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "17": {
+      "id": "minecraft:golden_apple",
+      "count": 64
+    },
+    "18": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "19": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "20": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "21": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "22": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "23": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "24": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "25": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "27": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "28": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "29": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "30": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "31": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "32": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "33": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "34": {
+      "id": "minecraft:wind_charge",
+      "count": 64
+    },
+    "35": {
+      "id": "minecraft:totem_of_undying"
+    }
+  },
+  "effects": []
+}

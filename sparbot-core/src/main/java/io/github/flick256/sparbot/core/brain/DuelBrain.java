@@ -4,6 +4,7 @@ import io.github.flick256.sparbot.core.act.Inputs;
 import io.github.flick256.sparbot.core.aim.AimController;
 import io.github.flick256.sparbot.core.math.Angles;
 import io.github.flick256.sparbot.core.math.Rng;
+import io.github.flick256.sparbot.core.math.Vec3;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.sense.PerceptionDelay;
@@ -30,9 +31,9 @@ public final class DuelBrain implements Policy {
 	private final AimController aim;
 	private final PerceptionDelay perception = new PerceptionDelay();
 	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic(),
-		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new RodTactic(), new KiteTactic(),
+		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
 		new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
-		new LavaTactic(), new WebTactic(), new WaterTactic());
+		new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic());
 	private DuelMemory memory = new DuelMemory();
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
@@ -65,6 +66,9 @@ public final class DuelBrain implements Policy {
 	@Override
 	public Inputs act(Observation raw) {
 		perception.push(raw.target());
+		Vec3 here = raw.self().position();
+		memory.selfMotion = memory.lastSelfPosition == null ? Vec3.ZERO : here.subtract(memory.lastSelfPosition);
+		memory.lastSelfPosition = here;
 		if (--memory.ticksUntilReactionResample <= 0) {
 			double networkMs = profile.pingMs().sample(rng) / 2.0;
 			memory.reactionDelayTicks = (int) Math.round((profile.reactionTimeMs().sample(rng) + networkMs) / 50.0);

@@ -1,0 +1,157 @@
+{
+  "id": "pvphq_crystal",
+  "displayName": "Crystal (PvPHQ)",
+  "mode": "crystal",
+  "provenance": {
+    "source": "user-supplied",
+    "server": "PvPHQ (play.pvphq.com)",
+    "mode": "crystal",
+    "minecraftVersion": "26.2",
+    "confidence": "medium",
+    "verified": false,
+    "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
+    "notes": "PvPHQ's crystal kit with respawn anchors and glowstone. SparBot can't use anchors yet, so a bot fights it with crystals only. Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out; hotbar slot 4 is read as respawn anchors and slot 8 as obsidian (they look alike); inventory slot 9 (grey) is read as an elytra, which fits the fireworks next to it; inventory slots 17 and 26 are read as netherite pickaxes (one may be an axe); inventory slot 20 (a long purple weapon, maybe a netherite spear), slot 24 (a grey-white splash potion) and slot 35 (a purple item) are not identified and are left out; inventory slot 15 is read as a Fire Resistance splash potion and slot 16 as a Swiftness potion; inventory slot 34 may be spectral arrows.",
+    "deviations": [
+      "none: transcribed from a 26.2 server"
+    ]
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:netherite_helmet"
+    },
+    "chest": {
+      "id": "minecraft:netherite_chestplate"
+    },
+    "legs": {
+      "id": "minecraft:netherite_leggings"
+    },
+    "feet": {
+      "id": "minecraft:netherite_boots"
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_sword"
+    },
+    "1": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "2": {
+      "id": "minecraft:golden_apple",
+      "count": 64
+    },
+    "3": {
+      "id": "minecraft:end_crystal",
+      "count": 64
+    },
+    "4": {
+      "id": "minecraft:respawn_anchor",
+      "count": 64
+    },
+    "5": {
+      "id": "minecraft:glowstone",
+      "count": 64
+    },
+    "6": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "7": {
+      "id": "minecraft:crossbow"
+    },
+    "8": {
+      "id": "minecraft:obsidian",
+      "count": 64
+    },
+    "9": {
+      "id": "minecraft:elytra"
+    },
+    "10": {
+      "id": "minecraft:firework_rocket",
+      "count": 24
+    },
+    "11": {
+      "id": "minecraft:mace"
+    },
+    "12": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "13": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "14": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "15": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:fire_resistance"
+    },
+    "16": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "17": {
+      "id": "minecraft:netherite_pickaxe"
+    },
+    "18": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "19": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "21": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "22": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "23": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "25": {
+      "id": "minecraft:arrow",
+      "count": 64
+    },
+    "26": {
+      "id": "minecraft:netherite_pickaxe"
+    },
+    "27": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "28": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "29": {
+      "id": "minecraft:glowstone",
+      "count": 64
+    },
+    "30": {
+      "id": "minecraft:end_crystal",
+      "count": 64
+    },
+    "31": {
+      "id": "minecraft:obsidian",
+      "count": 64
+    },
+    "32": {
+      "id": "minecraft:experience_bottle",
+      "count": 64
+    },
+    "33": {
+      "id": "minecraft:experience_bottle",
+      "count": 64
+    },
+    "34": {
+      "id": "minecraft:arrow",
+      "count": 64
+    }
+  },
+  "effects": []
+}

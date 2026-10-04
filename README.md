@@ -9,7 +9,7 @@ servers, and players don't need to install anything.
 
 > Status: **milestone 5**: matches in arenas (best-of-N, arena reset between rounds, player inventory
 > safety), bot-vs-bot benchmarks and an Elo ladder, on top of milestone 4: bots fight with the full modern toolset (sword, axe against shields,
-> block-hitting, bow, crossbow, fishing rod, ender pearls, golden apples, totems) at a chosen skill
+> block-hitting, bow, crossbow, ender pearls, golden apples, totems) at a chosen skill
 > level and **playstyle**, using a full kit system with capture and personal layouts. A debug view shows
 > what a bot is thinking.
 
@@ -22,7 +22,6 @@ servers, and players don't need to install anything.
 | Axe | Switches to the axe when the opponent raises a shield (an axe hit disables it for 5 s); circles a shield if it has no axe |
 | Bow / crossbow | Used at 8-40 blocks; full 20-tick draw; crossbow charged in 25 ticks, then fired; aim solved with the real arrow physics and leading moving targets |
 | Ender pearl | Closes 16-45 block gaps (lands just short of the opponent) or escapes when low and cornered; aim solved with real pearl physics |
-| Fishing rod | Hooks an opponent who is running away, then reels them in (in 26.2 the hook does no damage or knockback) |
 | Golden apples / food | Eats a golden apple when low (not in the opponent's face unless desperate), and food when hungry and safe |
 | Totems | After a pop, puts a new totem in the offhand: the swap key from the hotbar, or opening the inventory (taking human time) |
 | Retreat | Disengages below the panic threshold (earlier with worn-out armor), eats while running, then re-engages |
@@ -31,15 +30,17 @@ servers, and players don't need to install anything.
 | Buffs | Drinks or splashes Speed, Fire Resistance and Strength again when they wear off and the opponent is not close |
 | Spear | Keeps about 3 blocks away and jabs on a full charge (26.2: a jab hits only from 2 to 4.5 blocks); from a gap, sprints in holding a charge (damage 1 + closing speed x the spear's multiplier), but not at an opponent running straight away; falls back to the sword when the opponent gets inside 2 blocks |
 | End crystals | Puts obsidian down next to the opponent, a crystal on it, and hits the crystal (26.2: power-6 blast, damage falls off over 12 blocks); only uses spots it can reach to hit (blocks reach 4.5, crystals only 3) and, when skilled, only crystals closer to the opponent than to itself |
-| TNT minecarts | Puts a rail down beside the opponent, a TNT minecart on it, and sets it off with a short Flame-bow shot (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
-| Lava, water and cobwebs (UHC) | Pours lava onto the block the opponent stands on, backs off while it burns and spreads, then scoops it back up; webs the opponent where they stand; puts itself out with a water bucket at its feet when burning, and picks the water back up; won't walk into lava or fire |
+| TNT minecarts | Starts a cart only when the opponent is predictable (webbed, standing still or running straight in), puts the rail where they will be by the time the arrow arrives, then finishes the combo: cart on the rail and a quick Flame-bow shot (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
+| Lava, water and cobwebs (UHC) | Webbed itself, it waters the web away (flowing water destroys a web in 26.2) and does it again if you drain it; webs you where you stand, or where you'll land after a knock-up; pours lava onto a webbed opponent's web (it lands on their head) or under their feet, backs off while it spreads, then scoops it back up; puts itself out with water when burning; won't walk into lava or fire |
+| Shield stun | Axe hit on a raised shield (disables it for 5 s), then a pre-planned instant switch back to the sword or mace and a hit before the opponent can react; skill decides how often the follow-up is ready |
+| Blocks (UHC) | Low on health with a golden apple to eat and the opponent coming in: stops, builds a two-high wall between them, then eats behind it |
 | Mace and wind charges | Looks straight down and throws a wind charge at its feet to launch, swaps to the mace, then smashes on the way down (26.2: +4 damage per block fallen up to 3, +2 up to 8, +1 after; the wind charge's own launch causes no fall damage) |
 
 How often each tool is used depends on the profile's item skills, so a Beginner rarely re-totems or
 pearls and a Pro almost always does.
 
 Bundled kits for trying it out: `sparbot_combat` (everything above), `sparbot_ranged` (bow focus) and
-`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword), `sparbot_crystal` (end crystals, obsidian, totems), `sparbot_cart` (rails, TNT minecarts, Flame bow) and `sparbot_uhc` (lava, water, cobwebs, bow and rod). All are SparBot originals, not copies of any
+`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword), `sparbot_crystal` (end crystals, obsidian, totems), `sparbot_cart` (rails, TNT minecarts, Flame bow) and `sparbot_uhc` (lava, water, cobwebs, bow). All are SparBot originals, not copies of any
 server's layout.
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
@@ -160,8 +161,10 @@ with any style, and styles can be mixed by share.
 | `aggressive_rusher` | Always pressing; rarely retreats, pearls in, trades hits for crits |
 | `wtap_combo` | Sprint-reset combos: lots of W-taps and S-taps, keeps spacing |
 | `defensive_shield` | Turtles behind the shield, block-hits, heals early, backs off when hurt |
-| `kiter` | Keeps about 12 blocks away, shoots, rods anyone who runs |
+| `kiter` | Keeps about 12 blocks away and shoots |
 | `pearl_aggro` | Closes every gap with ender pearls |
+| `no_strafe` | Fights in a straight line, no side-strafing in melee (like many top sword players) |
+| `heavy_strafe` | Circles the opponent almost constantly |
 
 A style is JSON with:
 - `tacticWeights`: multipliers on the utility AI's tactic scores
@@ -184,11 +187,13 @@ plus every deviation made when translating it from an older version. Custom kits
 
 Bundled kits:
 - `basic_sword`: SparBot's own duel kit (unenchanted diamond gear).
+- `sparbot_*`: SparBot's own kits for each mode (combat, ranged, nodebuff, mace, spear, crystal, cart, uhc).
+- `pvphq_sword`, `pvphq_uhc`, `pvphq_smp`, `pvphq_mace`, `pvphq_crystal`: PvPHQ's kits, transcribed from
+  kit-editor screenshots. Confidence is **medium**: enchantments aren't visible in the screenshots and some
+  items were read by colour. Each kit's `provenance.notes` lists exactly what to confirm.
 - `mctiers_sword_recreation`: an **unverified** third-party recreation of the MCTiers-style Sword kit.
 
-No exact MCPVP kit layouts are published anywhere, so none are bundled. See
-[docs/kit-research.md](docs/kit-research.md). Send screenshots of the layouts you want and they will be
-added as verified kits.
+See [docs/kit-research.md](docs/kit-research.md).
 
 ## Fairness and mortality guarantees
 

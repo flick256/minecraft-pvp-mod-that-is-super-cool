@@ -31,7 +31,7 @@ class PlaystyleTest {
 		Playstyle rusher = PRESETS.get("aggressive_rusher");
 		Playstyle kiter = PRESETS.get("kiter");
 		assertEquals(0.7 * rusher.weight("ranged") + 0.3 * kiter.weight("ranged"), mix.weight("ranged"), 1e-9);
-		assertEquals(0.7 * rusher.weight("rod") + 0.3 * kiter.weight("rod"), mix.weight("rod"), 1e-9);
+		assertEquals(0.7 * rusher.weight("engage") + 0.3 * kiter.weight("engage"), mix.weight("engage"), 1e-9);
 		assertEquals(0.3 * kiter.preferredRange(), mix.preferredRange(), 1e-9);
 		assertEquals(0.7 * rusher.skillBias().get("pearlSkill"), mix.skillBias().get("pearlSkill"), 1e-9);
 		assertTrue(mix.validate().isEmpty(), mix.validate().toString());

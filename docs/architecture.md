@@ -96,15 +96,15 @@ mostly the bot's own placements, which a player knows about without reacting to 
 ## Brain (utility AI)
 
 Every tick each tactic scores itself and the highest score acts. The active tactic gets a +0.05 bonus
-so the bot doesn't dither. The bands are in `Scores`: melee 0.6, specialists 0.7 (bow, rod, guard,
+so the bot doesn't dither. The bands are in `Scores`: melee 0.6, specialists 0.7 (bow, guard,
 pearl), and 0.8+ for survival (retreat, heal, re-totem). "Will this player use X?" is rolled from
 the profile's skill once per decision window (`Decision`), not every tick.
 
 A playstyle multiplies each tactic's score by its weight and biases the profile's skills before the
 brain is built, so the same brain plays every style.
 
-Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), cart (rail, TNT minecart, Flame arrow), lava, web and water (UHC), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
-rod, search. `Ballistics` simulates arrows, pearls and fishing hooks in the exact per-tick order vanilla
+Tactics: pot, refill, buff (NoDebuff), mace (wind-charge launch and smash), spear (jab spacing, sprint charges), crystal (obsidian, place, detonate), cart (rail, TNT minecart, Flame arrow), lava, web, water and wall (UHC), kite (ranged styles only), engage (melee, block-hit, axe, crits, W/S-tap), retreat, heal, retotem, ranged, guard, pearl,
+search. `Ballistics` simulates arrows and pearls in the exact per-tick order vanilla
 uses, to find the pitch that lands on target.
 
 ## Milestones
@@ -114,7 +114,7 @@ uses, to find the pitch that lands on target.
 | M0 | Toolchain, core/mod split, CI | done |
 | M1 | Mortal bot body, perception, constrained inputs, skill profiles, sword duel, mortality tests | done |
 | M2 | Full kit system: slot-for-slot JSON with any item component, provenance, validator, kit and layout capture, eating, hotbar and offhand swaps, inventory clicks | done |
-| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods, pearls, totems, golden apples, retreat and heal | done |
+| M3 | Combat, part 1: shields and axe disabling, shield block-hitting, jump reset, S-tap, bows, crossbows, rods (removed later), pearls, totems, golden apples, retreat and heal | done |
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
 | M6 | Mode packs: NoDebuff (pot, refill, buff), Mace and wind charges, Spear, Crystal, Cart PvP, UHC (lava, water, webs, no natural regeneration) | done |

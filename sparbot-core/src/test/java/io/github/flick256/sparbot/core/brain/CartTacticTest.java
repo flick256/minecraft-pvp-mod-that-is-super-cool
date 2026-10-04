@@ -29,7 +29,7 @@ class CartTacticTest {
 		SkillProfile.ItemSkills i = p.items();
 		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(), p.reach(),
 			p.technique(), new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), i.retotemSkill(), i.gappleHealthFraction(),
-				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.rodSkill(), i.potHealthFraction(), i.maceSkill(),
+				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.potHealthFraction(), i.maceSkill(),
 				i.spearSkill(), i.crystalSkill(), 1.0, i.uhcSkill()),
 			p.mistakeRate(), p.panicHealthFraction());
 	}
@@ -48,7 +48,7 @@ class CartTacticTest {
 		for (int i = 0; i < 60 && !fired; i++) {
 			int drawn = h.useTicks;
 			Inputs in = h.tick();
-			fired = drawn >= 10 && !in.use() && h.slots[h.selected].kind() == ItemKind.BOW;
+			fired = drawn >= 6 && !in.use() && h.slots[h.selected].kind() == ItemKind.BOW;
 		}
 		assertTrue(fired, "drew the Flame bow and let go");
 		assertEquals("cart", h.brain.lastTrace().tactic());
@@ -93,5 +93,28 @@ class CartTacticTest {
 			h.tick();
 		}
 		assertEquals("engage", h.brain.lastTrace().tactic(), "without fire to set them off, carts are useless");
+	}
+
+	@Test
+	void waitsForAnOpening() {
+		// Running sideways fast: a cart placed now would miss. Standing still: go.
+		io.github.flick256.sparbot.core.sense.TargetState running = new io.github.flick256.sparbot.core.sense.TargetState(7, "Steve",
+			new Vec3(0, 0, 2.5), new Vec3(0.28, 0, 0), 0, 20, 20, true, 0, false, true, 0, 0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15);
+		BrainHarness h = new BrainHarness(cartPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, FLAME_BOW, 2, RAILS, 3, CART, 21, ARROWS), running);
+		h.world = new Surroundings(List.of(), List.of(), List.of(new BlockSpot(1, -1, 3)), List.of(), List.of());
+		for (int i = 0; i < 30; i++) {
+			h.tick();
+		}
+		assertFalse(h.history.stream().anyMatch(in -> in.use() && "minecraft:rail".equals(h.slots[h.selected].id())), "no rail for a moving target");
+	}
+
+	@Test
+	void leadsTheRailAheadOfAnApproachingOpponent() {
+		io.github.flick256.sparbot.core.sense.TargetState coming = new io.github.flick256.sparbot.core.sense.TargetState(7, "Steve",
+			new Vec3(0, 0, 6.0), new Vec3(0, 0, -0.1), 0, 20, 20, true, 0, false, true, 0, 0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15);
+		// 16 ticks at 0.1 blocks per tick towards the bot, scaled by the pro's tracking lead.
+		Vec3 ahead = CartTactic.predicted(coming, cartPro().aim().trackingLead());
+		assertTrue(ahead.z() < 6.0 && ahead.z() > 3.5, "expected to be closer by the time the arrow arrives, z " + ahead.z());
+		assertTrue(CartTactic.predicted(coming, 0).z() == 6.0, "no tracking skill, no lead");
 	}
 }

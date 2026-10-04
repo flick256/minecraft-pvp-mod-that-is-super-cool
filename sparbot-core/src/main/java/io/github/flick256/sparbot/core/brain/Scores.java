@@ -7,7 +7,7 @@ package io.github.flick256.sparbot.core.brain;
 final class Scores {
 	/** Plain melee engagement with a visible opponent. */
 	static final double MELEE = 0.6;
-	/** Situational tactics (bow, rod, shield guard, pearl) that should replace melee when chosen. */
+	/** Situational tactics (bow, shield guard, pearl) that should replace melee when chosen. */
 	static final double SPECIALIST = 0.7;
 	/** Staying alive: healing, re-totem, retreat. */
 	static final double SURVIVAL = 0.8;

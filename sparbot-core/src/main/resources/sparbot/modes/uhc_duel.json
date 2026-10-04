@@ -1,7 +1,7 @@
 {
   "id": "uhc_duel",
   "displayName": "UHC Duel",
-  "description": "UHC rules: no natural regeneration, only golden apples heal. Lava, water, webs, bow and rod. One round.",
+  "description": "UHC rules: no natural regeneration, only golden apples heal. Lava, water, webs and a bow. One round.",
   "kit": "sparbot_uhc",
   "roundsToWin": 1,
   "roundSeconds": 600,

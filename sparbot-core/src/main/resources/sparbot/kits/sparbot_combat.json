@@ -10,7 +10,7 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own all-round kit exercising every milestone-3 mechanic: sword, axe vs shields, block-hitting, bow, crossbow, rod, pearls, golden apples and a spare totem.",
+    "notes": "SparBot's own all-round kit exercising every milestone-3 mechanic: sword, axe vs shields, block-hitting, bow, crossbow, pearls, golden apples and a spare totem.",
     "deviations": []
   },
   "armor": {
@@ -25,7 +25,6 @@
     "1": {"id": "minecraft:diamond_axe"},
     "2": {"id": "minecraft:bow", "enchantments": {"minecraft:power": 1}},
     "3": {"id": "minecraft:crossbow"},
-    "4": {"id": "minecraft:fishing_rod"},
     "5": {"id": "minecraft:ender_pearl", "count": 4},
     "6": {"id": "minecraft:golden_apple", "count": 4},
     "7": {"id": "minecraft:cooked_beef", "count": 16},

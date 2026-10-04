@@ -38,7 +38,25 @@ SparBot includes exactly one kit derived from it, the Sword kit, with
 | feet | diamond_boots | protection 3, unbreaking 3 |
 | hotbar 0 | diamond_sword | unbreaking 3 |
 
+## PvPHQ (play.pvphq.com), from the user's screenshots
+
+On 2026-10-04 the user sent screenshots of PvPHQ's kit editor for five kits. They are bundled as
+`pvphq_sword`, `pvphq_uhc`, `pvphq_smp`, `pvphq_mace` and `pvphq_crystal`, slot for slot, with
+`provenance.source = "user-supplied"`, `confidence = "medium"` and `verified = false`, because:
+- **Enchantments** aren't visible in an inventory screenshot (only the netherite axe in the SMP kit had
+  its tooltip open), so they are left out rather than guessed.
+- **Potions** were read by colour (26.2 colours: Strength yellow, Fire Resistance orange, Swiftness light
+  blue, Healing red); their levels are guesses.
+- **A few items** couldn't be identified (a tall purple item in the mace and crystal kits, a long purple
+  weapon and a grey-white splash potion in the crystal kit) and are left out.
+- **Golden heads** in the UHC kit are a server-made item; golden apples stand in for them.
+- **Respawn anchors** in the crystal kit are kept, but the bot can't use anchors yet.
+
+Each kit's `provenance.notes` lists its uncertain slots. Hover screenshots of the enchanted items (or
+`/sparbot kit capture` in singleplayer after rebuilding a kit) would make them verified.
+
 ## Still needed from the user
 
-For each MCPVP kit you care about (Sword, Shield, Pot, Spear, Mace, Netherite Pot, ...), a screenshot
-of the default layout (`/kit` editor or inventory) plus the hover text of any enchanted item.
+For the PvPHQ kits: hover text of the enchanted items, and what the unidentified slots are (see above).
+For each other kit you care about (Shield, Pot, Spear, Cart, Netherite Pot, ...), a screenshot of the
+default layout plus the hover text of any enchanted item.

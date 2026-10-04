@@ -39,6 +39,15 @@ public final class Hands {
 		return -1;
 	}
 
+	/**
+	 * A switch planned before it is needed (a practised combo, like axe then sword): the key press is
+	 * due this tick, with no reaction time. Returns the slot to press, or -1 if it is already held.
+	 */
+	public int requestPlanned(BrainContext c, int slot) {
+		pendingSlot = -1;
+		return slot < 0 || slot >= InventoryState.HOTBAR_SIZE || slot == c.self.inventory().selectedSlot() ? -1 : slot;
+	}
+
 	public void reset() {
 		pendingSlot = -1;
 		ticksUntilSwitch = 0;

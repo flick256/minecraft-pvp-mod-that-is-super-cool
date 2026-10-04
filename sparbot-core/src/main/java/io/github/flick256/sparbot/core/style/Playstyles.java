@@ -15,7 +15,7 @@ import java.util.Map;
 
 /** Parses playstyles and mixes ("a:0.7,b:0.3"), and exposes the bundled presets. */
 public final class Playstyles {
-	public static final List<String> PRESET_IDS = List.of("balanced", "aggressive_rusher", "wtap_combo", "defensive_shield", "kiter", "pearl_aggro");
+	public static final List<String> PRESET_IDS = List.of("balanced", "aggressive_rusher", "wtap_combo", "defensive_shield", "kiter", "pearl_aggro", "no_strafe", "heavy_strafe");
 	private static final Gson GSON = new Gson();
 
 	private Playstyles() {

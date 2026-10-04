@@ -68,7 +68,6 @@ public record SkillProfile(
 	 * @param axeSkill switching to an axe to disable a raised shield
 	 * @param bowSkill using bows/crossbows at range, and how well the shot is aimed
 	 * @param pearlSkill using ender pearls to close distance or escape
-	 * @param rodSkill using a fishing rod to pull a fleeing opponent
 	 * @param potHealthFraction throw a splash healing potion below this health fraction
 	 * @param maceSkill going for the wind-charge launch and mace smash when in range
 	 * @param spearSkill fighting with a spear: keeping jab range, timing full-charge jabs, sprint charges
@@ -86,7 +85,6 @@ public record SkillProfile(
 		double axeSkill,
 		double bowSkill,
 		double pearlSkill,
-		double rodSkill,
 		double potHealthFraction,
 		double maceSkill,
 		double spearSkill,
@@ -137,7 +135,6 @@ public record SkillProfile(
 		range("items.axeSkill", items.axeSkill(), 0, 1, errors);
 		range("items.bowSkill", items.bowSkill(), 0, 1, errors);
 		range("items.pearlSkill", items.pearlSkill(), 0, 1, errors);
-		range("items.rodSkill", items.rodSkill(), 0, 1, errors);
 		range("items.potHealthFraction", items.potHealthFraction(), 0, 1, errors);
 		range("items.maceSkill", items.maceSkill(), 0, 1, errors);
 		range("items.spearSkill", items.spearSkill(), 0, 1, errors);

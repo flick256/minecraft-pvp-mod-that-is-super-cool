@@ -13,9 +13,7 @@ public final class Ballistics {
 		/** ThrowableProjectile#tick (pearls, splash potions): gravity, drag, move. */
 		GRAVITY_DRAG_MOVE,
 		/** AbstractArrow#tick: move, drag, gravity. */
-		MOVE_DRAG_GRAVITY,
-		/** FishingHook#tick: gravity, move, drag. */
-		GRAVITY_MOVE_DRAG
+		MOVE_DRAG_GRAVITY
 	}
 
 	/** How the launcher turns the player's pitch into an initial (horizontal, vertical) velocity. */
@@ -29,24 +27,12 @@ public final class Ballistics {
 		return new double[] {Math.cos(rad) * speed, -Math.sin(rad) * speed};
 	};
 
-	/**
-	 * FishingHook(Player, ...): direction (horizontal 1, vertical -tan(pitch) clamped to [-5, 5]),
-	 * scaled by 0.6 / |direction| + ~0.5 (vanilla adds a small triangle-distributed random term).
-	 */
-	public static final Launch FISHING_HOOK = (pitch, speed) -> {
-		double vertical = Math.max(-5.0, Math.min(5.0, -Math.tan(Math.toRadians(pitch))));
-		double length = Math.sqrt(1 + vertical * vertical);
-		double scale = 0.6 / length + 0.5;
-		return new double[] {scale, vertical * scale};
-	};
-
 	public record Projectile(String name, double speed, double gravity, double drag, Order order, Launch launch) {
 	}
 
 	public static final Projectile ARROW_FULL_BOW = new Projectile("arrow (full bow)", 3.0, 0.05, 0.99, Order.MOVE_DRAG_GRAVITY, LOOK_VECTOR);
 	public static final Projectile ARROW_CROSSBOW = new Projectile("arrow (crossbow)", 3.15, 0.05, 0.99, Order.MOVE_DRAG_GRAVITY, LOOK_VECTOR);
 	public static final Projectile ENDER_PEARL = new Projectile("ender pearl", 1.5, 0.03, 0.99, Order.GRAVITY_DRAG_MOVE, LOOK_VECTOR);
-	public static final Projectile HOOK = new Projectile("fishing hook", 1.0, 0.03, 0.92, Order.GRAVITY_MOVE_DRAG, FISHING_HOOK);
 
 	private static final int MAX_TICKS = 200;
 
@@ -84,13 +70,6 @@ public final class Ballistics {
 					vh *= p.drag();
 					vy *= p.drag();
 					vy -= p.gravity();
-				}
-				case GRAVITY_MOVE_DRAG -> {
-					vy -= p.gravity();
-					x += vh;
-					y += vy;
-					vh *= p.drag();
-					vy *= p.drag();
 				}
 			}
 			if (x >= horizontalDistance) {

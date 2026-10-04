@@ -13,8 +13,9 @@ import io.github.flick256.sparbot.core.sense.TargetState;
  * UHC lava: empty a lava bucket onto the block the opponent stands on (BucketItem#use places the lava in
  * the space above the clicked face, where the opponent is), let them burn, then scoop it back up with
  * the now-empty bucket so it can be used again and doesn't spread. While it burns, the bot backs off
- * from it: lava spreads a block every 1.5 s on flat ground. Skill decides how often the bot goes for it
- * and whether it remembers to pick the lava back up.
+ * from it: lava spreads a block every 1.5 s on flat ground. An opponent stuck in a cobweb is the best
+ * moment: the bot pours the lava onto the web itself, so it lands on their head while they can't move.
+ * Skill decides how often the bot goes for it and whether it remembers to pick the lava back up.
  */
 public final class LavaTactic implements Tactic {
 	/** Never this close: the lava would be at the bot's own feet. */
@@ -60,11 +61,18 @@ public final class LavaTactic implements Tactic {
 		}
 		TargetState t = c.seen();
 		InventoryState inv = c.self.inventory();
-		if (c.target == null || t == null || !t.visible() || !t.onGround() || t.onFire() || inv.hotbarSlot(ItemKind.LAVA_BUCKET) < 0) {
+		if (c.target == null || t == null || !t.visible() || inv.hotbarSlot(ItemKind.LAVA_BUCKET) < 0) {
 			return 0;
 		}
 		double d = c.targetDistance();
 		if (d > MAX_RANGE || horizontal(c.self.position(), t.position()) < MIN_RANGE) {
+			return 0;
+		}
+		if (t.inWeb() && !t.onFire()) {
+			// Webbed: they can't step out of it. Any player who has the lava goes for it.
+			return willLava.get(c.rng, c.profile.items().uhcSkill(), 20) ? Scores.SPECIALIST + 0.1 : 0;
+		}
+		if (!t.onGround() || t.onFire()) {
 			return 0;
 		}
 		return willLava.get(c.rng, c.profile.items().uhcSkill(), 60) ? Scores.SPECIALIST + 0.03 : 0;
@@ -103,9 +111,11 @@ public final class LavaTactic implements Tactic {
 				if (t == null || ticks > PLACE_TIMEOUT || bucketSlot < 0 || !inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET)) {
 					return finish();
 				}
+				// On a webbed opponent the bucket is emptied onto the web: the lava lands above it, on their head.
 				BlockSpot ground = BlockPlay.groundUnder(t.position());
-				lava = new BlockSpot(ground.x(), ground.y() + 1, ground.z());
-				return BlockPlay.clickTop(c, ground, 1.0, bucketSlot);
+				BlockSpot clicked = t.inWeb() ? new BlockSpot(ground.x(), ground.y() + 1, ground.z()) : ground;
+				lava = new BlockSpot(clicked.x(), clicked.y() + 1, clicked.z());
+				return BlockPlay.clickTop(c, clicked, 1.0, bucketSlot);
 			}
 			case BURN -> {
 				boolean left = t == null || lava.horizontalDistanceTo(t.position()) > 1.5;

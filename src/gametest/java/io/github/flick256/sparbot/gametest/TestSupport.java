@@ -83,7 +83,7 @@ final class TestSupport {
 		bot.setProfile(new io.github.flick256.sparbot.core.profile.SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(),
 			p.pingMs(), p.aim(), p.clicking(), p.reach(), p.technique(),
 			new io.github.flick256.sparbot.core.profile.SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), 1, i.gappleHealthFraction(),
-				i.eatHungerBelow(), 1, 1, 1, 1, 1, i.potHealthFraction(), 1, 1, 1, 1, 1),
+				i.eatHungerBelow(), 1, 1, 1, 1, i.potHealthFraction(), 1, 1, 1, 1, 1),
 			p.mistakeRate(), p.panicHealthFraction()));
 		return bot;
 	}

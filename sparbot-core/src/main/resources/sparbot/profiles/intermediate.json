@@ -43,7 +43,7 @@
     "critSkill": 0.45,
     "wTapSkill": 0.35,
     "sTapSkill": 0.2,
-    "strafeSkill": 0.55,
+    "strafeSkill": 0.4,
     "jumpResetSkill": 0.25,
     "spacingSkill": 0.45
   },
@@ -67,7 +67,6 @@
     "axeSkill": 0.45,
     "bowSkill": 0.5,
     "pearlSkill": 0.35,
-    "rodSkill": 0.3,
     "potHealthFraction": 0.55,
     "maceSkill": 0.45,
     "spearSkill": 0.45,

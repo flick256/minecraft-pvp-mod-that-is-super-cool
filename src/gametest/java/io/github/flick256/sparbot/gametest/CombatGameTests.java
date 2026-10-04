@@ -14,7 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Milestone 3: shields, axes, bows, crossbows, pearls, rods, totems and block-hitting, with real items. */
+/** Milestone 3: shields, axes, bows, crossbows, pearls, totems and block-hitting, with real items. */
 public class CombatGameTests {
 	private static void clearInventory(BotPlayer body) {
 		Inventory inv = body.getInventory();
@@ -124,32 +124,6 @@ public class CombatGameTests {
 			helper.assertTrue(jumper.stats().pearlsThrown() > 0, "a pearl was thrown");
 			helper.assertTrue(body.distanceTo(t) < startDistance - 12, "the pearl carried the bot towards its opponent");
 			TestSupport.remove(jumper, target);
-		});
-	}
-
-	@GameTest(maxTicks = 400, padding = 24)
-	public void botHooksAFleeingOpponentWithItsRod(GameTestHelper helper) {
-		TestSupport.platform(helper, 8, 20);
-		Bot angler = TestSupport.certain(TestSupport.spawnBot(helper, "Angler", 3.5, 1, 2.5, 0, "pro", "sparbot_combat"));
-		BotPlayer body = TestSupport.body(angler);
-		// Rod only, so the test isolates the rod decision.
-		clearInventory(body);
-		body.getInventory().setItem(0, new ItemStack(Items.FISHING_ROD));
-		Bot runner = TestSupport.dummy(helper, "Runner", 3.5, 1, 6.5, 0, "basic_sword");
-		BotPlayer r = TestSupport.body(runner);
-		angler.setAssignedTarget(r.getUUID());
-		AtomicBoolean hooked = new AtomicBoolean();
-		helper.onEachTick(() -> {
-			if (SparBot.bots().get(runner.name()).isPresent()) {
-				BotTestAccess.press(runner, new Inputs(0, 0, 1, 0, false, false, false, false, false, -1)); // walk away (facing +z)
-			}
-			if (body.fishing != null && body.fishing.getHookedIn() == r) {
-				hooked.set(true);
-			}
-		});
-		helper.succeedWhen(() -> {
-			helper.assertTrue(hooked.get(), "the bot's hook caught the fleeing opponent");
-			TestSupport.remove(angler, runner);
 		});
 	}
 

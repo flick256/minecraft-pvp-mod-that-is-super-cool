@@ -1,0 +1,10 @@
+{
+  "id": "no_strafe",
+  "displayName": "No Strafe",
+  "description": "Fights in a straight line: no side-strafing in melee, like many top sword players. Everything else is unchanged.",
+  "tacticWeights": {},
+  "skillBias": {
+    "strafeSkill": -1.0
+  },
+  "preferredRange": 0
+}

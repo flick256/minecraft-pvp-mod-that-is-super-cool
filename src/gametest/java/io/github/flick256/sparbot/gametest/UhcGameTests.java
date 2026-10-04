@@ -124,4 +124,87 @@ public class UhcGameTests {
 			TestSupport.remove(bot, target);
 		});
 	}
+
+	@GameTest(maxTicks = 300)
+	public void botWashesItselfOutOfAWeb(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Unstuck", 3.5, 1, 3.5, 0, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		helper.setBlock(new BlockPos(3, 1, 3), Blocks.COBWEB);
+		helper.startSequence()
+			.thenWaitUntil(() -> helper.assertTrue(helper.getBlockState(new BlockPos(3, 1, 3)).isAir() || !helper.getBlockState(new BlockPos(3, 1, 3)).is(Blocks.COBWEB),
+				"the web is still there"))
+			.thenWaitUntil(() -> helper.assertValueEqual(body.getInventory().countItem(Items.WATER_BUCKET), 2, "water buckets (picked back up)"))
+			.thenExecute(() -> TestSupport.remove(bot))
+			.thenSucceed();
+	}
+
+	@GameTest(maxTicks = 300, padding = 16)
+	public void botPoursLavaOntoAWebbedOpponent(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Torch", 1.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		body.getInventory().setItem(6, ItemStack.EMPTY); // no webs of its own
+		Bot target = TestSupport.dummy(helper, "Stuck", 4.5, 1, 3.5, 90, "basic_sword");
+		helper.setBlock(new BlockPos(4, 1, 3), Blocks.COBWEB);
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		helper.succeedWhen(() -> {
+			helper.assertTrue(target.body() != null && target.body().isOnFire(), "the webbed opponent burns");
+			TestSupport.remove(bot, target);
+		});
+	}
+
+	@GameTest(maxTicks = 300)
+	public void botStunsAShieldAndHitsAtOnce(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Stunner", 2.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot : new int[] {2, 3, 4, 5, 6, 7}) {
+			body.getInventory().setItem(slot, ItemStack.EMPTY); // sword and axe only
+		}
+		Bot target = TestSupport.dummy(helper, "Turtle", 4.5, 1, 3.5, 90, "basic_sword");
+		BotPlayer t = TestSupport.body(target);
+		t.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+		bot.setAssignedTarget(t.getUUID());
+		long[] disabledAt = {-1};
+		float[] healthAtDisable = {0};
+		helper.onEachTick(() -> {
+			if (!t.isUsingItem() && disabledAt[0] < 0 && !t.getCooldowns().isOnCooldown(t.getOffhandItem())) {
+				t.startUsingItem(net.minecraft.world.InteractionHand.OFF_HAND); // keeps the shield raised until it is disabled
+			}
+			if (disabledAt[0] < 0 && t.getCooldowns().isOnCooldown(t.getOffhandItem())) {
+				disabledAt[0] = helper.getTick();
+				healthAtDisable[0] = t.getHealth();
+			}
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(disabledAt[0] >= 0, "the axe disabled the shield");
+			helper.assertTrue(t.getHealth() < healthAtDisable[0], "then a hit landed");
+			helper.assertTrue(helper.getTick() - disabledAt[0] <= 10, "right after the stun, " + (helper.getTick() - disabledAt[0]) + " ticks later");
+			TestSupport.remove(bot, target);
+		});
+	}
+
+	@GameTest(maxTicks = 300)
+	public void botWallsOffToHeal(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Mason", 2.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		Bot target = TestSupport.dummy(helper, "Rusher", 6.5, 1, 3.5, 90, "basic_sword");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		int planksBefore = body.getInventory().countItem(Items.COBBLESTONE);
+		// Hurt mid-fight, once the bot has seen its opponent.
+		helper.runAfterDelay(20, () -> body.setHealth(6));
+		helper.succeedWhen(() -> {
+			helper.assertValueEqual(body.getInventory().countItem(Items.COBBLESTONE), planksBefore - 2, "cobblestone used (a two-high wall)");
+			boolean wall = false;
+			for (int x = 1; x <= 6 && !wall; x++) {
+				for (int z = 1; z <= 6 && !wall; z++) {
+					wall = helper.getBlockState(new BlockPos(x, 1, z)).is(Blocks.COBBLESTONE) && helper.getBlockState(new BlockPos(x, 2, z)).is(Blocks.COBBLESTONE);
+				}
+			}
+			helper.assertTrue(wall, "a two-high wall stands between them");
+			TestSupport.remove(bot, target);
+		});
+	}
 }

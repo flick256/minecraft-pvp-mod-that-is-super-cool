@@ -57,7 +57,7 @@ public final class TestFixtures {
 				slots[slot] = item;
 			}
 		}
-		return new InventoryState(slots, offhand, base.armor(), 0, false, false, 0, ItemKind.EMPTY, false, false, false);
+		return new InventoryState(slots, offhand, base.armor(), 0, false, false, 0, ItemKind.EMPTY, false);
 	}
 
 	public static SelfState self(Vec3 pos, float yaw, float pitch, float health, float attackStrength, boolean onGround, int[] drops) {

@@ -18,13 +18,12 @@ only target survival players. Switch to survival with `/gamemode survival` befor
 |---|---|---|
 | Sword duel | `/sparbot spawn Bob pro` | Bob walks at you, times his hits, crits, W-taps and strafes |
 | Skill difference | `/sparbot spawn Noob beginner` | Slower, misses, spam-clicks, sometimes walks off edges |
-| Full kit | `/sparbot spawn Kit pro sparbot_combat` | Bob has a sword, axe, shield, bow, crossbow, rod, pearls, golden apples and a spare totem |
+| Full kit | `/sparbot spawn Kit pro sparbot_combat` | Bob has a sword, axe, shield, bow, crossbow, pearls, golden apples and a spare totem |
 | Axe vs shield | Fight Kit while holding a shield up (right click) | Kit switches to the axe; your shield gets disabled (cooldown on your hotbar) |
 | Block-hitting | Stand in melee with Kit | Kit raises the shield between its own swings |
 | Bow | Back off 10+ blocks | Kit draws fully and shoots, leading you if you move |
 | Guard | Draw a bow at Kit from range | Kit raises the shield and walks in |
 | Pearl | Get 20+ blocks away (`/tp`) | Kit throws a pearl and lands near you |
-| Rod | Run away from Kit at 4-8 blocks | Kit hooks you and pulls you back |
 | Golden apple | Hit Kit down to half health, then back off | Kit eats a golden apple (watch the absorption hearts) |
 | Totem | `/sparbot kill` doesn't trigger totems; instead `/damage Kit 100` with a totem in its offhand | Totem pops, then Kit moves the spare totem into its offhand |
 | Watch it think | `/sparbot info Kit` | Current tactic, all tactic scores, reaction delay, mistake state |

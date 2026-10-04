@@ -1,0 +1,95 @@
+{
+  "id": "pvphq_uhc",
+  "displayName": "UHC (PvPHQ)",
+  "mode": "uhc",
+  "provenance": {
+    "source": "user-supplied",
+    "server": "PvPHQ (play.pvphq.com)",
+    "mode": "uhc",
+    "minecraftVersion": "26.2",
+    "confidence": "medium",
+    "verified": false,
+    "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
+    "notes": "PvPHQ's UHC kit. Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out; hotbar slot 4 (two yellow cubes) is read as golden heads, a server-made item; golden apples stand in for them; the wood is read as oak planks; inventory slot 14 may be an empty bucket rather than a third water bucket.",
+    "deviations": [
+      "none: transcribed from a 26.2 server"
+    ]
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:diamond_helmet"
+    },
+    "chest": {
+      "id": "minecraft:diamond_chestplate"
+    },
+    "legs": {
+      "id": "minecraft:diamond_leggings"
+    },
+    "feet": {
+      "id": "minecraft:diamond_boots"
+    }
+  },
+  "offhand": {
+    "id": "minecraft:shield"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:diamond_sword"
+    },
+    "1": {
+      "id": "minecraft:diamond_axe"
+    },
+    "2": {
+      "id": "minecraft:golden_apple",
+      "count": 8
+    },
+    "3": {
+      "id": "minecraft:golden_apple",
+      "count": 2
+    },
+    "4": {
+      "id": "minecraft:water_bucket"
+    },
+    "5": {
+      "id": "minecraft:lava_bucket"
+    },
+    "6": {
+      "id": "minecraft:oak_planks",
+      "count": 64
+    },
+    "7": {
+      "id": "minecraft:crossbow"
+    },
+    "8": {
+      "id": "minecraft:cobweb",
+      "count": 8
+    },
+    "9": {
+      "id": "minecraft:arrow",
+      "count": 10
+    },
+    "12": {
+      "id": "minecraft:water_bucket"
+    },
+    "13": {
+      "id": "minecraft:water_bucket"
+    },
+    "14": {
+      "id": "minecraft:water_bucket"
+    },
+    "17": {
+      "id": "minecraft:oak_planks",
+      "count": 64
+    },
+    "21": {
+      "id": "minecraft:diamond_pickaxe"
+    },
+    "22": {
+      "id": "minecraft:lava_bucket"
+    },
+    "26": {
+      "id": "minecraft:bow"
+    }
+  },
+  "effects": []
+}

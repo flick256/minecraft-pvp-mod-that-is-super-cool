@@ -24,6 +24,10 @@ public final class EngageTactic implements Tactic {
 	/** Lower the block-hit shield this much attack charge before the planned swing. */
 	private static final double BLOCK_HIT_RELEASE_MARGIN = 0.2;
 	private static final double AXE_MIN_CHARGE = 0.25;
+	/** How long after a shield stun the bot still goes for the immediate follow-up hit. */
+	private static final int STUN_WINDOW = 8;
+	/** An axe disables a shield for 5 s (the axe's disable_blocking_for_seconds). */
+	private static final int SHIELD_DISABLE_TICKS = 100;
 
 	@Override
 	public String name() {
@@ -124,7 +128,11 @@ public final class EngageTactic implements Tactic {
 		// raised shield for 5 s in 26.2). Switching takes the profile's hotbar time and resets the charge.
 		InventoryState inv = self.inventory();
 		TargetState seen = c.seen();
-		boolean shieldUp = seen != null && seen.blocking();
+		if (m.shieldDisabledTicks > 0) {
+			m.shieldDisabledTicks--;
+		}
+		// A shield our axe just disabled can't block, whatever it looks like.
+		boolean shieldUp = seen != null && seen.blocking() && m.shieldDisabledTicks == 0;
 		int axeSlot = inv.bestHotbarWeapon(ItemKind.AXE);
 		if (shieldUp && axeSlot >= 0 && !m.axeMode && m.axeDecision.get(c.rng, c.profile.items().axeSkill(), 30)) {
 			m.axeMode = true;
@@ -134,7 +142,8 @@ public final class EngageTactic implements Tactic {
 			m.axeMode = false;
 		}
 		int weaponSlot = m.axeMode ? axeSlot : Hands.preferredMeleeSlot(inv);
-		int press = c.memory.hands.request(c, weaponSlot);
+		boolean stun = m.stunTicks > 0;
+		int press = stun && m.stunPlanned ? c.memory.hands.requestPlanned(c, weaponSlot) : c.memory.hands.request(c, weaponSlot);
 		boolean armed = weaponSlot < 0 || inv.selectedSlot() == weaponSlot;
 
 		// Facing a raised shield without an axe, a skilled player circles to its side instead of
@@ -150,6 +159,19 @@ public final class EngageTactic implements Tactic {
 			&& self.attackStrength() >= AXE_MIN_CHARGE) {
 			// Disabling the shield only needs the hit to land, not a full charge.
 			attack = true;
+			// Shield stun: the axe hit disables the shield for 5 s, so the next hit can't be blocked.
+			// A skilled player has the follow-up ready: switch straight back and hit at once (any charge
+			// still knocks them up, and a mace smash bonus isn't scaled by charge at all).
+			m.axeMode = false;
+			m.shieldDisabledTicks = SHIELD_DISABLE_TICKS;
+			m.stunTicks = STUN_WINDOW;
+			m.stunPlanned = c.rng.chance(c.profile.items().axeSkill());
+		} else if (stun) {
+			m.stunTicks--;
+			if (armed && !inv.usingItem() && distance <= judgedReach && c.crosshairOnTarget(judgedReach + 0.5)) {
+				attack = true;
+				m.stunTicks = 0;
+			}
 		}
 
 		// Block-hitting: with a shield in the offhand, raise it while the sword recharges and lower it in

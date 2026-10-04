@@ -1,0 +1,10 @@
+{
+  "id": "heavy_strafe",
+  "displayName": "Heavy Strafe",
+  "description": "Circles the opponent almost constantly in melee.",
+  "tacticWeights": {},
+  "skillBias": {
+    "strafeSkill": 0.5
+  },
+  "preferredRange": 0
+}

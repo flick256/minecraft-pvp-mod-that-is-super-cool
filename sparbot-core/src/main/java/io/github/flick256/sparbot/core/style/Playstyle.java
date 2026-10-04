@@ -20,10 +20,10 @@ import java.util.Set;
 public record Playstyle(String id, String displayName, String description, Map<String, Double> tacticWeights, Map<String, Double> skillBias,
 	double preferredRange) {
 	/** Tactic names a weight can refer to (see the brain's tactic list). */
-	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "rod", "kite", "pot", "refill", "buff", "mace", "spear", "crystal", "cart", "lava", "web", "water");
+	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "kite", "pot", "refill", "buff", "mace", "spear", "crystal", "cart", "lava", "web", "water", "wall");
 	/** Skills a bias can refer to. */
 	public static final Set<String> SKILLS = Set.of("critSkill", "wTapSkill", "sTapSkill", "strafeSkill", "jumpResetSkill", "spacingSkill",
-		"retotemSkill", "shieldSkill", "axeSkill", "bowSkill", "pearlSkill", "rodSkill", "gappleHealthFraction", "panicHealthFraction",
+		"retotemSkill", "shieldSkill", "axeSkill", "bowSkill", "pearlSkill", "gappleHealthFraction", "panicHealthFraction",
 		"cooldownDiscipline", "potHealthFraction", "maceSkill", "spearSkill", "crystalSkill", "cartSkill", "uhcSkill");
 
 	public static final Playstyle BALANCED = new Playstyle("balanced", "Balanced", "No preferences: every tactic at face value.", Map.of(), Map.of(), 0);
@@ -75,7 +75,7 @@ public record Playstyle(String id, String displayName, String description, Map<S
 		SkillProfile.ItemSkills i = p.items();
 		SkillProfile.ItemSkills items = new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), b("retotemSkill", i.retotemSkill()),
 			b("gappleHealthFraction", i.gappleHealthFraction()), i.eatHungerBelow(), b("shieldSkill", i.shieldSkill()), b("axeSkill", i.axeSkill()),
-			b("bowSkill", i.bowSkill()), b("pearlSkill", i.pearlSkill()), b("rodSkill", i.rodSkill()), b("potHealthFraction", i.potHealthFraction()), b("maceSkill", i.maceSkill()),
+			b("bowSkill", i.bowSkill()), b("pearlSkill", i.pearlSkill()), b("potHealthFraction", i.potHealthFraction()), b("maceSkill", i.maceSkill()),
 			b("spearSkill", i.spearSkill()), b("crystalSkill", i.crystalSkill()),
 			b("cartSkill", i.cartSkill()), b("uhcSkill", i.uhcSkill()));
 		SkillProfile.Clicking clicking = new SkillProfile.Clicking(p.clicking().cps(), b("cooldownDiscipline", p.clicking().cooldownDiscipline()));

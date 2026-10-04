@@ -1,17 +1,15 @@
 {
   "id": "kiter",
   "displayName": "Kiter",
-  "description": "Fights at range: backs off to keep about 12 blocks of distance, shoots, and rods anyone who runs.",
+  "description": "Fights at range: backs off to keep about 12 blocks of distance, and shoots.",
   "tacticWeights": {
     "ranged": 1.3,
     "engage": 0.85,
-    "rod": 1.2,
     "kite": 1.0
   },
   "skillBias": {
     "bowSkill": 0.3,
-    "panicHealthFraction": 0.15,
-    "rodSkill": 0.2
+    "panicHealthFraction": 0.15
   },
   "preferredRange": 12
 }

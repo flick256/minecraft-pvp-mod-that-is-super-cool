@@ -19,18 +19,28 @@ import java.util.OptionalDouble;
  * (MinecartTNT#hurtServer) with power 4 + 1.5 x the arrow's speed x a random fraction. A Flame bow
  * shoots burning arrows.
  *
- * <p>Each tick the bot does the most advanced step available: shoot a cart beside the opponent, else
- * put a cart on a rail beside them, else put a rail down beside them, while holding 2.5-4.5 blocks of
- * distance. It shoots after a short draw: the arrow only has to cross a few blocks.
+ * <p>The bot starts a cart only when the opponent is predictable: stuck in a web, standing still, or
+ * running straight at it. It puts the rail where the opponent will be by the time the arrow arrives
+ * (their motion times the combo's length, as well as its tracking skill allows), and once a rail or cart
+ * is down it finishes the combo instead of wandering off: cart on the rail, then a short Flame-bow shot
+ * (the arrow only has to cross a few blocks). It holds 2.5-4.5 blocks of distance throughout.
  */
 public final class CartTactic implements Tactic {
 	static final String FLAME = "minecraft:flame";
 	private static final double ENGAGE_RANGE = 8.0;
-	/** BowItem#getPowerForTime(10) = 0.42, so the arrow leaves at 1.25 blocks per tick. */
-	private static final int DRAW_TICKS = 10;
-	private static final double ARROW_SPEED = 1.25;
-	/** The blast's power at its strongest for that arrow speed: 4 + 1.5 x 1.25. */
+	/** BowItem#getPowerForTime(6) = 0.23, so the arrow leaves at 0.69 blocks per tick. */
+	private static final int DRAW_TICKS = 6;
+	private static final double ARROW_SPEED = 0.69;
+	/** The blast's power at its strongest for that arrow speed: 4 + 1.5 x 0.69. */
 	private static final double PLANNED_POWER = 4.0 + 1.5 * ARROW_SPEED;
+	/** Ticks from deciding where the rail goes to the arrow arriving: two hotbar switches, two clicks, the draw. */
+	private static final int COMBO_TICKS = DRAW_TICKS + 10;
+	/** Never lead the opponent by more than this (blocks). */
+	private static final double MAX_LEAD = 2.5;
+	/** Below this horizontal speed (blocks per tick) the opponent counts as standing still. */
+	private static final double STILL = 0.12;
+	/** A rail this recent means the combo is under way. */
+	private static final int COMBO_MEMORY = 60;
 	/** A TNT minecart's box is 0.98 wide and 0.7 tall; aim at its middle. */
 	private static final double CART_MID = 0.35;
 	private static final double SHOOT_RANGE = 10.0;
@@ -39,6 +49,8 @@ public final class CartTactic implements Tactic {
 
 	private final Decision willCart = new Decision();
 	private String step = "";
+	private long lastRail = Long.MIN_VALUE / 2;
+	private int railsBefore = -1;
 
 	@Override
 	public String name() {
@@ -60,16 +72,49 @@ public final class CartTactic implements Tactic {
 		if (inv.usingItem() && inv.usingKind() == ItemKind.BOW && "shoot".equals(step)) {
 			return Scores.SPECIALIST + 0.1;
 		}
-		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0 && c.world.tntCarts().isEmpty()) {
+		// A rail or cart already down next to them: finish the combo.
+		boolean cartDown = c.world.tntCarts().stream().anyMatch(p -> horizontal(p, t.position()) <= BlockPlay.NEAR_TARGET + 1.0);
+		boolean railDown = c.observation.tick() - lastRail < COMBO_MEMORY && inv.hotbarSlot(ItemKind.TNT_MINECART) >= 0;
+		if (cartDown || railDown) {
+			return Scores.SPECIALIST + 0.08;
+		}
+		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0 || !opening(c, t)) {
 			return 0;
 		}
-		return willCart.get(c.rng, c.profile.items().cartSkill(), 40) ? Scores.SPECIALIST : 0;
+		return willCart.get(c.rng, c.profile.items().cartSkill(), 20) ? Scores.SPECIALIST : 0;
+	}
+
+	/** Webbed, standing still, or coming straight in: the moments a cart lands where it was aimed. */
+	static boolean opening(BrainContext c, TargetState t) {
+		double speed = Math.sqrt(t.velocity().x() * t.velocity().x() + t.velocity().z() * t.velocity().z());
+		Vec3 toUs = c.self.position().subtract(t.position());
+		double len = Math.sqrt(toUs.x() * toUs.x() + toUs.z() * toUs.z());
+		double closing = len < 1e-6 ? 0 : (t.velocity().x() * toUs.x() + t.velocity().z() * toUs.z()) / len;
+		return t.inWeb() || t.onGround() && speed < STILL || closing > speed * 0.8 && closing > 0.1;
+	}
+
+	/** Where the opponent will be when the arrow arrives, as well as the bot's tracking skill can tell. */
+	static Vec3 predicted(TargetState t, double trackingLead) {
+		if (t.inWeb()) {
+			return t.position();
+		}
+		double scale = COMBO_TICKS * trackingLead;
+		double lx = t.velocity().x() * scale;
+		double lz = t.velocity().z() * scale;
+		double lead = Math.sqrt(lx * lx + lz * lz);
+		if (lead > MAX_LEAD) {
+			lx *= MAX_LEAD / lead;
+			lz *= MAX_LEAD / lead;
+		}
+		return new Vec3(t.position().x() + lx, t.position().y(), t.position().z() + lz);
 	}
 
 	@Override
 	public void reset() {
 		willCart.reset();
 		step = "";
+		lastRail = Long.MIN_VALUE / 2;
+		railsBefore = -1;
 	}
 
 	@Override
@@ -82,6 +127,12 @@ public final class CartTactic implements Tactic {
 		}
 		Vec3 eye = self.eyePosition();
 		double skill = c.profile.items().cartSkill();
+		Vec3 ahead = predicted(t, c.profile.aim().trackingLead());
+		int rails = inv.count(i -> i.kind() == ItemKind.BLOCK && "minecraft:rail".equals(i.id()));
+		if (railsBefore >= 0 && rails < railsBefore) {
+			lastRail = c.observation.tick();
+		}
+		railsBefore = rails;
 
 		Optional<Vec3> cart = c.world.tntCarts().stream()
 			.filter(p -> horizontal(p, t.position()) <= BlockPlay.NEAR_TARGET + 0.5 && p.distanceTo(eye) <= SHOOT_RANGE
@@ -94,9 +145,9 @@ public final class CartTactic implements Tactic {
 
 		int cartSlot = inv.hotbarSlot(ItemKind.TNT_MINECART);
 		Optional<BlockSpot> rail = cartSlot < 0 ? Optional.empty() : c.world.rails().stream()
-			.filter(r -> r.horizontalDistanceTo(t.position()) <= BlockPlay.NEAR_TARGET && r.y() + BlockPlay.RAIL_HEIGHT < eye.y()
+			.filter(r -> r.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && r.y() + BlockPlay.RAIL_HEIGHT < eye.y()
 				&& BlockPlay.worth(c, center(r, 0), PLANNED_POWER, skill))
-			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(t.position())));
+			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(ahead)));
 		if (rail.isPresent()) {
 			step = "place cart";
 			return BlockPlay.clickTop(c, rail.get(), BlockPlay.RAIL_HEIGHT, cartSlot);
@@ -105,11 +156,11 @@ public final class CartTactic implements Tactic {
 		int railItem = inv.hotbarSlot(i -> i.kind() == ItemKind.BLOCK && "minecraft:rail".equals(i.id()));
 		Optional<BlockSpot> spot = railItem < 0 || cartSlot < 0 ? Optional.empty() : c.world.groundSpots().stream()
 			.filter(s -> {
-				double d = s.horizontalDistanceTo(t.position());
-				// Beside the opponent, not under them (they would ride the cart away).
-				return d <= BlockPlay.NEAR_TARGET && d >= 0.9 && s.y() + 1 < eye.y() && BlockPlay.worth(c, center(s, 1), PLANNED_POWER, skill);
+				// Where they are going, but not under them now (they would ride the cart away).
+				return s.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && s.horizontalDistanceTo(t.position()) >= 0.9 && s.y() + 1 < eye.y()
+					&& BlockPlay.worth(c, center(s, 1), PLANNED_POWER, skill);
 			})
-			.min(Comparator.comparingDouble(s -> s.horizontalDistanceTo(t.position())));
+			.min(Comparator.comparingDouble(s -> s.horizontalDistanceTo(ahead)));
 		if (spot.isPresent()) {
 			step = "place rail";
 			return BlockPlay.clickTop(c, spot.get(), 1.0, railItem);

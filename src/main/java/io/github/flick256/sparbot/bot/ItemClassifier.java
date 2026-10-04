@@ -11,12 +11,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +23,6 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import org.jspecify.annotations.Nullable;
 
 /** Maps real 26.2 item stacks to the brain's {@link ItemKind}s and {@link ItemInfo}s. */
 public final class ItemClassifier {
@@ -148,7 +145,7 @@ public final class ItemClassifier {
 		return ids;
 	}
 
-	public static InventoryState inventory(ServerPlayer player, @Nullable Entity target) {
+	public static InventoryState inventory(ServerPlayer player) {
 		Inventory inventory = player.getInventory();
 		ItemInfo[] slots = new ItemInfo[InventoryState.SIZE];
 		for (int i = 0; i < InventoryState.SIZE; i++) {
@@ -161,7 +158,6 @@ public final class ItemClassifier {
 			info(player, player.getItemBySlot(EquipmentSlot.FEET))
 		};
 		boolean using = player.isUsingItem();
-		FishingHook hook = player.fishing;
 		return new InventoryState(
 			slots,
 			info(player, player.getOffhandItem()),
@@ -171,8 +167,6 @@ public final class ItemClassifier {
 			using && player.getUsedItemHand() == InteractionHand.OFF_HAND,
 			using ? player.getTicksUsingItem() : 0,
 			using ? classify(player.getUseItem()) : ItemKind.EMPTY,
-			player.isBlocking(),
-			hook != null && !hook.isRemoved(),
-			hook != null && target != null && hook.getHookedIn() == target);
+			player.isBlocking());
 	}
 }

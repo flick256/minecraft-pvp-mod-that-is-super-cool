@@ -16,6 +16,8 @@ class UhcTacticsTest {
 	private static final ItemInfo WATER = TestFixtures.item(ItemKind.WATER_BUCKET, "minecraft:water_bucket", 1, 1);
 	private static final ItemInfo BUCKET = TestFixtures.item(ItemKind.BUCKET, "minecraft:bucket", 1, 1);
 	private static final ItemInfo WEBS = TestFixtures.item(ItemKind.COBWEB, "minecraft:cobweb", 8, 1);
+	private static final ItemInfo PLANKS = TestFixtures.item(ItemKind.BLOCK, "minecraft:oak_planks", 64, 1);
+	private static final ItemInfo OBSIDIAN = TestFixtures.item(ItemKind.BLOCK, "minecraft:obsidian", 64, 1);
 
 	/** Pro with certain UHC decisions, so assertions don't depend on dice rolls. */
 	private static SkillProfile uhcPro() {
@@ -23,7 +25,7 @@ class UhcTacticsTest {
 		SkillProfile.ItemSkills i = p.items();
 		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(), p.reach(),
 			p.technique(), new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), i.retotemSkill(), i.gappleHealthFraction(),
-				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.rodSkill(), i.potHealthFraction(), i.maceSkill(),
+				i.eatHungerBelow(), i.shieldSkill(), i.axeSkill(), i.bowSkill(), i.pearlSkill(), i.potHealthFraction(), i.maceSkill(),
 				i.spearSkill(), i.crystalSkill(), i.cartSkill(), 1.0),
 			p.mistakeRate(), p.panicHealthFraction());
 	}
@@ -64,5 +66,82 @@ class UhcTacticsTest {
 		h.slots[1] = BUCKET;
 		h.onFire = false;
 		assertTrue(usesWithin(h, ItemKind.BUCKET, 40), "picked the water back up");
+	}
+
+	@Test
+	void watersItsWayOutOfAWeb() {
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WATER), TestFixtures.target(new Vec3(0, 0, 9.0), 0));
+		h.inWeb = true;
+		assertTrue(usesWithin(h, ItemKind.WATER_BUCKET, 40), "emptied the water bucket onto the web");
+		assertTrue(h.pitch >= 80, "looking down at the web, pitch " + h.pitch);
+		assertEquals("water", h.brain.lastTrace().tactic());
+	}
+
+	@Test
+	void poursLavaOntoAWebbedOpponent() {
+		TestFixturesWeb web = new TestFixturesWeb();
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, LAVA), web.webbed(new Vec3(0, 0, 3.0)));
+		assertTrue(usesWithin(h, ItemKind.LAVA_BUCKET, 40), "poured the lava");
+		assertEquals("lava", h.brain.lastTrace().tactic());
+		// Onto the top of the web (one block up from the ground), so less steeply than at the ground.
+		assertTrue(h.pitch > 5 && h.pitch < 25, "aimed at the web's top, pitch " + h.pitch);
+	}
+
+	@Test
+	void followsAShieldStunWithAnInstantHit() {
+		ItemInfo axe = TestFixtures.AXE;
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, axe),
+			TestFixtures.target(new Vec3(0, 0, 2.5), 0, ItemKind.SWORD, ItemKind.SHIELD, ItemKind.SHIELD, true));
+		int axeHit = -1;
+		int followUp = -1;
+		for (int i = 0; i < 80 && followUp < 0; i++) {
+			Inputs in = h.tick();
+			if (in.attack() && h.slots[h.selected].kind() == ItemKind.AXE && axeHit < 0) {
+				axeHit = i;
+			} else if (in.attack() && axeHit >= 0 && h.slots[h.selected].kind() == ItemKind.SWORD) {
+				followUp = i;
+			}
+		}
+		assertTrue(axeHit >= 0, "disabled the shield with the axe");
+		assertTrue(followUp >= 0 && followUp - axeHit <= 4, "switched back and hit within 4 ticks (axe " + axeHit + ", sword " + followUp + ")");
+	}
+
+	@Test
+	void wallsOffBeforeHealing() {
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, TestFixtures.GAPPLE, 2, PLANKS),
+			TestFixtures.target(new Vec3(0, 0, 4.0), 0));
+		h.health = 6;
+		boolean placed = false;
+		for (int i = 0; i < 40 && !placed; i++) {
+			Inputs in = h.tick();
+			placed = in.use() && "minecraft:oak_planks".equals(h.slots[h.selected].id());
+			if (placed) {
+				assertEquals(0, in.forward(), "stands still to build");
+			}
+		}
+		assertTrue(placed, "put a block down between itself and the opponent");
+		assertEquals("wall", h.brain.lastTrace().tactic());
+	}
+
+	@Test
+	void obsidianIsNotWallMaterial() {
+		assertTrue(WallTactic.wallBlock(PLANKS));
+		assertTrue(!WallTactic.wallBlock(OBSIDIAN) && !WallTactic.wallBlock(WEBS));
+	}
+
+	@Test
+	void predictsWhereAKnockedUpPlayerLands() {
+		// Knocked up and back: about 0.4 up and 0.4 away per tick, from standing on the ground.
+		Vec3 land = BlockPlay.landing(new Vec3(0, 1.0, 3.0), new Vec3(0, 0.42, 0.4), 1.0);
+		assertEquals(1.0, land.y(), 1e-9);
+		assertTrue(land.z() > 6.0 && land.z() < 8.5, "lands a few blocks back, at z " + land.z());
+	}
+
+	/** A target standing in a cobweb. */
+	private static final class TestFixturesWeb {
+		io.github.flick256.sparbot.core.sense.TargetState webbed(Vec3 pos) {
+			return new io.github.flick256.sparbot.core.sense.TargetState(7, "Steve", pos, Vec3.ZERO, 0, 20, 20, true, 0, false, true, 0, 0.3, 1.8,
+				ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15, false, true);
+		}
 	}
 }
