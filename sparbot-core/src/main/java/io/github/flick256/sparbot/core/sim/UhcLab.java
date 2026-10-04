@@ -1,0 +1,366 @@
+package io.github.flick256.sparbot.core.sim;
+
+import io.github.flick256.sparbot.core.brain.DecisionTrace;
+import io.github.flick256.sparbot.core.profile.SkillProfile;
+import io.github.flick256.sparbot.core.profile.SkillProfiles;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.stream.IntStream;
+
+/**
+ * Full-kit UHC fights in the simulator, with what happened in them: who won, how long it took, what
+ * each side spent its time on, how much the world (lava, fire, falls) hurt, and what was left lying
+ * around. For finding what the bots do badly at hundreds of fights a second:
+ * {@code java ... UhcLab [fights] [profileA] [profileB] [kit] [terrain]}.
+ */
+public final class UhcLab {
+	private UhcLab() {
+	}
+
+	/** Totals over many fights. */
+	public static final class Report {
+		final AtomicInteger fights = new AtomicInteger();
+		final AtomicInteger winsA = new AtomicInteger();
+		final AtomicInteger winsB = new AtomicInteger();
+		final AtomicInteger timeouts = new AtomicInteger();
+		final DoubleAdder ticks = new DoubleAdder();
+		final DoubleAdder scoreA = new DoubleAdder();
+		final Map<String, DoubleAdder> stats = new ConcurrentHashMap<>();
+		final Map<String, DoubleAdder> tactics = new ConcurrentHashMap<>();
+		final DoubleAdder leftoverWater = new DoubleAdder();
+		final DoubleAdder leftoverLava = new DoubleAdder();
+		/** Longest stretch either side spent in one non-melee tactic without its health or the opponent's changing. */
+		final AtomicInteger longestStall = new AtomicInteger();
+		volatile String stallNote = "";
+
+		void add(String key, double v) {
+			stats.computeIfAbsent(key, k -> new DoubleAdder()).add(v);
+		}
+
+		public double scoreA() {
+			return scoreA.sum() / Math.max(1, fights.get());
+		}
+
+		@Override
+		public String toString() {
+			int n = Math.max(1, fights.get());
+			StringBuilder sb = new StringBuilder();
+			sb.append(String.format(Locale.ROOT, "%d fights: A won %d, B won %d, timeouts %d, A's score %.3f, mean length %.0f ticks%n", fights.get(), winsA.get(),
+				winsB.get(), timeouts.get(), scoreA(), ticks.sum() / n));
+			for (Map.Entry<String, DoubleAdder> e : new TreeMap<>(stats).entrySet()) {
+				sb.append(String.format(Locale.ROOT, "  %-22s %8.2f per fight%n", e.getKey(), e.getValue().sum() / n));
+			}
+			double total = tactics.values().stream().mapToDouble(DoubleAdder::sum).sum();
+			sb.append("  time per tactic (both sides):");
+			new TreeMap<>(tactics).forEach((k, v) -> sb.append(String.format(Locale.ROOT, " %s %.1f%%", k, 100 * v.sum() / Math.max(1, total))));
+			sb.append(String.format(Locale.ROOT, "%n  left lying around at the end: water %.2f, lava %.2f blocks%n", leftoverWater.sum() / n, leftoverLava.sum() / n));
+			sb.append(String.format(Locale.ROOT, "  longest stall: %d ticks %s%n", longestStall.get(), stallNote));
+			return sb.toString();
+		}
+	}
+
+	public static Report run(Tournament.Entrant a, Tournament.Entrant b, Loadout loadout, SimArena arena, int fights, long seed, int maxTicks) {
+		Report report = new Report();
+		IntStream.range(0, fights).parallel().forEach(i -> {
+			long s = seed * 1_000_003L + i;
+			boolean swap = i % 2 == 1;
+			Tournament.Entrant first = swap ? b : a;
+			Tournament.Entrant second = swap ? a : b;
+			int sideA = swap ? 1 : 0;
+			int[] stall = new int[2];
+			int[] webStart = {-1, -1};
+			boolean[] webBucket = new boolean[2];
+			String[] stallTactic = new String[2];
+			float[][] lastHealth = new float[2][2];
+			SimWorld[] worldRef = new SimWorld[1];
+			DuelSim.Watcher watcher = (tick, world, fighters, inputs, sides) -> {
+				worldRef[0] = world;
+				for (int k = 0; k < 2; k++) {
+					if (fighters[k].inWeb && webStart[k] < 0) {
+						webStart[k] = tick;
+						boolean hotbar = false;
+						for (int slot = 0; slot < 9; slot++) {
+							hotbar |= fighters[k].slots[slot] != null && fighters[k].slots[slot].kind() == io.github.flick256.sparbot.core.item.ItemKind.WATER_BUCKET;
+						}
+						webBucket[k] = hotbar;
+					} else if (!fighters[k].inWeb && webStart[k] >= 0) {
+						int length = tick - webStart[k];
+						report.add(webBucket[k] ? "web episodes (water in hotbar)" : "web episodes (no water in hotbar)", 0.5);
+						report.add(webBucket[k] ? "web ticks (water in hotbar)" : "web ticks (no water in hotbar)", length / 2.0);
+						webStart[k] = -1;
+					}
+					DecisionTrace trace = sides[k].policy().lastTrace();
+					String tactic = trace == null || trace.tactic() == null ? "?" : trace.tactic();
+					report.tactics.computeIfAbsent(tactic, t -> new DoubleAdder()).add(1);
+					boolean changed = fighters[k].health != lastHealth[k][0] || fighters[1 - k].health != lastHealth[k][1];
+					lastHealth[k][0] = fighters[k].health;
+					lastHealth[k][1] = fighters[1 - k].health;
+					if (!tactic.equals(stallTactic[k]) || changed || tactic.equals("engage") || tactic.equals("search")) {
+						stall[k] = 0;
+						stallTactic[k] = tactic;
+					} else if (++stall[k] > report.longestStall.get()) {
+						report.longestStall.set(stall[k]);
+						report.stallNote = "(" + tactic + " " + trace.note() + ", seed " + s + ", tick " + tick + ")";
+					}
+				}
+			};
+			DuelSim.Result r = DuelSim.fight(first.side(s), second.side(s ^ 0x9E3779B9L), loadout, arena, s, maxTicks, watcher);
+			report.fights.incrementAndGet();
+			report.ticks.add(r.ticks());
+			report.scoreA.add(r.score(sideA));
+			if (r.winner() < 0) {
+				report.timeouts.incrementAndGet();
+			} else if (r.winner() == sideA) {
+				report.winsA.incrementAndGet();
+			} else {
+				report.winsB.incrementAndGet();
+			}
+			for (int k = 0; k < 2; k++) {
+				DuelSim.SideStats st = r.sides()[k];
+				report.add("hits", r.hits()[k] / 2.0);
+				report.add("swings", r.swings()[k] / 2.0);
+				report.add("damage dealt", r.damage()[k] / 2.0);
+				report.add("crits", r.crits()[k] / 2.0);
+				report.add("blocked hits", r.blockedHits()[k] / 2.0);
+				report.add("gapples eaten", r.gapplesEaten()[k] / 2.0);
+				report.add("lava pours", st.lavaPours() / 2.0);
+				report.add("water pours", st.waterPours() / 2.0);
+				report.add("scoops", st.scoops() / 2.0);
+				report.add("blocks placed", st.blocksPlaced() / 2.0);
+				report.add("webs placed", st.websPlaced() / 2.0);
+				report.add("arrows shot", st.arrowsShot() / 2.0);
+				report.add("arrow hits", st.arrowHits() / 2.0);
+				report.add("lava damage taken", st.lavaDamage() / 2.0);
+				report.add("fire damage taken", st.fireDamage() / 2.0);
+				report.add("fall damage taken", st.fallDamage() / 2.0);
+				report.add("ticks in web", st.ticksInWeb() / 2.0);
+				report.add("ticks in water", st.ticksInWater() / 2.0);
+				report.add("ticks burning", st.ticksBurning() / 2.0);
+			}
+			if (worldRef[0] != null) {
+				report.leftoverWater.add(worldRef[0].count(SimWorld.WATER));
+				report.leftoverLava.add(worldRef[0].count(SimWorld.LAVA));
+			}
+		});
+		return report;
+	}
+
+	/** Prints one fight tick by tick between two ticks: {@code UhcLab trace seed from to [a] [b]}. */
+	static void trace(long seed, int from, int to, String pa, String pb, String kit, boolean terrain, boolean swap) {
+		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
+		Tournament.Entrant a = Tournament.scripted(presets.get(pa));
+		Tournament.Entrant b = Tournament.scripted(presets.get(pb));
+		Tournament.Entrant first = swap ? b : a;
+		Tournament.Entrant second = swap ? a : b;
+		DuelSim.Watcher watcher = (tick, world, f, in, sides) -> {
+			if (tick < from || tick > to) {
+				return;
+			}
+			StringBuilder sb = new StringBuilder(String.format(Locale.ROOT, "%5d", tick));
+			for (int k = 0; k < 2; k++) {
+				DecisionTrace t = sides[k].policy().lastTrace();
+				String note = t.note().contains("step=") ? t.note().substring(t.note().indexOf("step=") + 5) : "";
+				SimStack held = f[k].held();
+				sb.append(String.format(Locale.ROOT, " | %d %-8s %-14s hp%5.1f (%6.2f %5.2f %6.2f) yaw%5.0f pit%4.0f %s%s%s%s %-12s k=%s%s%s%s%s",
+					k, t.tactic(), note, f[k].health + f[k].absorption, f[k].x, f[k].y, f[k].z, f[k].yaw, f[k].pitch, f[k].inWater ? "W" : "-",
+					f[k].inWeb ? "N" : "-", f[k].onFire() ? "F" : "-", f[k].inLava ? "L" : "-", held == null ? "empty" : held.id().replace("minecraft:", ""),
+					in[k].forward() + "/" + in[k].strafe(), in[k].jump() ? "J" : "", in[k].attack() ? "A" : "", in[k].use() ? "U" : "",
+					in[k].hotbarSlot() >= 0 ? "#" + in[k].hotbarSlot() : ""));
+			}
+			if (System.getProperty("blocks") != null) {
+				for (int k = 0; k < 2; k++) {
+					StringBuilder around = new StringBuilder("        " + k + " near:");
+					int fx = (int) Math.floor(f[k].x);
+					int fy = (int) Math.floor(f[k].y + 1e-7);
+					int fz = (int) Math.floor(f[k].z);
+					for (int dy = -1; dy <= 2; dy++) {
+						for (int dz = -2; dz <= 2; dz++) {
+							for (int dx = -2; dx <= 2; dx++) {
+								byte t = world.type(fx + dx, fy + dy, fz + dz);
+								if (t != SimWorld.AIR && !(t == SimWorld.STONE && fy + dy < 0)) {
+									around.append(" ").append(new String[] {"air", "stone", "cobble", "obsidian", "web", "water", "lava"}[t]).append("@")
+										.append(fx + dx).append(",").append(fy + dy).append(",").append(fz + dz)
+										.append(world.isSource(fx + dx, fy + dy, fz + dz) ? "s" : "");
+								}
+							}
+						}
+					}
+					System.out.println(around);
+				}
+			}
+			System.out.println(sb);
+		};
+		DuelSim.Result r = DuelSim.fight(first.side(seed), second.side(seed ^ 0x9E3779B9L), Loadout.ofKit(kit), terrain ? SimArena.UHC_TERRAIN : SimArena.UHC,
+			seed, to + 1, watcher);
+		System.out.println("winner " + r.winner() + " after " + r.ticks());
+	}
+
+	/** A profile whose item skills are all 1 (the GameTests' TestSupport#certain). */
+	static SkillProfile certain(SkillProfile p) {
+		SkillProfile.ItemSkills i = p.items();
+		return new SkillProfile(p.id(), p.displayName(), p.description(), p.reactionTimeMs(), p.pingMs(), p.aim(), p.clicking(), p.reach(), p.technique(),
+			new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), 1, i.gappleHealthFraction(), i.eatHungerBelow(), 1, 1, 1, 1, i.potHealthFraction(),
+				1, 1, 1, 1, 1),
+			p.mistakeRate(), p.panicHealthFraction());
+	}
+
+	/** A pro shooting a standing dummy 15 blocks away (the GameTest arrowParity): shots and hits until it dies. */
+	static void arrows(int fights) {
+		arrows(fights, false);
+	}
+
+	static void arrows(int fights, boolean moving) {
+		SkillProfile pro = certain(SkillProfiles.loadPresets().get("pro"));
+		Tournament.Entrant shooter = new Tournament.Entrant("archer", pro, seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(pro, seed));
+		io.github.flick256.sparbot.core.brain.Policy idle = new io.github.flick256.sparbot.core.brain.Policy() {
+			@Override
+			public io.github.flick256.sparbot.core.act.Inputs act(io.github.flick256.sparbot.core.sense.Observation observation) {
+				return io.github.flick256.sparbot.core.act.Inputs.IDLE;
+			}
+
+			@Override
+			public DecisionTrace lastTrace() {
+				return DecisionTrace.NONE;
+			}
+
+			@Override
+			public void reset() {
+			}
+		};
+		SimArena arena = new SimArena(16, 6, 15, 15, false, false);
+		int shots = 0;
+		int hits = 0;
+		int ticks = 0;
+		SimArena line = new SimArena(16, 6, 15, 15, false, true);
+		for (int i = 0; i < fights; i++) {
+			double[] home = new double[3];
+			int phase = i;
+			DuelSim.Watcher mover = !moving ? null : new DuelSim.Watcher() {
+				@Override
+				public void tick(int tick, SimWorld world, SimFighter[] f, io.github.flick256.sparbot.core.act.Inputs[] in, DuelSim.Side[] sides) {
+					if (tick == 0) {
+						home[0] = f[1].x;
+						home[2] = f[1].z;
+					}
+					f[1].x = home[0];
+					f[1].z = home[2] + 1.5 * Math.sin(2 * Math.PI * (tick + 7 * phase) / 60.0);
+					f[1].vx = 0;
+					f[1].vz = 0;
+					f[1].pendingMotion = null;
+				}
+
+				@Override
+				public void arrowDone(SimArrow arrow) {
+					if (phase < 8 && arrow.closest != null) {
+						System.out.printf(Locale.ROOT, "pass: %s d=%.2f dx=%.2f dy=%.2f dz=%.2f%n", arrow.hit ? "HIT" : "MISS", arrow.closest[0], arrow.closest[1], arrow.closest[2], arrow.closest[3]);
+					}
+				}
+			};
+			DuelSim.Result r = DuelSim.fight(shooter.side(i), new DuelSim.Side(idle, pro), Loadout.ofKit("sparbot_uhc"), moving ? line : arena, i, 800, mover);
+			shots += r.sides()[0].arrowsShot();
+			hits += r.sides()[0].arrowHits();
+			ticks += r.ticks();
+		}
+		System.out.printf(Locale.ROOT, "%d fights: %.1f shots, %.1f hits (%.0f%%), %.0f ticks each%n", fights, shots / (double) fights, hits / (double) fights,
+			100.0 * hits / Math.max(1, shots), ticks / (double) fights);
+	}
+
+	/** The GameTests' webEscape and fireEscape: a pro webbed (four layouts) or set on fire, an idle opponent 8 blocks off. */
+	static void escapes(int repeats) {
+		SkillProfile pro = SkillProfiles.loadPresets().get("pro");
+		Tournament.Entrant bot = Tournament.scripted(pro);
+		io.github.flick256.sparbot.core.brain.Policy idle = new io.github.flick256.sparbot.core.brain.Policy() {
+			@Override
+			public io.github.flick256.sparbot.core.act.Inputs act(io.github.flick256.sparbot.core.sense.Observation observation) {
+				return io.github.flick256.sparbot.core.act.Inputs.IDLE;
+			}
+
+			@Override
+			public DecisionTrace lastTrace() {
+				return DecisionTrace.NONE;
+			}
+
+			@Override
+			public void reset() {
+			}
+		};
+		SimArena arena = new SimArena(16, 6, 8.25, 8.25, false, true);
+		for (int layout = 0; layout <= 4; layout++) {
+			StringBuilder sb = new StringBuilder(layout < 4 ? "web layout " + layout + ":" : "fire:");
+			for (int i = 0; i < repeats; i++) {
+				int lay = layout;
+				int[] freeAt = {-1};
+				DuelSim.Watcher w = (tick, world, f, in, sides) -> {
+					if (tick == 0) {
+						f[0].x = 0.25;
+						f[0].z = 0.25;
+						f[1].x = 8.5;
+						f[1].z = 0.5;
+						switch (lay) {
+							case 0 -> world.set(0, 0, 0, SimWorld.WEB);
+							case 1 -> world.set(-1, 0, -1, SimWorld.WEB);
+							case 2 -> {
+								world.set(-1, 0, 0, SimWorld.WEB);
+								world.set(-1, 1, 0, SimWorld.WEB);
+							}
+							case 3 -> world.set(-1, 1, -1, SimWorld.WEB);
+							default -> {
+							}
+						}
+					}
+					if (lay == 4) {
+						if (tick == 10) {
+							world.set(0, 0, 0, SimWorld.LAVA);
+						} else if (tick == 14) {
+							world.set(0, 0, 0, SimWorld.AIR);
+						}
+						if (tick > 16 && !f[0].onFire() && freeAt[0] < 0) {
+							freeAt[0] = tick - 14;
+						}
+					} else if (tick > 2 && !f[0].inWeb && freeAt[0] < 0) {
+						freeAt[0] = tick;
+					}
+				};
+				DuelSim.fight(bot.side(i), new DuelSim.Side(idle, pro), Loadout.ofKit("sparbot_uhc"), arena, 100 + i, 400, w);
+				sb.append(' ').append(freeAt[0]);
+			}
+			System.out.println(sb);
+		}
+	}
+
+	public static void main(String[] args) {
+		if (args.length > 0 && args[0].equals("escapes")) {
+			escapes(args.length > 1 ? Integer.parseInt(args[1]) : 10);
+			return;
+		}
+		if (args.length > 0 && args[0].equals("arrows")) {
+			arrows(args.length > 1 ? Integer.parseInt(args[1]) : 20, args.length > 2 && Boolean.parseBoolean(args[2]));
+			return;
+		}
+		if (args.length > 0 && args[0].equals("trace")) {
+			long seed = Long.parseLong(args[1]);
+			trace(seed, Integer.parseInt(args[2]), Integer.parseInt(args[3]), args.length > 4 ? args[4] : "pro", args.length > 5 ? args[5] : "pro",
+				args.length > 6 ? args[6] : "sparbot_uhc", args.length > 7 && Boolean.parseBoolean(args[7]), args.length > 8 && Boolean.parseBoolean(args[8]));
+			return;
+		}
+		int fights = args.length > 0 ? Integer.parseInt(args[0]) : 200;
+		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
+		String pa = args.length > 1 ? args[1] : "pro";
+		String pb = args.length > 2 ? args[2] : "pro";
+		String kit = args.length > 3 ? args[3] : "sparbot_uhc";
+		boolean terrain = args.length > 4 && Boolean.parseBoolean(args[4]);
+		int maxTicks = args.length > 5 ? Integer.parseInt(args[5]) : 6000;
+		Loadout loadout = Loadout.ofKit(kit);
+		long start = System.nanoTime();
+		Report r = run(Tournament.scripted(presets.get(pa)), Tournament.scripted(presets.get(pb)), loadout, terrain ? SimArena.UHC_TERRAIN : SimArena.UHC,
+			fights, 1, maxTicks);
+		double seconds = (System.nanoTime() - start) / 1e9;
+		System.out.printf(Locale.ROOT, "%s vs %s, kit %s%s%n", pa, pb, kit, terrain ? ", uneven ground" : "");
+		System.out.print(r);
+		System.out.printf(Locale.ROOT, "%.1f s (%.1f fights/s)%n", seconds, fights / seconds);
+	}
+}

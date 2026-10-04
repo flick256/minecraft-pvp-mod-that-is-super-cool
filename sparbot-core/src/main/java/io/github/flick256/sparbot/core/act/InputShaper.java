@@ -84,7 +84,7 @@ public final class InputShaper {
 		if (latency.size() <= latencyTicks) {
 			// Nothing has "arrived" yet: keep holding the previous keys, no new mouse movement or clicks.
 			return new Inputs(0, 0, lastEmitted.forward(), lastEmitted.strafe(), lastEmitted.jump(), lastEmitted.sneak(),
-				lastEmitted.sprint(), false, lastEmitted.use(), -1, false, lastEmitted.inventoryOpen(), null);
+				lastEmitted.sprint(), false, lastEmitted.use(), -1, false, lastEmitted.inventoryOpen(), null, lastEmitted.holdAttack());
 		}
 		Inputs out = latency.pollFirst();
 		// If latency shrank, two packets arrive in the same tick: merge them (mouse deltas add up).
@@ -93,7 +93,7 @@ public final class InputShaper {
 			out = new Inputs(out.yawDelta() + next.yawDelta(), out.pitchDelta() + next.pitchDelta(), next.forward(), next.strafe(),
 				next.jump(), next.sneak(), next.sprint(), out.attack() || next.attack(), next.use(),
 				next.hotbarSlot() >= 0 ? next.hotbarSlot() : out.hotbarSlot(), out.swapOffhand() || next.swapOffhand(),
-				next.inventoryOpen(), next.inventoryClick() != null ? next.inventoryClick() : out.inventoryClick());
+				next.inventoryOpen(), next.inventoryClick() != null ? next.inventoryClick() : out.inventoryClick(), next.holdAttack());
 		}
 		return out;
 	}
@@ -140,8 +140,9 @@ public final class InputShaper {
 			lastSwapTick = tick;
 		}
 
+		// Holding the button down is not clicking: it isn't held to the click rate.
 		Inputs out = new Inputs(yaw, pitch, in.forward(), in.strafe(), in.jump(), in.sneak(), in.sprint(), attack, in.use(), in.hotbarSlot(),
-			swap, false, null);
+			swap, false, null, in.holdAttack());
 		lastEmitted = out;
 		return out;
 	}

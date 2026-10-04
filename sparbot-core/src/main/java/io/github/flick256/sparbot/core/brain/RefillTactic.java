@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 /**
  * Restocks the hotbar from the main inventory between engagements, like a player opening the
  * inventory and pressing number keys over each stack: healing potions into empty hotbar slots, plus
- * one stack of pearls and golden apples when the hotbar has none. Takes the profile's inventory time,
+ * one stack of pearls and golden apples when the hotbar has none, and a water bucket. Takes the profile's inventory time,
  * the bot cannot move or fight while the screen is open, and it gives up if the opponent closes in.
  */
 public final class RefillTactic implements Tactic {
@@ -128,9 +128,24 @@ public final class RefillTactic implements Tactic {
 				potsInHotbar++;
 			}
 		}
+		// UHC: a water bucket belongs in the hotbar (a web or fire with none to hand is deadly). The spare
+		// goes where the empty bucket is, or into a free slot.
+		boolean waterRefill = false;
+		if (inv.hotbarSlot(ItemKind.WATER_BUCKET) < 0) {
+			int from = inv.mainInventorySlot(i -> i.is(ItemKind.WATER_BUCKET));
+			int to = inv.hotbarSlot(ItemKind.BUCKET);
+			if (to < 0 && !freeHotbar.isEmpty()) {
+				to = freeHotbar.remove(0);
+			}
+			if (from >= 0 && to >= 0 && !used.contains(from)) {
+				clicks.add(new InventoryClick(from, to));
+				used.add(from);
+				waterRefill = true;
+			}
+		}
 		// Only worth opening the inventory when the hotbar has run dry of something important.
 		boolean hotbarOutOfPots = inv.hotbarSlot(Potions::isHealingSplash) < 0;
-		boolean worthIt = hotbarOutOfPots || clicks.size() >= 2;
+		boolean worthIt = hotbarOutOfPots || waterRefill || clicks.size() >= 2;
 		return worthIt ? clicks : List.of();
 	}
 

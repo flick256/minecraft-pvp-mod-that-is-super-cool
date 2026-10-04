@@ -48,6 +48,11 @@ public final class Rng {
 		return mean + nextGaussian() * stdDev;
 	}
 
+	/** RandomSource#triangle(0, spread): a value in (-spread, spread), most likely near 0. */
+	public double triangle(double spread) {
+		return spread * (nextDouble() - nextDouble());
+	}
+
 	public Rng fork() {
 		return new Rng(random.nextLong());
 	}

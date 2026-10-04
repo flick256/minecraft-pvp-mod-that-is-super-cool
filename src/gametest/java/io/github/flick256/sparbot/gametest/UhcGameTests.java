@@ -139,6 +139,24 @@ public class UhcGameTests {
 			.thenSucceed();
 	}
 
+	@GameTest(maxTicks = 200)
+	public void botCutsItselfOutOfAWebWithItsSword(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Cutter", 3.5, 1, 3.5, 0, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot = 0; slot < body.getInventory().getContainerSize(); slot++) {
+			if (body.getInventory().getItem(slot).is(Items.WATER_BUCKET)) {
+				body.getInventory().setItem(slot, ItemStack.EMPTY); // no water: the sword it is
+			}
+		}
+		helper.setBlock(new BlockPos(3, 1, 3), Blocks.COBWEB);
+		helper.succeedWhen(() -> {
+			helper.assertFalse(helper.getBlockState(new BlockPos(3, 1, 3)).is(Blocks.COBWEB), "the web is still there");
+			helper.assertTrue(body.getMainHandItem().is(Items.DIAMOND_SWORD), "cut with the sword");
+			TestSupport.remove(bot);
+		});
+	}
+
 	@GameTest(maxTicks = 300, padding = 16)
 	public void botPoursLavaOntoAWebbedOpponent(GameTestHelper helper) {
 		TestSupport.arena(helper);

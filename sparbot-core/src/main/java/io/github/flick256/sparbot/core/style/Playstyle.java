@@ -20,7 +20,7 @@ import java.util.Set;
 public record Playstyle(String id, String displayName, String description, Map<String, Double> tacticWeights, Map<String, Double> skillBias,
 	double preferredRange) {
 	/** Tactic names a weight can refer to (see the brain's tactic list). */
-	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "kite", "pot", "refill", "buff", "mace", "spear", "crystal", "cart", "lava", "web", "water", "wall", "cleanup", "boost");
+	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "kite", "pot", "refill", "buff", "mace", "spear", "crystal", "cart", "lava", "web", "water", "wall", "cleanup", "boost", "breakweb");
 	/** Skills a bias can refer to. */
 	public static final Set<String> SKILLS = Set.of("critSkill", "wTapSkill", "sTapSkill", "strafeSkill", "jumpResetSkill", "spacingSkill", "readSkill", "feintSkill", "comboSkill",
 		"retotemSkill", "shieldSkill", "axeSkill", "bowSkill", "pearlSkill", "gappleHealthFraction", "panicHealthFraction",

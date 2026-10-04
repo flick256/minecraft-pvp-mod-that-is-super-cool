@@ -28,8 +28,6 @@ public final class RangedTactic implements Tactic {
 	/** Longest stretch of bow play (6 s) before pushing in for {@link #PUSH_IN_TICKS}. */
 	private static final int MAX_RANGED_TICKS = 120;
 	private static final int PUSH_IN_TICKS = 200;
-	/** Farther than this, the bow is still the way to go. */
-	private static final double FAR = 20.0;
 	private int rangedTicks;
 	private long pushInFrom = Long.MIN_VALUE / 2;
 	private final Decision wantsRanged = new Decision();
@@ -58,9 +56,10 @@ public final class RangedTactic implements Tactic {
 		if (distance < MIN_RANGE || distance > MAX_RANGE) {
 			return 0;
 		}
-		// A bow exchange going nowhere: after a while a player pushes in instead (unless they're far off).
+		// A bow exchange going nowhere: after a while a player pushes in instead, however far (arrow
+		// knockback pushes two archers apart, so waiting for them to come closer never ends).
 		long now = c.observation.tick();
-		if (now - pushInFrom < PUSH_IN_TICKS && distance < FAR) {
+		if (now - pushInFrom < PUSH_IN_TICKS) {
 			return 0;
 		}
 		if (rangedTicks > MAX_RANGED_TICKS) {

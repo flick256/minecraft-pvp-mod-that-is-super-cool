@@ -16,6 +16,12 @@ public record Vec3(double x, double y, double z) {
 		return new Vec3(x * s, y * s, z * s);
 	}
 
+	/** This vector scaled to length 1 (zero stays zero). */
+	public Vec3 normalize() {
+		double len = length();
+		return len < 1.0E-4 ? ZERO : scale(1.0 / len);
+	}
+
 	public double length() {
 		return Math.sqrt(x * x + y * y + z * z);
 	}

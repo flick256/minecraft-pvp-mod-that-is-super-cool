@@ -69,6 +69,11 @@ public final class ClientEmulator {
 	private int rightClickDelay;
 	private int useSequence;
 	private boolean inventoryOpen;
+	// MultiPlayerGameMode's block breaking state (cobwebs only: a bot doesn't dig).
+	private boolean destroying;
+	private BlockPos destroyPos = BlockPos.ZERO;
+	private float destroyProgress;
+	private int destroyDelay;
 
 	/** Applies one tick of shaped inputs. Order follows the client: mouse, hotbar, keys, clicks, movement, sprint. */
 	void apply(BotPlayer player, Bot bot, Inputs in) {
@@ -128,9 +133,63 @@ public final class ClientEmulator {
 			startUseItem(player, listener);
 		}
 		useHeld = in.use();
+		// Minecraft#continueAttack: the attack button held down keeps breaking the block under the crosshair.
+		if (in.holdAttack() && !player.isUsingItem()) {
+			continueDestroy(player, listener);
+		} else {
+			stopDestroy(listener);
+		}
 
 		sendKeys(listener, new Input(in.forward() > 0, in.forward() < 0, in.strafe() > 0, in.strafe() < 0, in.jump(), in.sneak(), in.sprint()));
 		updateSprint(player, listener);
+	}
+
+	/**
+	 * MultiPlayerGameMode#continueDestroyBlock for a cobweb under the crosshair: START_DESTROY_BLOCK on a new
+	 * block, then BlockState#getDestroyProgress each tick (the client's own count), STOP_DESTROY_BLOCK at 1,
+	 * then 5 ticks before the next. The server checks the time it took (ServerPlayerGameMode). Only cobwebs:
+	 * a bot never digs the arena.
+	 */
+	private void continueDestroy(BotPlayer player, ServerGamePacketListenerImpl listener) {
+		if (destroyDelay > 0) {
+			destroyDelay--;
+			return;
+		}
+		HitResult hit = raycast(player);
+		if (!(hit instanceof BlockHitResult block) || hit.getType() != HitResult.Type.BLOCK
+			|| !player.level().getBlockState(block.getBlockPos()).is(net.minecraft.world.level.block.Blocks.COBWEB)) {
+			stopDestroy(listener);
+			return;
+		}
+		BlockPos pos = block.getBlockPos();
+		net.minecraft.world.level.block.state.BlockState state = player.level().getBlockState(pos);
+		if (!destroying || !pos.equals(destroyPos)) {
+			stopDestroy(listener);
+			listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, pos, block.getDirection(),
+				++useSequence));
+			destroying = true;
+			destroyPos = pos;
+			destroyProgress = 0;
+		} else {
+			destroyProgress += state.getDestroyProgress(player, player.level(), pos);
+			if (destroyProgress >= 1.0F) {
+				listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, block.getDirection(),
+					++useSequence));
+				destroying = false;
+				destroyProgress = 0;
+				destroyDelay = 5;
+			}
+		}
+		listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
+	}
+
+	/** MultiPlayerGameMode#stopDestroyBlock: letting go aborts the block being broken. */
+	private void stopDestroy(ServerGamePacketListenerImpl listener) {
+		if (destroying) {
+			listener.handlePlayerAction(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, destroyPos, Direction.DOWN));
+			destroying = false;
+			destroyProgress = 0;
+		}
 	}
 
 	private void sendKeys(ServerGamePacketListenerImpl listener, Input newKeys) {
@@ -265,7 +324,7 @@ public final class ClientEmulator {
 					}
 				}
 			}
-			// A bot never starts mining: clicking a block only swings (a deliberate milestone-1 limit).
+			// A click on a block only swings: breaking one (cobwebs only) is holding the button (continueDestroy).
 			case BLOCK -> {
 			}
 			case MISS -> missTime = MISS_TIME_TICKS;
@@ -419,5 +478,8 @@ public final class ClientEmulator {
 		missTime = 0;
 		rightClickDelay = 0;
 		inventoryOpen = false;
+		destroying = false;
+		destroyProgress = 0;
+		destroyDelay = 0;
 	}
 }

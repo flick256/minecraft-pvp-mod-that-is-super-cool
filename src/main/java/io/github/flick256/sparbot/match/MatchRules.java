@@ -17,7 +17,8 @@ public final class MatchRules {
 	private MatchRules() {
 	}
 
-	static void withoutRegeneration(UUID player, boolean on) {
+	/** Switches natural regeneration off (or back on) for one player: a match's fighters, or a test's. */
+	public static void withoutRegeneration(UUID player, boolean on) {
 		if (on) {
 			NO_REGENERATION.add(player);
 		} else {

@@ -60,3 +60,14 @@ tasks.register('tournament', JavaExec) {
 	mainClass = 'io.github.flick256.sparbot.core.sim.Tournament'
 	args = [project.findProperty('fights') ?: '100']
 }
+
+// Full-kit UHC fights between scripted bots in the simulator, with statistics:
+// ./gradlew :sparbot-core:uhcLab -Pfights=200 -Pa=pro -Pb=pro -Pkit=sparbot_uhc -Pterrain=false
+tasks.register('uhcLab', JavaExec) {
+	group = 'sparbot'
+	description = 'Runs full-kit UHC fights in the simulator and prints what happened in them.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.flick256.sparbot.core.sim.UhcLab'
+	args = [project.findProperty('fights') ?: '200', project.findProperty('a') ?: 'pro', project.findProperty('b') ?: 'pro',
+		project.findProperty('kit') ?: 'sparbot_uhc', project.findProperty('terrain') ?: 'false']
+}

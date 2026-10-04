@@ -5,6 +5,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -23,11 +25,17 @@ import net.minecraft.world.phys.Vec3;
  *       thrown or shot projectile inherits.</li>
  *   <li>{@link #applyInput()} turns the held keys into movement exactly like the vanilla client's
  *       LocalPlayer#applyInput.</li>
+ *   <li>A hit blocked with a shield pushes the blocker's server-side velocity (LivingEntity#blockedByItem
+ *       and #dealDefaultKnockback) but isn't marked as a hurt, so vanilla never sends that push to a
+ *       client and a human player doesn't feel it. The bot moves by its server-side velocity, so it
+ *       skips those two pushes ({@link #blockUsingItem}, {@link #knockback}, {@link #dealDefaultKnockback}).</li>
  * </ul>
  * Nothing here touches health, damage, invulnerability or abilities.
  */
 public final class BotPlayer extends ServerPlayer {
 	private final Bot bot;
+	/** Inside a shield block (see the class comment). */
+	private boolean blockingHit;
 
 	public BotPlayer(MinecraftServer server, ServerLevel level, GameProfile profile, ClientInformation info, Bot bot) {
 		super(server, level, profile, info);
@@ -63,6 +71,32 @@ public final class BotPlayer extends ServerPlayer {
 			setKnownMovement(new Vec3(getX() - xo, getY() - yo, getZ() - zo));
 			level().getChunkSource().move(this);
 		}
+	}
+
+	@Override
+	protected void blockUsingItem(ServerLevel level, LivingEntity attacker, DamageSource source, float damage) {
+		blockingHit = true;
+		try {
+			super.blockUsingItem(level, attacker, source, damage);
+		} finally {
+			blockingHit = false;
+		}
+	}
+
+	@Override
+	public void knockback(double power, double xd, double zd, DamageSource source, float damage, boolean comesFromEffect) {
+		if (blockingHit) {
+			return; // LivingEntity#blockedByItem's push: never sent to a client
+		}
+		super.knockback(power, xd, zd, source, damage, comesFromEffect);
+	}
+
+	@Override
+	public void dealDefaultKnockback(DamageSource source, float damage, boolean blocked) {
+		if (blocked && damage <= 0.0F) {
+			return; // a fully blocked hit isn't marked hurt, so a client never gets this push
+		}
+		super.dealDefaultKnockback(source, damage, blocked);
 	}
 
 	@Override
