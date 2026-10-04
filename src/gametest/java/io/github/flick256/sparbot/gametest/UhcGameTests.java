@@ -267,4 +267,29 @@ public class UhcGameTests {
 			TestSupport.remove(bot, target);
 		});
 	}
+
+	@GameTest(maxTicks = 300, padding = 32)
+	public void botBlockBoostsBackIntoTheFight(GameTestHelper helper) {
+		TestSupport.platform(helper, 8, 20);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Booster", 3.5, 1, 2.5, 0, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot : new int[] {2, 4, 5, 6}) {
+			body.getInventory().setItem(slot, ItemStack.EMPTY); // no bow, buckets or webs: blocks only
+		}
+		Bot target = TestSupport.dummy(helper, "Gap", 3.5, 1, 11.5, 180, "basic_sword");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		int blocksBefore = body.getInventory().countItem(Items.COBBLESTONE);
+		double ground = helper.absoluteVec(new net.minecraft.world.phys.Vec3(0, 1, 0)).y;
+		boolean[] stoodOnStep = {false};
+		helper.onEachTick(() -> {
+			if (body.onGround() && body.getY() > ground + 0.9) {
+				stoodOnStep[0] = true;
+			}
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(body.getInventory().countItem(Items.COBBLESTONE) < blocksBefore, "placed a step");
+			helper.assertTrue(stoodOnStep[0], "jumped onto it");
+			TestSupport.remove(bot, target);
+		});
+	}
 }

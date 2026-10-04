@@ -35,6 +35,11 @@ public final class CrystalTactic implements Tactic {
 
 	private final Decision willCrystal = new Decision();
 	private String step = "";
+	/** A crystal it has been trying to hit, and for how long: one it can't hit (a block in the way) is left alone. */
+	private Vec3 hitting;
+	private int hittingTicks;
+	private final java.util.Map<Vec3, Long> cantHit = new java.util.HashMap<>();
+	private static final int GIVE_UP_HIT_TICKS = 10;
 
 	@Override
 	public String name() {
@@ -65,6 +70,8 @@ public final class CrystalTactic implements Tactic {
 
 	@Override
 	public void reset() {
+		cantHit.clear();
+		hitting = null;
 		willCrystal.reset();
 		step = "";
 	}
@@ -73,14 +80,14 @@ public final class CrystalTactic implements Tactic {
 	private record Choice(String step, Vec3 crystal, BlockSpot block) {
 	}
 
-	private static Choice choose(BrainContext c) {
+	private Choice choose(BrainContext c) {
 		SelfState self = c.self;
 		InventoryState inv = self.inventory();
 		TargetState t = c.seen();
 		Vec3 eye = self.eyePosition();
 		double skill = c.profile.items().crystalSkill();
 		Optional<Vec3> crystal = c.world.crystals().stream()
-			.filter(p -> crystalDistance(eye, p) <= self.attackReach() && BlockPlay.worth(c, p, Explosions.CRYSTAL_POWER, skill))
+			.filter(p -> crystalDistance(eye, p) <= self.attackReach() && !cantHit.containsKey(p) && BlockPlay.worth(c, p, Explosions.CRYSTAL_POWER, skill))
 			.min(Comparator.comparingDouble(p -> -Explosions.rawDamage(p, t.position(), Explosions.CRYSTAL_POWER)));
 		if (crystal.isPresent()) {
 			return new Choice("hit", crystal.get(), null);
@@ -117,6 +124,7 @@ public final class CrystalTactic implements Tactic {
 
 	@Override
 	public Inputs act(BrainContext c) {
+		cantHit.values().removeIf(t -> c.observation.tick() - t > 100);
 		SelfState self = c.self;
 		InventoryState inv = self.inventory();
 		TargetState t = c.seen();
@@ -129,6 +137,11 @@ public final class CrystalTactic implements Tactic {
 		switch (choice.step()) {
 			case "hit" -> {
 				Vec3 p = choice.crystal();
+				hittingTicks = p.equals(hitting) ? hittingTicks + 1 : 0;
+				hitting = p;
+				if (hittingTicks > GIVE_UP_HIT_TICKS) {
+					cantHit.put(p, c.observation.tick());
+				}
 				float[] look = c.lookAt(Angles.yawTowards(eye, p.add(new Vec3(0, 1, 0))), Angles.pitchTowards(eye, p.add(new Vec3(0, 1, 0))));
 				boolean aimed = BrainContext.rayHitsBox(eye, Angles.lookVector(self.yaw(), self.pitch()),
 					new Vec3(p.x() - CRYSTAL_HALF, p.y(), p.z() - CRYSTAL_HALF), new Vec3(p.x() + CRYSTAL_HALF, p.y() + CRYSTAL_HEIGHT, p.z() + CRYSTAL_HALF),
