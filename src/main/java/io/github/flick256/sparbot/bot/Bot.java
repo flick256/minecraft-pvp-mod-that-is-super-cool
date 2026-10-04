@@ -198,8 +198,8 @@ public final class Bot {
 	}
 
 	private void rebuildBrain() {
-		DuelBrain brain = new DuelBrain(profile, playstyle, seed, model == null ? new io.github.flick256.sparbot.core.brain.EngageTactic()
-			: new io.github.flick256.sparbot.core.brain.LearnedMeleeTactic(model));
+		DuelBrain brain = model == null ? new DuelBrain(profile, playstyle, seed, new io.github.flick256.sparbot.core.brain.EngageTactic())
+			: DuelBrain.learned(profile, playstyle, seed, model);
 		if (disabledTechniques != null) {
 			brain.setDisabledTechniques(disabledTechniques);
 		}

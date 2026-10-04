@@ -54,8 +54,8 @@ public final class UhcLab {
 			for (Map.Entry<String, DoubleAdder> e : new TreeMap<>(stats).entrySet()) {
 				sb.append(String.format(Locale.ROOT, "  %-22s %8.2f per fight%n", e.getKey(), e.getValue().sum() / n));
 			}
-			double total = tactics.values().stream().mapToDouble(DoubleAdder::sum).sum();
-			sb.append("  time per tactic (both sides):");
+			double total = tactics.values().stream().mapToDouble(DoubleAdder::sum).sum() / 2;
+			sb.append("  time per tactic (A then B):");
 			new TreeMap<>(tactics).forEach((k, v) -> sb.append(String.format(Locale.ROOT, " %s %.1f%%", k, 100 * v.sum() / Math.max(1, total))));
 			sb.append(String.format(Locale.ROOT, "%n  left lying around at the end: water %.2f, lava %.2f blocks%n", leftoverWater.sum() / n, leftoverLava.sum() / n));
 			sb.append(String.format(Locale.ROOT, "  longest stall: %d ticks %s%n", longestStall.get(), stallNote));
@@ -95,7 +95,7 @@ public final class UhcLab {
 					}
 					DecisionTrace trace = sides[k].policy().lastTrace();
 					String tactic = trace == null || trace.tactic() == null ? "?" : trace.tactic();
-					report.tactics.computeIfAbsent(tactic, t -> new DoubleAdder()).add(1);
+					report.tactics.computeIfAbsent((k == sideA ? "A:" : "B:") + tactic, t -> new DoubleAdder()).add(1);
 					boolean changed = fighters[k].health != lastHealth[k][0] || fighters[1 - k].health != lastHealth[k][1];
 					lastHealth[k][0] = fighters[k].health;
 					lastHealth[k][1] = fighters[1 - k].health;
@@ -121,25 +121,26 @@ public final class UhcLab {
 			}
 			for (int k = 0; k < 2; k++) {
 				DuelSim.SideStats st = r.sides()[k];
-				report.add("hits", r.hits()[k] / 2.0);
-				report.add("swings", r.swings()[k] / 2.0);
-				report.add("damage dealt", r.damage()[k] / 2.0);
-				report.add("crits", r.crits()[k] / 2.0);
-				report.add("blocked hits", r.blockedHits()[k] / 2.0);
-				report.add("gapples eaten", r.gapplesEaten()[k] / 2.0);
-				report.add("lava pours", st.lavaPours() / 2.0);
-				report.add("water pours", st.waterPours() / 2.0);
-				report.add("scoops", st.scoops() / 2.0);
-				report.add("blocks placed", st.blocksPlaced() / 2.0);
-				report.add("webs placed", st.websPlaced() / 2.0);
-				report.add("arrows shot", st.arrowsShot() / 2.0);
-				report.add("arrow hits", st.arrowHits() / 2.0);
-				report.add("lava damage taken", st.lavaDamage() / 2.0);
-				report.add("fire damage taken", st.fireDamage() / 2.0);
-				report.add("fall damage taken", st.fallDamage() / 2.0);
-				report.add("ticks in web", st.ticksInWeb() / 2.0);
-				report.add("ticks in water", st.ticksInWater() / 2.0);
-				report.add("ticks burning", st.ticksBurning() / 2.0);
+				String side = k == sideA ? "A " : "B ";
+				report.add(side + "hits", r.hits()[k]);
+				report.add(side + "swings", r.swings()[k]);
+				report.add(side + "damage dealt", r.damage()[k]);
+				report.add(side + "crits", r.crits()[k]);
+				report.add(side + "blocked hits", r.blockedHits()[k]);
+				report.add(side + "gapples eaten", r.gapplesEaten()[k]);
+				report.add(side + "lava pours", st.lavaPours());
+				report.add(side + "water pours", st.waterPours());
+				report.add(side + "scoops", st.scoops());
+				report.add(side + "blocks placed", st.blocksPlaced());
+				report.add(side + "webs placed", st.websPlaced());
+				report.add(side + "arrows shot", st.arrowsShot());
+				report.add(side + "arrow hits", st.arrowHits());
+				report.add(side + "lava damage taken", st.lavaDamage());
+				report.add(side + "fire damage taken", st.fireDamage());
+				report.add(side + "fall damage taken", st.fallDamage());
+				report.add(side + "ticks in web", st.ticksInWeb());
+				report.add(side + "ticks in water", st.ticksInWater());
+				report.add(side + "ticks burning", st.ticksBurning());
 			}
 			if (worldRef[0] != null) {
 				report.leftoverWater.add(worldRef[0].count(SimWorld.WATER));
@@ -197,6 +198,28 @@ public final class UhcLab {
 		DuelSim.Result r = DuelSim.fight(first.side(seed), second.side(seed ^ 0x9E3779B9L), Loadout.ofKit(kit), terrain ? SimArena.UHC_TERRAIN : SimArena.UHC,
 			seed, to + 1, watcher);
 		System.out.println("winner " + r.winner() + " after " + r.ticks());
+	}
+
+	/**
+	 * A contestant by name: a profile id (the scripted brain), {@code melee:<model>} (the pro with a bundled
+	 * melee model) or {@code melee:<path.json>}.
+	 */
+	static Tournament.Entrant entrant(String name, Map<String, SkillProfile> presets) {
+		if (name.startsWith("melee:")) {
+			String model = name.substring("melee:".length());
+			io.github.flick256.sparbot.core.ml.Mlp net;
+			if (model.endsWith(".json")) {
+				try {
+					net = io.github.flick256.sparbot.core.ml.Mlp.fromJson(java.nio.file.Files.readString(java.nio.file.Path.of(model)));
+				} catch (java.io.IOException e) {
+					throw new java.io.UncheckedIOException(e);
+				}
+			} else {
+				net = io.github.flick256.sparbot.core.ml.Models.loadBundled().get(model);
+			}
+			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get("pro"), net);
+		}
+		return Tournament.scripted(presets.get(name));
 	}
 
 	/** A profile whose item skills are all 1 (the GameTests' TestSupport#certain). */
@@ -356,8 +379,7 @@ public final class UhcLab {
 		int maxTicks = args.length > 5 ? Integer.parseInt(args[5]) : 6000;
 		Loadout loadout = Loadout.ofKit(kit);
 		long start = System.nanoTime();
-		Report r = run(Tournament.scripted(presets.get(pa)), Tournament.scripted(presets.get(pb)), loadout, terrain ? SimArena.UHC_TERRAIN : SimArena.UHC,
-			fights, 1, maxTicks);
+		Report r = run(entrant(pa, presets), entrant(pb, presets), loadout, terrain ? SimArena.UHC_TERRAIN : SimArena.UHC, fights, 1, maxTicks);
 		double seconds = (System.nanoTime() - start) / 1e9;
 		System.out.printf(Locale.ROOT, "%s vs %s, kit %s%s%n", pa, pb, kit, terrain ? ", uneven ground" : "");
 		System.out.print(r);

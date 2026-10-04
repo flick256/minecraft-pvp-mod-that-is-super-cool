@@ -19,8 +19,8 @@ import java.util.function.Consumer;
 /**
  * Trains a melee model: imitate the scripted pro (unless continuing from a model), then improve by
  * self-play, keeping the version that scores best against the scripted pro. From a checkout:
- * {@code ./gradlew :sparbot-core:trainSword} or {@code trainUhc} ({@code -Pgenerations=300 -Pout=model.json
- * [-Pstart=existing.json]}); in game: {@code /sparbot train [sword|uhc] <name> [generations] [from]}.
+ * {@code ./gradlew :sparbot-core:trainSword}, {@code trainUhcMelee} or {@code trainUhc} ({@code -Pgenerations=300
+ * -Pout=model.json [-Pstart=existing.json]}); in game: {@code /sparbot train [sword|uhcmelee|uhc] <name> [generations] [from]}.
  */
 public final class Train {
 	private static final int EVAL_FIGHTS = 200;
@@ -30,7 +30,12 @@ public final class Train {
 	public enum Mode {
 		/** Sword duels: sword and armor only. */
 		SWORD(Loadout.DIAMOND_SWORD, 1),
-		/** UHC melee: sword, axe, shield, golden apples, Protection armor, no natural regeneration. */
+		/** UHC melee only: sword, axe, shield, golden apples, Protection armor, no natural regeneration. */
+		UHC_MELEE(Loadout.UHC, 2),
+		/**
+		 * The whole UHC brain in full-kit fights (blocks, water, lava, webs, bow): the UHC melee network and a
+		 * tactic chooser, trained together ({@link UhcBrainTraining}).
+		 */
 		UHC(Loadout.UHC, 2);
 
 		private final Loadout loadout;
@@ -54,12 +59,25 @@ public final class Train {
 		}
 
 		public String id() {
-			return name().toLowerCase(Locale.ROOT);
+			return name().toLowerCase(Locale.ROOT).replace("_", "");
 		}
 
 		/** The mode a network of this shape was trained for. */
 		public static Mode of(Mlp net) {
-			return net.inputs() == MeleeFeatures.COUNT_V2 ? UHC : SWORD;
+			if (net.tactics() != null) {
+				return UHC;
+			}
+			return net.inputs() == MeleeFeatures.COUNT_V2 ? UHC_MELEE : SWORD;
+		}
+
+		/** By id: sword, uhcmelee or uhc. */
+		public static Mode byId(String id) {
+			for (Mode m : values()) {
+				if (m.id().equals(id.toLowerCase(Locale.ROOT).replace("_", ""))) {
+					return m;
+				}
+			}
+			throw new IllegalArgumentException("no training mode " + id + " (sword, uhcmelee, uhc)");
 		}
 	}
 
@@ -77,6 +95,12 @@ public final class Train {
 	 * @return the best model's score against the scripted pro
 	 */
 	public static double run(Mode mode, Mlp start, int generations, Consumer<String> log, BooleanSupplier cancelled, Consumer<Mlp> onBest) {
+		if (mode == Mode.UHC) {
+			if (start != null && start.inputs() != MeleeFeatures.COUNT_V2) {
+				throw new IllegalArgumentException("that model is not a UHC model");
+			}
+			return UhcBrainTraining.run(start, generations, log, cancelled, onBest);
+		}
 		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
 		SkillProfile pro = presets.get("pro");
 		Tournament.Entrant scriptedPro = Tournament.scripted(pro);
@@ -93,7 +117,7 @@ public final class Train {
 		} else {
 			log.accept("collecting examples from the scripted pro (" + mode.id() + ")");
 			List<Imitation.Example> examples = Imitation.collect(pro, List.of(presets.get("intermediate"), presets.get("advanced"), pro),
-				mode == Mode.UHC ? 200 : 400, 1, mode.loadout(), mode.version);
+				mode == Mode.UHC_MELEE ? 200 : 400, 1, mode.loadout(), mode.version);
 			net = Mlp.random(new Random(1), mode.inputs(), 32, 32, mode.outputs());
 			double loss = Imitation.train(net, examples, 12, 0.003, 1);
 			double[] agree = Imitation.agreement(net, examples);
@@ -128,7 +152,7 @@ public final class Train {
 
 	/** {@code Train <sword|uhc> [generations] [out.json] [start.json]} */
 	public static void main(String[] args) throws IOException {
-		Mode mode = Mode.valueOf(args.length > 0 ? args[0].toUpperCase(Locale.ROOT) : "SWORD");
+		Mode mode = Mode.byId(args.length > 0 ? args[0] : "sword");
 		int generations = args.length > 1 ? Integer.parseInt(args[1]) : 100;
 		Path out = Path.of(args.length > 2 ? args[2] : "build/models/" + mode.id() + ".json");
 		Path startFrom = args.length > 3 && !args[3].isBlank() ? Path.of(args[3]) : null;

@@ -79,8 +79,7 @@ public final class SelfPlay {
 
 	/** The learned network as a tournament entrant, under the given limits. */
 	public static Tournament.Entrant entrant(String name, SkillProfile limits, Mlp net) {
-		return new Tournament.Entrant(name, new DuelBrain(limits, 0).profile(),
-			seed -> new DuelBrain(limits, Playstyle.BALANCED, seed, new LearnedMeleeTactic(net)));
+		return new Tournament.Entrant(name, new DuelBrain(limits, 0).profile(), seed -> DuelBrain.learned(limits, Playstyle.BALANCED, seed, net));
 	}
 
 	/** Mean shaped score of {@code net} over this generation's fights (the same fights for every candidate). */

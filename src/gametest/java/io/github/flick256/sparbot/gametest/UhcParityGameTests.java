@@ -106,10 +106,18 @@ public class UhcParityGameTests {
 	}
 
 	private static void fight(GameTestHelper helper, int round) {
+		fight(helper, round, null);
+	}
+
+	/** As {@link #fight(GameTestHelper, int)}, with bot A fighting with the given model (null: scripted). */
+	private static void fight(GameTestHelper helper, int round, String modelA) {
 		arena(helper);
-		double gap = 8 + round;
+		double gap = 8 + round % 8;
 		double cx = HALF + 1;
-		Bot a = TestSupport.spawnBot(helper, "ParityA", cx - gap / 2, 1, cx, -90, "pro", "sparbot_uhc");
+		Bot a = TestSupport.spawnBot(helper, modelA == null ? "ParityA" : "BrainA", cx - gap / 2, 1, cx, -90, "pro", "sparbot_uhc");
+		if (modelA != null) {
+			a.setModel(modelA, SparBot.models().get(modelA).orElseThrow());
+		}
 		Bot b = TestSupport.spawnBot(helper, "ParityB", cx + gap / 2, 1, cx, 90, "pro", "sparbot_uhc");
 		a.setAssignedTarget(TestSupport.body(b).getUUID());
 		b.setAssignedTarget(TestSupport.body(a).getUUID());
@@ -147,7 +155,7 @@ public class UhcParityGameTests {
 						}
 					}
 				}
-				SparBot.LOGGER.info("UHC parity round {}: ticks={} winner={} healthA={} healthB={} leftoverWater={} leftoverLava={} | A {} | B {}", round,
+				SparBot.LOGGER.info((modelA == null ? "UHC parity" : "UHC brain") + " round {}: ticks={} winner={} healthA={} healthB={} leftoverWater={} leftoverLava={} | A {} | B {}", round,
 					helper.getTick(), ha > hb ? "A" : hb > ha ? "B" : "draw", ha, hb, water, lava, wa.line(), wb.line());
 				if (pa != null) {
 					io.github.flick256.sparbot.match.MatchRules.withoutRegeneration(pa.getUUID(), false);
@@ -460,5 +468,65 @@ public class UhcParityGameTests {
 	@GameTest(maxTicks = 420, padding = 60)
 	public void fireEscape3(GameTestHelper helper) {
 		fireEscape(helper, 3);
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound0(GameTestHelper helper) {
+		fight(helper, 0, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound1(GameTestHelper helper) {
+		fight(helper, 1, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound2(GameTestHelper helper) {
+		fight(helper, 2, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound3(GameTestHelper helper) {
+		fight(helper, 3, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound4(GameTestHelper helper) {
+		fight(helper, 4, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound5(GameTestHelper helper) {
+		fight(helper, 5, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound6(GameTestHelper helper) {
+		fight(helper, 6, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound7(GameTestHelper helper) {
+		fight(helper, 7, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound8(GameTestHelper helper) {
+		fight(helper, 8, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound9(GameTestHelper helper) {
+		fight(helper, 9, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound10(GameTestHelper helper) {
+		fight(helper, 10, "uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 60)
+	public void brainRound11(GameTestHelper helper) {
+		fight(helper, 11, "uhc");
 	}
 }

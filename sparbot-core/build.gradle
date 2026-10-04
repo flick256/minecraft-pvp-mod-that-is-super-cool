@@ -35,20 +35,21 @@ test {
 	useJUnitPlatform()
 }
 
-// Trains a model in the duel simulator: ./gradlew :sparbot-core:trainSword (or trainUhc) -Pgenerations=300 -Pout=model.json [-Pstart=old.json]
-['sword', 'uhc'].each { mode ->
+// Trains a model in the simulator: ./gradlew :sparbot-core:trainSword (trainUhcMelee, or trainUhc for the whole UHC brain)
+// -Pgenerations=300 -Pout=model.json [-Pstart=old.json]
+['sword', 'uhcMelee', 'uhc'].each { mode ->
 	tasks.register("train${mode.capitalize()}", JavaExec) {
 		group = 'sparbot'
-		description = "Trains a learned ${mode} melee model (imitation, then self-play) in the duel simulator."
+		description = "Trains a learned ${mode} model (imitation or the scripted brain to start, then self-play) in the simulator."
 		classpath = sourceSets.main.runtimeClasspath
 		mainClass = 'io.github.flick256.sparbot.core.ml.Train'
 		args = [
-			mode,
+			mode.toLowerCase(),
 			project.findProperty('generations') ?: '100',
 			project.findProperty('out') ?: layout.buildDirectory.file("models/${mode}.json").get().asFile.path,
 			project.findProperty('start') ?: ''
 		]
-		jvmArgs = ['-Xmx2g']
+		jvmArgs = ['-Xmx3g']
 	}
 }
 

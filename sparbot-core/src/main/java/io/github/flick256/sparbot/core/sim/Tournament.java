@@ -19,6 +19,8 @@ import java.util.stream.IntStream;
 public final class Tournament {
 	/** 60 seconds, a long sword duel. */
 	public static final int MAX_TICKS = 1200;
+	/** 150 seconds for a full-kit (UHC) fight, which takes longer. */
+	public static final int MAX_KIT_TICKS = 3000;
 
 	private Tournament() {
 	}
@@ -51,12 +53,13 @@ public final class Tournament {
 
 	/** As {@link #score(Entrant, Entrant, int, long)} with the given loadout. */
 	public static double score(Entrant a, Entrant b, int fights, long seed, Loadout loadout) {
+		int maxTicks = loadout.hasKit() ? MAX_KIT_TICKS : MAX_TICKS;
 		return IntStream.range(0, fights).parallel().mapToDouble(i -> {
 			long s = seed * 1_000_003L + i;
 			if (i % 2 == 0) {
-				return DuelSim.fight(a.side(s), b.side(s ^ 0x9E3779B9L), loadout, s, MAX_TICKS).score(0);
+				return DuelSim.fight(a.side(s), b.side(s ^ 0x9E3779B9L), loadout, s, maxTicks).score(0);
 			}
-			return DuelSim.fight(b.side(s ^ 0x9E3779B9L), a.side(s), loadout, s, MAX_TICKS).score(1);
+			return DuelSim.fight(b.side(s ^ 0x9E3779B9L), a.side(s), loadout, s, maxTicks).score(1);
 		}).average().orElse(0.5);
 	}
 

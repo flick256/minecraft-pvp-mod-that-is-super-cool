@@ -40,6 +40,9 @@ public final class ModelRegistry {
 					if (!io.github.flick256.sparbot.core.brain.LearnedMeleeTactic.fits(net)) {
 						throw new IllegalArgumentException("not a melee model (" + net + ")");
 					}
+					if (net.tactics() != null && !io.github.flick256.sparbot.core.brain.LearnedTactics.fits(net.tactics())) {
+						throw new IllegalArgumentException("its tactics network has the wrong shape (" + net + ")");
+					}
 					models.put(id, net);
 					SparBot.LOGGER.info("Loaded model '{}' from {}: {}", id, file.getFileName(), net);
 				} catch (IllegalArgumentException | IOException | com.google.gson.JsonParseException e) {

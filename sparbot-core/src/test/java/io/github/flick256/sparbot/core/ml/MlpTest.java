@@ -46,4 +46,15 @@ class MlpTest {
 		Mlp back = Mlp.fromJson(net.toJson());
 		assertArrayEquals(net.forward(new double[] {1, 2, 3}), back.forward(new double[] {1, 2, 3}), 1e-12);
 	}
+
+	@Test
+	void aTacticsNetworkTravelsWithItsModel() {
+		Mlp melee = Mlp.random(new Random(1), 3, 4, 2);
+		org.junit.jupiter.api.Assertions.assertFalse(melee.toJson().contains("tactics"), "a plain model's file is unchanged");
+		Mlp model = melee.withTactics(Mlp.random(new Random(2), 5, 3, 2));
+		Mlp back = Mlp.fromJson(model.toJson());
+		assertArrayEquals(model.tactics().forward(new double[] {1, 2, 3, 4, 5}), back.tactics().forward(new double[] {1, 2, 3, 4, 5}), 1e-12);
+		assertArrayEquals(model.forward(new double[] {1, 2, 3}), back.forward(new double[] {1, 2, 3}), 1e-12);
+		org.junit.jupiter.api.Assertions.assertNotNull(back.withParams(back.params().clone()).tactics(), "new weights keep the tactics network");
+	}
 }

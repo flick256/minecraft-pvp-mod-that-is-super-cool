@@ -172,6 +172,7 @@ public final class SparBotCommand {
 			}))
 			.then(Commands.literal("sword").then(trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode.SWORD)))
 			.then(Commands.literal("uhc").then(trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode.UHC)))
+			.then(Commands.literal("uhcmelee").then(trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode.UHC_MELEE)))
 			.then(trainArguments(null)));
 
 		root.then(Commands.literal("technique").then(botArgument()
@@ -356,7 +357,8 @@ public final class SparBotCommand {
 		}
 		io.github.flick256.sparbot.core.ml.Train.Mode mode = chosen != null ? chosen
 			: start != null ? io.github.flick256.sparbot.core.ml.Train.Mode.of(start) : io.github.flick256.sparbot.core.ml.Train.Mode.SWORD;
-		if (start != null && io.github.flick256.sparbot.core.ml.Train.Mode.of(start) != mode) {
+		if (start != null && io.github.flick256.sparbot.core.ml.Train.Mode.of(start) != mode
+			&& !(mode == io.github.flick256.sparbot.core.ml.Train.Mode.UHC && io.github.flick256.sparbot.core.ml.Train.Mode.of(start) == io.github.flick256.sparbot.core.ml.Train.Mode.UHC_MELEE)) {
 			throw new SimpleCommandExceptionType(Component.literal(from + " is not a " + mode.id() + " model")).create();
 		}
 		CommandSourceStack source = ctx.getSource();

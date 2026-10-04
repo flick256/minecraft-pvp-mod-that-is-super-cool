@@ -14,18 +14,36 @@ public final class Mlp {
 
 	private final int[] sizes;
 	private final double[] params;
+	/** A second network that travels with this one (a melee model's tactic chooser), or null. */
+	private final Mlp tactics;
 
 	public Mlp(int... sizes) {
 		this.sizes = sizes.clone();
 		this.params = new double[count(sizes)];
+		this.tactics = null;
 	}
 
-	private Mlp(int[] sizes, double[] params) {
+	private Mlp(int[] sizes, double[] params, Mlp tactics) {
 		this.sizes = sizes.clone();
 		this.params = params.clone();
+		this.tactics = tactics;
 		if (params.length != count(sizes)) {
 			throw new IllegalArgumentException("expected " + count(sizes) + " weights, got " + params.length);
 		}
+	}
+
+	private Mlp(int[] sizes, double[] params) {
+		this(sizes, params, null);
+	}
+
+	/** The tactic-choosing network that comes with this (melee) model, or null for the scripted choices. */
+	public Mlp tactics() {
+		return tactics;
+	}
+
+	/** This network with {@code net} as its tactic chooser. */
+	public Mlp withTactics(Mlp net) {
+		return new Mlp(sizes, params, net == null ? null : net.copy());
 	}
 
 	private static int count(int[] sizes) {
@@ -68,11 +86,12 @@ public final class Mlp {
 	}
 
 	public Mlp copy() {
-		return new Mlp(sizes, params);
+		return new Mlp(sizes, params, tactics == null ? null : tactics.copy());
 	}
 
+	/** New weights for this network (the tactic chooser is kept). */
 	public Mlp withParams(double[] newParams) {
-		return new Mlp(sizes, newParams);
+		return new Mlp(sizes, newParams, tactics);
 	}
 
 	public double[] forward(double[] input) {
@@ -147,23 +166,30 @@ public final class Mlp {
 		}
 	}
 
-	private record Json(int[] sizes, double[] params) {
+	private record Json(int[] sizes, double[] params, Json tactics) {
+	}
+
+	private Json json() {
+		return new Json(sizes, params, tactics == null ? null : tactics.json());
 	}
 
 	public String toJson() {
-		return GSON.toJson(new Json(sizes, params));
+		return GSON.toJson(json());
 	}
 
 	public static Mlp fromJson(String json) {
-		Json j = GSON.fromJson(json, Json.class);
+		return of(GSON.fromJson(json, Json.class));
+	}
+
+	private static Mlp of(Json j) {
 		if (j == null || j.sizes() == null || j.params() == null) {
 			throw new IllegalArgumentException("not a network");
 		}
-		return new Mlp(j.sizes(), j.params());
+		return new Mlp(j.sizes(), j.params(), j.tactics() == null ? null : of(j.tactics()));
 	}
 
 	@Override
 	public String toString() {
-		return "Mlp" + Arrays.toString(sizes) + " (" + params.length + " weights)";
+		return "Mlp" + Arrays.toString(sizes) + " (" + params.length + " weights" + (tactics == null ? "" : ", tactics " + Arrays.toString(tactics.sizes)) + ")";
 	}
 }

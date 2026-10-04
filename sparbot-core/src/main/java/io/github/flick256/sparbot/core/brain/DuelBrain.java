@@ -35,6 +35,8 @@ public final class DuelBrain implements Policy {
 	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
+	/** Learned shifts to the tactic scores, or null for the scripted priorities. */
+	private LearnedTactics learnedTactics;
 
 	public DuelBrain(SkillProfile profile, long seed) {
 		this(profile, Playstyle.BALANCED, seed);
@@ -73,6 +75,20 @@ public final class DuelBrain implements Policy {
 		return memory;
 	}
 
+	/** Chooses tactics with a learned network on top of the scripted scores ({@code null}: the scripted priorities). */
+	public void setLearnedTactics(LearnedTactics tactics) {
+		this.learnedTactics = tactics;
+	}
+
+	/** A brain for a learned model: its melee network, and its tactic chooser if it has one. */
+	public static DuelBrain learned(SkillProfile profile, Playstyle style, long seed, io.github.flick256.sparbot.core.ml.Mlp model) {
+		DuelBrain brain = new DuelBrain(profile, style, seed, new LearnedMeleeTactic(model));
+		if (model.tactics() != null) {
+			brain.setLearnedTactics(new LearnedTactics(model.tactics()));
+		}
+		return brain;
+	}
+
 	/** Switches techniques off (the rest on). */
 	public void setDisabledTechniques(java.util.Set<Technique> techniques) {
 		this.disabled = techniques.isEmpty() ? java.util.EnumSet.noneOf(Technique.class) : java.util.EnumSet.copyOf(techniques);
@@ -105,16 +121,25 @@ public final class DuelBrain implements Policy {
 
 		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory, disabled);
 		Map<String, Double> scores = new LinkedHashMap<>();
-		Tactic best = null;
-		double bestScore = Double.NEGATIVE_INFINITY;
-		for (Tactic tactic : tactics) {
+		double[] tacticScores = new double[tactics.size()];
+		for (int i = 0; i < tacticScores.length; i++) {
+			Tactic tactic = tactics.get(i);
 			// The playstyle reshapes priorities; "search" is the idle fallback and is never weighted.
 			double score = tactic.score(context);
 			if (score > 0 && !(tactic instanceof SearchTactic)) {
 				score *= style.weight(tactic.name());
 			}
-			scores.put(tactic.name(), score);
-			double effective = tactic == active ? score + HYSTERESIS : score;
+			tacticScores[i] = score;
+		}
+		if (learnedTactics != null) {
+			learnedTactics.shift(context, tactics, tacticScores, active);
+		}
+		Tactic best = null;
+		double bestScore = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < tacticScores.length; i++) {
+			Tactic tactic = tactics.get(i);
+			scores.put(tactic.name(), tacticScores[i]);
+			double effective = tactic == active ? tacticScores[i] + HYSTERESIS : tacticScores[i];
 			if (effective > bestScore) {
 				bestScore = effective;
 				best = tactic;
