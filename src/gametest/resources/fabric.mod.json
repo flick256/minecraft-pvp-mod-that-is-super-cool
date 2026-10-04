@@ -18,6 +18,9 @@
 			"io.github.flick256.sparbot.gametest.CartGameTests",
 			"io.github.flick256.sparbot.gametest.UhcGameTests",
 			"io.github.flick256.sparbot.gametest.RecordGameTests"
+		],
+		"fabric-client-gametest": [
+			"io.github.flick256.sparbot.gametest.MenuClientGameTest"
 		]
 	},
 	"depends": {

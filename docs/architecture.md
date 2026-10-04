@@ -32,7 +32,9 @@ src/main/            the Fabric mod (server side)
   style/ debug/       PlaystyleRegistry; DebugOverlay (action bar and crosshair particles for one viewer)
   record/            Recorder (bots' shaped inputs, humans' inputs read back from their packets), ReplayManager
   command/ config/ stats/ mixin/
-src/gametest/        in-game tests run by `./gradlew build`
+src/client/          the optional client menu (SparBotMenuScreen); talks to the server via menu/ payloads
+src/gametest/        in-game tests run by `./gradlew build`; MenuClientGameTest runs with
+                     `xvfb-run ./gradlew runClientGameTest`
 ```
 
 ## How a tick works
@@ -116,7 +118,7 @@ uses, to find the pitch that lands on target.
 | M4 | Playstyles (weighted tactics plus skill biases, mixable at runtime), kite tactic, server-side debug overlay | done |
 | M5 | Matches: data-driven game modes, arenas with block snapshots, rounds, cleanup, player inventory backups, bot-vs-bot, Elo ladder and benchmark, training-world design (docs/training-world.md) | done |
 | M6 | Mode packs: NoDebuff (pot, refill, buff), Mace and wind charges, Spear, Crystal, Cart PvP, UHC (lava, water, webs, no natural regeneration) | done |
-| M7 | Recording and replay (done), config GUI | in progress |
+| M7 | Recording and replay, `/sparbot config`, client menu (B key) with a headless client test | done |
 | M8 | Super Mode A: record your play, imitation learning, ONNX export, in-game inference | |
 | M9 | Super Mode B: headless seeded simulation, league self-play | |
 | M10 | Training-world pack | |

@@ -7,10 +7,12 @@ base {
 }
 
 loom {
-	// Server-side only for now; a client source set returns with the debug overlay (milestone 4).
+	// src/main runs on both sides (the bots live on the server); src/client holds the optional menu.
+	splitEnvironmentSourceSets()
 	mods {
 		"sparbot" {
 			sourceSet sourceSets.main
+			sourceSet sourceSets.client
 		}
 	}
 }

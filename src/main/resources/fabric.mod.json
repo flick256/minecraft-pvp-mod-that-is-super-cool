@@ -12,6 +12,9 @@
 	"entrypoints": {
 		"main": [
 			"io.github.flick256.sparbot.SparBot"
+		],
+		"client": [
+			"io.github.flick256.sparbot.client.SparBotClient"
 		]
 	},
 	"depends": {

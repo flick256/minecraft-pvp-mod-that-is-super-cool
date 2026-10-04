@@ -6,6 +6,7 @@ import io.github.flick256.sparbot.config.SparBotConfig;
 import io.github.flick256.sparbot.debug.DebugOverlay;
 import io.github.flick256.sparbot.kit.KitRegistry;
 import io.github.flick256.sparbot.match.MatchManager;
+import io.github.flick256.sparbot.menu.MenuSync;
 import io.github.flick256.sparbot.profile.ProfileRegistry;
 import io.github.flick256.sparbot.record.Recorder;
 import io.github.flick256.sparbot.record.ReplayManager;
@@ -44,6 +45,7 @@ public final class SparBot implements ModInitializer {
 	public void onInitialize() {
 		reloadConfigAndProfiles();
 		StatsTracker.register();
+		MenuSync.register();
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> SparBotCommand.register(dispatcher));
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			reloadKits(server);
@@ -69,6 +71,10 @@ public final class SparBot implements ModInitializer {
 		PROFILES.reload(configDir().resolve("sparbot").resolve("profiles"));
 		STYLES.reload(configDir().resolve("sparbot").resolve("playstyles"));
 		RECORDER.setDirectory(configDir().resolve("sparbot").resolve("recordings"));
+	}
+
+	public static void saveConfig() {
+		config.save(configDir().resolve("sparbot.json"));
 	}
 
 	public static void reloadKits(MinecraftServer server) {

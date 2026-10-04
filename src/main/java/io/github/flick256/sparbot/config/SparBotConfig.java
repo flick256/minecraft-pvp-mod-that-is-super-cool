@@ -101,14 +101,19 @@ public final class SparBotConfig {
 				SparBot.LOGGER.error("Could not read {}: {}. Using defaults.", file, e.getMessage());
 			}
 		}
+		config.save(file);
+		return config;
+	}
+
+	/** Writes the config (pretty-printed JSON); a failure is logged, not thrown. */
+	public void save(Path file) {
 		try {
 			Files.createDirectories(file.getParent());
 			try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-				GSON.toJson(config, writer);
+				GSON.toJson(this, writer);
 			}
 		} catch (IOException e) {
 			SparBot.LOGGER.warn("Could not write {}: {}", file, e.getMessage());
 		}
-		return config;
 	}
 }

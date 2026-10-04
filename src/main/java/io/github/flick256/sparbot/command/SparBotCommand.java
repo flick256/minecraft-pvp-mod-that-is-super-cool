@@ -228,6 +228,7 @@ public final class SparBotCommand {
 
 		MatchCommands.addTo(root);
 		RecordCommands.addTo(root);
+		ConfigCommands.addTo(root);
 		dispatcher.register(root);
 	}
 
@@ -297,6 +298,11 @@ public final class SparBotCommand {
 	private static int ok(CommandContext<CommandSourceStack> ctx, String message) {
 		ctx.getSource().sendSuccess(() -> Component.literal(message), false);
 		return 1;
+	}
+
+	/** Whether {@code source} may use /sparbot (and see the menu). */
+	public static boolean allowed(CommandSourceStack source) {
+		return Commands.hasPermission(permission()).test(source);
 	}
 
 	private static PermissionCheck permission() {

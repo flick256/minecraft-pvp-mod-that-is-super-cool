@@ -93,10 +93,22 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
 | `/sparbot record start <name> <players>` / `stop <name>` / `list` | Records a fight (bots or humans) to `config/sparbot/recordings/<name>.spbr`: every tick, each fighter's position, state and inputs |
 | `/sparbot replay <name>` / `replay stop <name>` | Plays a recording back where it was recorded, with mannequins standing in for the fighters |
+| `/sparbot config` / `config get <key>` / `config set <key> <value>` | Shows or changes a setting (validated, saved to `config/sparbot.json`) |
+| `/sparbot menu` (or press **B**) | Opens the SparBot menu, if SparBot is also on your client |
 | `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
 | `/sparbot reload` | Reloads the config, profiles and kits |
+
+## The menu
+
+With SparBot installed on your client too, press **B** (rebindable in Controls) or run `/sparbot menu`:
+- **Bots:** every bot with its profile, style and health, and buttons to fight it, kill or respawn it, or remove it
+- **Spawn:** name, profile, kit and playstyle, then *Spawn bot*
+- **Settings:** every setting from `config/sparbot.json` except `commandPermission`
+
+Every button just sends a `/sparbot` command, so the server checks permissions and values as if you had
+typed it. Without SparBot on the client, everything still works through commands.
 
 ## Skill profiles
 
