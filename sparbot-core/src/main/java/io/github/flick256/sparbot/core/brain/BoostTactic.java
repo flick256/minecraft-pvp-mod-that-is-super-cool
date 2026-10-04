@@ -19,6 +19,8 @@ public final class BoostTactic implements Tactic {
 	/** The block goes this far ahead (blocks), towards the opponent. */
 	private static final double AHEAD = 1.8;
 	private static final int TIMEOUT = 40;
+	/** Standing still to place the step: no longer than this. */
+	private static final int PLACE_TIMEOUT = 10;
 	private static final int COOLDOWN = 160;
 
 	private enum Phase {
@@ -105,7 +107,8 @@ public final class BoostTactic implements Tactic {
 			case PLACE -> {
 				if (count(inv) < blocksBefore) {
 					phase = Phase.STEP;
-				} else if (slot(inv) < 0) {
+				} else if (slot(inv) < 0 || ticks > PLACE_TIMEOUT) {
+					// No block, or it won't go down (the spot is taken, hidden, out of reach): don't stand there.
 					return finish(c);
 				} else {
 					// Click the top of the ground where the step goes, walking up to it.
