@@ -23,7 +23,7 @@ public final class LavaTactic implements Tactic {
 	/** Never pour closer than this (horizontally): the lava would be at the bot's own feet. */
 	private static final double MIN_RANGE = 2.0;
 	private static final double MAX_RANGE = 4.3;
-	private static final int PLACE_TIMEOUT = 30;
+	private static final int PLACE_TIMEOUT = 15;
 	private static final int SCOOP_TIMEOUT = 25;
 	/** Interrupted (by water or eating) for longer than this, the lava is given up on. */
 	private static final int GIVE_UP_AFTER = 100;

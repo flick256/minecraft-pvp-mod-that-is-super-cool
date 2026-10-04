@@ -52,8 +52,21 @@ public record SkillProfile(
 	public record Reach(Distribution rangeErrorBlocks) {
 	}
 
-	/** Technique skills, each the probability (0-1) of executing the technique when it applies. */
-	public record Technique(double critSkill, double wTapSkill, double sTapSkill, double strafeSkill, double jumpResetSkill, double spacingSkill) {
+	/**
+	 * Technique skills, each the probability (0-1) of executing the technique when it applies.
+	 *
+	 * @param readSkill watching the opponent's swings to judge their attack charge: staying out of their
+	 *     reach while they are charged, punishing a missed swing, dodging the swing that is coming
+	 * @param feintSkill stepping into the opponent's reach and straight back out to draw a swing
+	 * @param comboSkill managing the distance after landing a hit (W/S-taps) so the next hit lands at full
+	 *     charge from the edge of reach
+	 */
+	public record Technique(double critSkill, double wTapSkill, double sTapSkill, double strafeSkill, double jumpResetSkill, double spacingSkill,
+		double readSkill, double feintSkill, double comboSkill) {
+		/** The original six techniques (reading, feints and combos off). */
+		public Technique(double critSkill, double wTapSkill, double sTapSkill, double strafeSkill, double jumpResetSkill, double spacingSkill) {
+			this(critSkill, wTapSkill, sTapSkill, strafeSkill, jumpResetSkill, spacingSkill, 0, 0, 0);
+		}
 	}
 
 	/**
@@ -125,6 +138,9 @@ public record SkillProfile(
 		range("technique.strafeSkill", technique.strafeSkill(), 0, 1, errors);
 		range("technique.jumpResetSkill", technique.jumpResetSkill(), 0, 1, errors);
 		range("technique.spacingSkill", technique.spacingSkill(), 0, 1, errors);
+		range("technique.readSkill", technique.readSkill(), 0, 1, errors);
+		range("technique.feintSkill", technique.feintSkill(), 0, 1, errors);
+		range("technique.comboSkill", technique.comboSkill(), 0, 1, errors);
 		items.hotbarSwitchMs().validate("items.hotbarSwitchMs", 40, 2000, errors);
 		// Opening the inventory and clicking takes a human at least ~120 ms.
 		items.inventoryMs().validate("items.inventoryMs", 120, 5000, errors);

@@ -14,6 +14,7 @@ import io.github.flick256.sparbot.core.math.Vec3;
  * @param offhand what the opponent visibly holds in the offhand
  * @param usingKind the item the opponent is visibly using (eating, drawing a bow, blocking), or EMPTY
  * @param armorPoints armor value of the opponent's visible armor
+ * @param ticksSinceSwing ticks since the opponent's arm last swung (a click, hit or miss), {@link #NO_SWING} if unknown
  */
 public record TargetState(
 	int entityId,
@@ -36,8 +37,20 @@ public record TargetState(
 	double armorPoints,
 	boolean onFire,
 	boolean inWeb,
-	boolean inWater
+	boolean inWater,
+	int ticksSinceSwing
 ) {
+	/** Unknown swing timing reads as long ago. */
+	public static final int NO_SWING = 100;
+
+	/** A target whose swing timing isn't known. */
+	public TargetState(int entityId, String name, Vec3 position, Vec3 velocity, float yaw, float health, float maxHealth, boolean onGround,
+		int hurtTime, boolean blocking, boolean visible, int ticksSinceSeen, double halfWidth, double height, ItemKind mainHand,
+		ItemKind offhand, ItemKind usingKind, double armorPoints, boolean onFire, boolean inWeb, boolean inWater) {
+		this(entityId, name, position, velocity, yaw, health, maxHealth, onGround, hurtTime, blocking, visible, ticksSinceSeen, halfWidth, height,
+			mainHand, offhand, usingKind, armorPoints, onFire, inWeb, inWater, NO_SWING);
+	}
+
 	/** A target whose water state isn't known (not in water). */
 	public TargetState(int entityId, String name, Vec3 position, Vec3 velocity, float yaw, float health, float maxHealth, boolean onGround,
 		int hurtTime, boolean blocking, boolean visible, int ticksSinceSeen, double halfWidth, double height, ItemKind mainHand,

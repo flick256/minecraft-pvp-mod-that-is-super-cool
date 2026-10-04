@@ -20,6 +20,12 @@ public enum Technique {
 	JUMP_RESET("jumpreset", p -> p.technique().jumpResetSkill()),
 	CRITS("crits", p -> p.technique().critSkill()),
 	SPACING("spacing", p -> p.technique().spacingSkill()),
+	/** Judging the opponent's attack charge from their swings: spacing out of their reach, punishing misses, dodging. */
+	READING("reading", p -> p.technique().readSkill()),
+	/** Stepping into the opponent's reach and back out to draw a swing. */
+	FEINTS("feints", p -> p.technique().feintSkill()),
+	/** W/S-taps after a hit so the next one lands at full charge from the edge of reach. */
+	COMBOS("combos", p -> p.technique().comboSkill()),
 	/** Raising the shield between swings (blocking against incoming threats is separate). */
 	BLOCK_HIT("blockhit", p -> p.items().shieldSkill()),
 	/** Following an axe hit on a shield with an immediate weapon hit (and a web under the opponent in UHC). */

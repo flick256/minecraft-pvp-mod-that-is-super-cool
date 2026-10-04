@@ -85,7 +85,9 @@ public final class EngageTactic implements Tactic {
 
 		// React to our own landed hit (perceived via the target's hurt animation starting).
 		boolean targetJustHurt = target.hurtTime() > m.lastTargetHurtTime && m.ticksSinceOwnClick < 6;
+		SwordPlan.observe(c);
 		if (targetJustHurt) {
+			m.sinceOwnHit = 0;
 			if (c.rng.chance(c.skill(Technique.W_TAP))) {
 				m.wTapTicks = c.rng.nextInt(2, 4);
 			} else if (c.rng.chance(c.skill(Technique.S_TAP))) {
@@ -100,6 +102,20 @@ public final class EngageTactic implements Tactic {
 			m.sTapTicks--;
 			forward = -1;
 			sprint = false;
+		}
+
+		// Timing and distance: combos, staying out of a charged opponent's reach, feints, whiff punishes.
+		SwordPlan.Move mv = new SwordPlan.Move(forward, strafe, sprint);
+		// (Not during a shield stun: the follow-up hit is the plan.)
+		if (!c.mistake(Mistake.OVERCHASE) && m.stunTicks == 0) {
+			SwordPlan.plan(c, distance, judgedReach, mv);
+		}
+		if (mv.planned) {
+			forward = mv.forward;
+			strafe = mv.strafe;
+			sprint = mv.sprint;
+			m.wTapTicks = 0;
+			m.sTapTicks = 0;
 		}
 
 		// Jump reset: jump the moment knockback lands to cancel part of it.
@@ -200,9 +216,7 @@ public final class EngageTactic implements Tactic {
 		SelfState self = c.self;
 		switch (m.critPhase) {
 			case NONE -> {
-				boolean nearlyCharged = self.attackStrength() >= 0.6;
-				boolean closeEnough = distance <= judgedReach + 1.2;
-				if (self.onGround() && nearlyCharged && closeEnough && !self.inWater() && c.rng.chance(c.skill(Technique.CRITS) * 0.15)) {
+				if (self.onGround() && !self.inWater() && SwordPlan.critOpportunity(c, distance, judgedReach)) {
 					m.critPhase = DuelMemory.CritPhase.WINDUP;
 					m.critTicks = 0;
 				}

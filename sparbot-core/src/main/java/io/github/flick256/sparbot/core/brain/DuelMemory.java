@@ -9,6 +9,25 @@ public final class DuelMemory {
 	final Decision blockHitDecision = new Decision();
 	/** Whether the bot stops strafing to take its shots (decided per window from bow skill). */
 	final Decision plantsFeet = new Decision();
+	// Sword plan (see SwordPlan).
+	final Decision readDecision = new Decision();
+	final Decision comboDecision = new Decision();
+	final Decision feintDecision = new Decision();
+	final Decision critDecision = new Decision();
+	/** Reading the opponent's swings this window. */
+	boolean reading;
+	float lastStrength;
+	/** How much the bot's attack charge grows per tick with the weapon in hand (measured). */
+	double chargeRate = 0.08;
+	int lastOpponentSinceSwing = io.github.flick256.sparbot.core.sense.TargetState.NO_SWING;
+	/** Ticks left to see whether the opponent's swing connected. */
+	int whiffCheck;
+	/** Ticks left to rush in on an opponent whose swing missed. */
+	int punishTicks;
+	int feintTicks;
+	int feintCooldown;
+	/** Ticks since the bot last saw its own hit land. */
+	int sinceOwnHit = Integer.MAX_VALUE / 2;
 	boolean axeMode;
 	int axeModeTicks;
 	/** Ticks left to follow an axe hit on a raised shield (a shield stun) with the next weapon. */

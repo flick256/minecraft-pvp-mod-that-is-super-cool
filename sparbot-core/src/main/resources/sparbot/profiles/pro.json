@@ -45,7 +45,10 @@
     "sTapSkill": 0.6,
     "strafeSkill": 0.45,
     "jumpResetSkill": 0.8,
-    "spacingSkill": 0.9
+    "spacingSkill": 0.9,
+    "readSkill": 0.9,
+    "feintSkill": 0.6,
+    "comboSkill": 0.9
   },
   "items": {
     "hotbarSwitchMs": {

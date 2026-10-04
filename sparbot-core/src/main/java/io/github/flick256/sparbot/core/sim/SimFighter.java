@@ -139,7 +139,7 @@ public final class SimFighter {
 	TargetState asTarget(int id) {
 		Vec3 velocity = new Vec3(x - lastX, y - lastY, z - lastZ);
 		return new TargetState(id, "Sim" + id, position(), velocity, yaw, health, MAX_HEALTH, onGround, hurtTime, false, true, 0, HALF_WIDTH, HEIGHT,
-			ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, loadout.armor());
+			ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, loadout.armor(), false, false, false, Math.min(TargetState.NO_SWING, ticksSinceSwing));
 	}
 
 	private static InventoryState inventory() {

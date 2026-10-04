@@ -60,14 +60,20 @@ public final class Perception {
 	private @Nullable TargetState lastSeen;
 	private @Nullable Vec3 lastSeenPosition;
 	private int ticksSinceSeen;
+	/** Swing animation tracking: a new swing starts when the arm starts swinging or restarts its swing. */
+	private long lastSwingTick = Long.MIN_VALUE / 2;
+	private boolean wasSwinging;
+	private int lastSwingTime;
 
 	Observation observe(Bot bot, BotPlayer self, long tick, double awarenessRadius, boolean autoTarget, boolean autoTargetBots) {
 		LivingEntity target = chooseTarget(bot, self, awarenessRadius, autoTarget, autoTargetBots);
-		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius, bot.assignedTarget() != null),
+		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius, bot.assignedTarget() != null, tick),
 			surroundings(self, awarenessRadius));
 	}
 
 	void reset() {
+		lastSwingTick = Long.MIN_VALUE / 2;
+		wasSwinging = false;
 		trackedId = null;
 		lastSeen = null;
 		lastSeenPosition = null;
@@ -109,7 +115,7 @@ public final class Perception {
 	 * @param assigned an opponent the bot was told to fight (a duel): it knows the opponent is still
 	 *     around, so it never forgets where it last saw them
 	 */
-	private @Nullable TargetState targetState(BotPlayer self, @Nullable LivingEntity target, double radius, boolean assigned) {
+	private @Nullable TargetState targetState(BotPlayer self, @Nullable LivingEntity target, double radius, boolean assigned, long tick) {
 		if (target == null) {
 			reset();
 			return null;
@@ -120,6 +126,13 @@ public final class Perception {
 		}
 		boolean visible = target.distanceToSqr(self) <= radius * radius && self.hasLineOfSight(target);
 		if (visible) {
+			// The swing animation is visible: a new swing is a click (hit or miss), which resets their charge.
+			if (target.swinging && (!wasSwinging || target.swingTime < lastSwingTime)) {
+				lastSwingTick = tick;
+			}
+			wasSwinging = target.swinging;
+			lastSwingTime = target.swingTime;
+			int sinceSwing = (int) Math.min(TargetState.NO_SWING, tick - lastSwingTick);
 			Vec3 position = new Vec3(target.getX(), target.getY(), target.getZ());
 			Vec3 velocity = lastSeenPosition == null || ticksSinceSeen > 0 ? Vec3.ZERO : position.subtract(lastSeenPosition);
 			ticksSinceSeen = 0;
@@ -128,7 +141,7 @@ public final class Perception {
 				target.getHealth(), target.getMaxHealth(), target.onGround(), target.hurtTime, target.isBlocking(), true, 0,
 				target.getBbWidth() / 2.0, target.getBbHeight(),
 				ItemClassifier.classify(target.getMainHandItem()), ItemClassifier.classify(target.getOffhandItem()),
-				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire(), inWeb(target), target.isInWater());
+				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire(), inWeb(target), target.isInWater(), sinceSwing);
 			return lastSeen;
 		}
 		if (lastSeen == null) {

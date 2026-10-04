@@ -35,6 +35,15 @@ public final class Tournament {
 		return new Entrant(profile.id(), new DuelBrain(profile, 0).profile(), seed -> new DuelBrain(profile, seed));
 	}
 
+	/** The scripted brain at a skill profile with some techniques switched off. */
+	public static Entrant scripted(SkillProfile profile, String name, java.util.Set<io.github.flick256.sparbot.core.brain.Technique> disabled) {
+		return new Entrant(name, new DuelBrain(profile, 0).profile(), seed -> {
+			DuelBrain brain = new DuelBrain(profile, seed);
+			brain.setDisabledTechniques(disabled);
+			return brain;
+		});
+	}
+
 	/** Mean score of {@code a} against {@code b} over {@code fights} fights (sides swapped every other fight), run in parallel. */
 	public static double score(Entrant a, Entrant b, int fights, long seed) {
 		return IntStream.range(0, fights).parallel().mapToDouble(i -> {
@@ -64,13 +73,13 @@ public final class Tournament {
 	public static String format(List<Entrant> entrants, double[][] m) {
 		StringBuilder sb = new StringBuilder(String.format(Locale.ROOT, "%-14s", ""));
 		for (Entrant e : entrants) {
-			sb.append(String.format(Locale.ROOT, "%10s", e.name()));
+			sb.append(String.format(Locale.ROOT, "%13s", e.name()));
 		}
 		sb.append('\n');
 		for (int i = 0; i < entrants.size(); i++) {
 			sb.append(String.format(Locale.ROOT, "%-14s", entrants.get(i).name()));
 			for (int j = 0; j < entrants.size(); j++) {
-				sb.append(String.format(Locale.ROOT, "%10.2f", m[i][j]));
+				sb.append(String.format(Locale.ROOT, "%13.2f", m[i][j]));
 			}
 			sb.append('\n');
 		}

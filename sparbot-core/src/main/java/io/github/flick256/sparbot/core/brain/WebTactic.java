@@ -16,7 +16,8 @@ import io.github.flick256.sparbot.core.sense.TargetState;
 public final class WebTactic implements Tactic {
 	private static final double MIN_RANGE = 1.2;
 	private static final double MAX_RANGE = 4.0;
-	private static final int PLACE_TIMEOUT = 30;
+	/** A web that won't go down this quickly (the spot is hidden behind a block, say) is given up on. */
+	private static final int PLACE_TIMEOUT = 12;
 	private static final int WEB_COOLDOWN = 80;
 
 	private final Decision willWeb = new Decision();

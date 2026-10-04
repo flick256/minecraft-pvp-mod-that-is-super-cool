@@ -22,7 +22,7 @@ public record Playstyle(String id, String displayName, String description, Map<S
 	/** Tactic names a weight can refer to (see the brain's tactic list). */
 	public static final Set<String> TACTICS = Set.of("engage", "retreat", "search", "heal", "retotem", "ranged", "guard", "pearl", "kite", "pot", "refill", "buff", "mace", "spear", "crystal", "cart", "lava", "web", "water", "wall");
 	/** Skills a bias can refer to. */
-	public static final Set<String> SKILLS = Set.of("critSkill", "wTapSkill", "sTapSkill", "strafeSkill", "jumpResetSkill", "spacingSkill",
+	public static final Set<String> SKILLS = Set.of("critSkill", "wTapSkill", "sTapSkill", "strafeSkill", "jumpResetSkill", "spacingSkill", "readSkill", "feintSkill", "comboSkill",
 		"retotemSkill", "shieldSkill", "axeSkill", "bowSkill", "pearlSkill", "gappleHealthFraction", "panicHealthFraction",
 		"cooldownDiscipline", "potHealthFraction", "maceSkill", "spearSkill", "crystalSkill", "cartSkill", "uhcSkill");
 
@@ -71,7 +71,7 @@ public record Playstyle(String id, String displayName, String description, Map<S
 		SkillProfile.Technique t = p.technique();
 		SkillProfile.Technique technique = new SkillProfile.Technique(b("critSkill", t.critSkill()), b("wTapSkill", t.wTapSkill()),
 			b("sTapSkill", t.sTapSkill()), b("strafeSkill", t.strafeSkill()), b("jumpResetSkill", t.jumpResetSkill()),
-			b("spacingSkill", t.spacingSkill()));
+			b("spacingSkill", t.spacingSkill()), b("readSkill", t.readSkill()), b("feintSkill", t.feintSkill()), b("comboSkill", t.comboSkill()));
 		SkillProfile.ItemSkills i = p.items();
 		SkillProfile.ItemSkills items = new SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), b("retotemSkill", i.retotemSkill()),
 			b("gappleHealthFraction", i.gappleHealthFraction()), i.eatHungerBelow(), b("shieldSkill", i.shieldSkill()), b("axeSkill", i.axeSkill()),

@@ -7,6 +7,7 @@
     "wTapSkill": 0.3,
     "sTapSkill": 0.15,
     "spacingSkill": 0.2,
+    "comboSkill": 0.2,
     "strafeSkill": 0.1,
     "critSkill": -0.15
   },
