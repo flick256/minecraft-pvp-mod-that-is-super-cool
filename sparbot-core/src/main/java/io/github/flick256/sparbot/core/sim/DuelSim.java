@@ -23,7 +23,34 @@ public final class DuelSim {
 
 	/** What one side did over the fight: utility, damage taken from the world. */
 	public record SideStats(int lavaPours, int waterPours, int scoops, int blocksPlaced, int websPlaced, int arrowsShot, int arrowHits,
-		float lavaDamage, float fireDamage, float fallDamage, int ticksInWeb, int ticksInWater, int ticksBurning) {
+		float lavaDamage, float fireDamage, float fallDamage, int ticksInWeb, int ticksInWater, int ticksBurning, int[] hitDistance) {
+		/** Melee hits that landed from beyond {@code blocks} (a tenth-of-a-block resolution). */
+		public int hitsBeyond(double blocks) {
+			int n = 0;
+			for (int i = (int) Math.round(blocks * 10); i < hitDistance.length; i++) {
+				n += hitDistance[i];
+			}
+			return n;
+		}
+
+		/** Mean distance melee hits landed from. */
+		public double meanHitDistance() {
+			double sum = 0;
+			int n = 0;
+			for (int i = 0; i < hitDistance.length; i++) {
+				sum += hitDistance[i] * (i + 0.5) / 10.0;
+				n += hitDistance[i];
+			}
+			return n == 0 ? 0 : sum / n;
+		}
+
+		public int damagingHits() {
+			int n = 0;
+			for (int h : hitDistance) {
+				n += h;
+			}
+			return n;
+		}
 	}
 
 	/**
@@ -123,7 +150,7 @@ public final class DuelSim {
 		for (int i = 0; i < 2; i++) {
 			SimFighter s = f[i];
 			stats[i] = new SideStats(s.lavaPours, s.waterPours, s.scoops, s.blocksPlaced, s.websPlaced, s.arrowsShot, s.arrowHits, s.lavaDamage,
-				s.fireDamage, s.fallDamage, counters[i][0], counters[i][1], counters[i][2]);
+				s.fireDamage, s.fallDamage, counters[i][0], counters[i][1], counters[i][2], s.hitDistance.clone());
 		}
 		return new Result(winner, tick, new float[] {f[0].health + f[0].absorption, f[1].health + f[1].absorption}, new float[] {f[0].damageDealt, f[1].damageDealt},
 			new int[] {f[0].swings, f[1].swings}, new int[] {f[0].hits, f[1].hits}, new int[] {f[0].crits, f[1].crits},

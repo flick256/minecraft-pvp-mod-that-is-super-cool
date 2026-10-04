@@ -31,7 +31,8 @@ class SkillProfilesTest {
 			assertTrue(stronger.clicking().cooldownDiscipline() > weaker.clicking().cooldownDiscipline(), pair + " discipline");
 			assertTrue(stronger.technique().critSkill() > weaker.technique().critSkill(), pair + " crits");
 			assertTrue(stronger.mistakeRate() < weaker.mistakeRate(), pair + " mistakes");
-			assertTrue(Math.abs(stronger.reach().rangeErrorBlocks().mean()) < Math.abs(weaker.reach().rangeErrorBlocks().mean()), pair + " reach");
+			// Stronger players judge reach more consistently (they all hold back a little, as people do).
+			assertTrue(stronger.reach().rangeErrorBlocks().stdDev() < weaker.reach().rangeErrorBlocks().stdDev(), pair + " reach");
 		}
 	}
 

@@ -54,7 +54,13 @@ public final class StatsTracker {
 		// Count only the primary target of the bot's own melee click (not sweeps or other damage it causes).
 		if (source.getEntity() instanceof BotPlayer attacker && source.getDirectEntity() == attacker
 			&& attacker.bot().isAttacking(victim.getId()) && lost > 0) {
-			attacker.bot().stats().recordHit(lost, attacker.bot().attackWouldCrit());
+			// Eye to the nearest point of the victim's hitbox: the distance a reach display shows.
+			net.minecraft.world.phys.Vec3 eye = attacker.getEyePosition();
+			net.minecraft.world.phys.AABB box = victim.getBoundingBox();
+			double dx = Math.max(Math.max(box.minX - eye.x, 0), eye.x - box.maxX);
+			double dy = Math.max(Math.max(box.minY - eye.y, 0), eye.y - box.maxY);
+			double dz = Math.max(Math.max(box.minZ - eye.z, 0), eye.z - box.maxZ);
+			attacker.bot().stats().recordHit(lost, attacker.bot().attackWouldCrit(), Math.sqrt(dx * dx + dy * dy + dz * dz));
 		}
 		if (source.getEntity() instanceof BotPlayer shooter && source.getDirectEntity() instanceof Projectile && victim != shooter && lost > 0) {
 			shooter.bot().stats().recordRangedHit(lost);

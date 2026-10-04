@@ -355,7 +355,113 @@ public final class UhcLab {
 		}
 	}
 
+	/**
+	 * Where A's melee hits land from: {@code UhcLab reach <a> <b> <kit|sword> [fights]}. Mean distance, the
+	 * share from beyond 2.8 and 2.9 blocks, and a histogram from 1.5 to 3.0.
+	 */
+	static void reach(String pa, String pb, String kit, int fights) {
+		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
+		Tournament.Entrant a = entrant(pa, presets);
+		Tournament.Entrant b = entrant(pb, presets);
+		Loadout loadout = kit.equals("sword") ? Loadout.DIAMOND_SWORD : Loadout.ofKit(kit);
+		int[] hist = new int[31];
+		double[] score = new double[1];
+		java.util.stream.IntStream.range(0, fights).parallel().forEach(i -> {
+			long seed = 77_000L + i;
+			boolean swap = i % 2 == 1;
+			DuelSim.Result r = swap ? DuelSim.fight(b.side(seed ^ 0x9E3779B9L), a.side(seed), loadout, seed, loadout.hasKit() ? 3000 : 1200)
+				: DuelSim.fight(a.side(seed), b.side(seed ^ 0x9E3779B9L), loadout, seed, loadout.hasKit() ? 3000 : 1200);
+			int side = swap ? 1 : 0;
+			synchronized (hist) {
+				for (int k = 0; k < 31; k++) {
+					hist[k] += r.sides()[side].hitDistance()[k];
+				}
+				score[0] += r.score(side);
+			}
+		});
+		DuelSim.SideStats all = new DuelSim.SideStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, hist);
+		int n = Math.max(1, all.damagingHits());
+		StringBuilder sb = new StringBuilder(String.format(Locale.ROOT, "%s vs %s (%s): score %.2f, %d hits, mean %.2f blocks, beyond 2.8: %.0f%%, beyond 2.9: %.0f%% |",
+			pa, pb, kit, score[0] / fights, all.damagingHits(), all.meanHitDistance(), 100.0 * all.hitsBeyond(2.8) / n, 100.0 * all.hitsBeyond(2.9) / n));
+		for (int k = 15; k <= 30; k++) {
+			sb.append(String.format(Locale.ROOT, " %.1f:%.0f%%", k / 10.0, 100.0 * hist[k] / n));
+		}
+		System.out.println(sb);
+	}
+
+	/**
+	 * What each utility play is worth: for every lava pour, web, block, arrow and water pour of side A, the
+	 * damage A dealt and took in the next 60 ticks, against the same for any 60 ticks of the fight:
+	 * {@code UhcLab utility <a> <b> [fights]}.
+	 */
+	static void utility(String pa, String pb, int fights) {
+		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
+		Tournament.Entrant a = entrant(pa, presets);
+		Tournament.Entrant b = entrant(pb, presets);
+		Loadout loadout = Loadout.ofKit("sparbot_uhc");
+		String[] kinds = {"lava pour", "web", "block", "arrow", "water pour", "any tick"};
+		double[][] sums = new double[kinds.length][3];
+		java.util.stream.IntStream.range(0, fights).parallel().forEach(i -> {
+			long seed = 88_000L + i;
+			boolean swap = i % 2 == 1;
+			int me = swap ? 1 : 0;
+			java.util.List<double[]> health = new java.util.ArrayList<>();
+			java.util.List<int[]> events = new java.util.ArrayList<>();
+			int[][] last = new int[1][];
+			DuelSim.Watcher w = (tick, world, f, in, sides) -> {
+				SimFighter s = f[me];
+				SimFighter o = f[1 - me];
+				health.add(new double[] {s.health + s.absorption, o.health + o.absorption});
+				int[] now = {s.lavaPours, s.websPlaced, s.blocksPlaced, s.arrowsShot, s.waterPours};
+				if (last[0] != null) {
+					for (int k = 0; k < now.length; k++) {
+						if (now[k] > last[0][k]) {
+							events.add(new int[] {k, tick});
+						}
+					}
+				}
+				last[0] = now;
+				if (tick % 20 == 0) {
+					events.add(new int[] {5, tick});
+				}
+			};
+			if (swap) {
+				DuelSim.fight(b.side(seed ^ 0x9E3779B9L), a.side(seed), loadout, SimArena.UHC, seed, 3000, w);
+			} else {
+				DuelSim.fight(a.side(seed), b.side(seed ^ 0x9E3779B9L), loadout, SimArena.UHC, seed, 3000, w);
+			}
+			synchronized (sums) {
+				for (int[] e : events) {
+					int from = e[1];
+					int to = Math.min(health.size() - 1, from + 60);
+					if (to <= from) {
+						continue;
+					}
+					double dealt = health.get(from)[1] - health.get(to)[1];
+					double taken = health.get(from)[0] - health.get(to)[0];
+					sums[e[0]][0] += 1;
+					sums[e[0]][1] += dealt;
+					sums[e[0]][2] += taken;
+				}
+			}
+		});
+		System.out.printf(Locale.ROOT, "%s vs %s, %d fights: health change in the 60 ticks after each play (positive dealt = opponent lost health)%n", pa, pb, fights);
+		for (int k = 0; k < kinds.length; k++) {
+			double n = Math.max(1, sums[k][0]);
+			System.out.printf(Locale.ROOT, "  %-11s %6.0f times  dealt %5.2f  taken %5.2f  net %+5.2f%n", kinds[k], sums[k][0], sums[k][1] / n, sums[k][2] / n,
+				(sums[k][1] - sums[k][2]) / n);
+		}
+	}
+
 	public static void main(String[] args) {
+		if (args.length > 0 && args[0].equals("utility")) {
+			utility(args[1], args[2], args.length > 3 ? Integer.parseInt(args[3]) : 200);
+			return;
+		}
+		if (args.length > 0 && args[0].equals("reach")) {
+			reach(args[1], args[2], args[3], args.length > 4 ? Integer.parseInt(args[4]) : 200);
+			return;
+		}
 		if (args.length > 0 && args[0].equals("escapes")) {
 			escapes(args.length > 1 ? Integer.parseInt(args[1]) : 10);
 			return;

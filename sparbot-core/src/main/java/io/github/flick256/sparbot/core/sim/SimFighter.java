@@ -200,6 +200,8 @@ public final class SimFighter {
 	int websPlaced;
 	int scoops;
 	int websBroken;
+	/** Hits by the distance they landed from, in tenths of a block (eye to where the crosshair met the body). */
+	final int[] hitDistance = new int[31];
 	int arrowsShot;
 	int arrowHits;
 	float lavaDamage;
@@ -733,7 +735,7 @@ public final class SimFighter {
 		double entry = rayEntry(eye, dir, other.boxMin(), other.boxMax(), Math.min(BLOCK_REACH, blockDistance));
 		if (entry >= 0 && entry < blockDistance) {
 			if (entry <= REACH) {
-				attack(other, rng);
+				attack(other, rng, entry);
 				return;
 			}
 			missTime = MISS_TIME;
@@ -742,7 +744,7 @@ public final class SimFighter {
 		}
 	}
 
-	private void attack(SimFighter other, Rng rng) {
+	private void attack(SimFighter other, Rng rng, double distance) {
 		float strength = attackStrength();
 		SimStack weapon = held();
 		ItemKind kind = heldKind();
@@ -764,6 +766,9 @@ public final class SimFighter {
 			hits++;
 			if (crit) {
 				crits++;
+			}
+			if (landed != BLOCKED) {
+				hitDistance[(int) Math.min(30, Math.floor(distance * 10))]++;
 			}
 		}
 		if (fullHit && knockbackAttack) {

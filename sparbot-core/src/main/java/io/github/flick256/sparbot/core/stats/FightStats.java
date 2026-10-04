@@ -17,6 +17,9 @@ public final class FightStats {
 	private int totemPops;
 	private int gapplesEaten;
 	private int pearlsThrown;
+	private double hitDistanceSum;
+	private int hitsWithDistance;
+	private int farHits;
 
 	/** A left click was sent, whether or not it connected. */
 	public void recordSwing() {
@@ -32,6 +35,26 @@ public final class FightStats {
 		}
 		currentCombo++;
 		longestCombo = Math.max(longestCombo, currentCombo);
+	}
+
+	/** A melee hit, with how far it landed from (eye to the opponent's hitbox), in blocks. */
+	public void recordHit(double damage, boolean crit, double distance) {
+		recordHit(damage, crit);
+		hitDistanceSum += distance;
+		hitsWithDistance++;
+		if (distance > 2.9) {
+			farHits++;
+		}
+	}
+
+	/** Mean distance melee hits landed from, 0 if none measured. */
+	public double meanHitDistance() {
+		return hitsWithDistance == 0 ? 0 : hitDistanceSum / hitsWithDistance;
+	}
+
+	/** Share of measured melee hits from beyond 2.9 blocks. */
+	public double farHitShare() {
+		return hitsWithDistance == 0 ? 0 : farHits / (double) hitsWithDistance;
 	}
 
 	/** The bot took damage from any source; this breaks its combo. */
@@ -135,8 +158,8 @@ public final class FightStats {
 	}
 
 	public String summary() {
-		return String.format("swings=%d hits=%d (%.0f%%) crits=%d (%.0f%%) ranged=%d blasts=%d dealt=%.1f taken=%.1f bestCombo=%d pops=%d gapples=%d pearls=%d K/D=%d/%d",
-			swings, hits, hitRate() * 100, crits, critRate() * 100, rangedHits, blastHits, damageDealt, damageTaken, longestCombo, totemPops, gapplesEaten,
+		return String.format("swings=%d hits=%d (%.0f%%, from %.2f blocks on average, %.0f%% beyond 2.9) crits=%d (%.0f%%) ranged=%d blasts=%d dealt=%.1f taken=%.1f bestCombo=%d pops=%d gapples=%d pearls=%d K/D=%d/%d",
+			swings, hits, hitRate() * 100, meanHitDistance(), farHitShare() * 100, crits, critRate() * 100, rangedHits, blastHits, damageDealt, damageTaken, longestCombo, totemPops, gapplesEaten,
 			pearlsThrown, kills, deaths);
 	}
 }

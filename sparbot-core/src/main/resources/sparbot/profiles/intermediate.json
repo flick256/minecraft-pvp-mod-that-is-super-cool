@@ -32,12 +32,7 @@
     "cooldownDiscipline": 0.6
   },
   "reach": {
-    "rangeErrorBlocks": {
-      "mean": 0.15,
-      "stdDev": 0.25,
-      "min": -0.8,
-      "max": 0.9
-    }
+    "rangeErrorBlocks": {"mean": -0.1, "stdDev": 0.28, "min": -0.9, "max": 0.7}
   },
   "technique": {
     "critSkill": 0.45,

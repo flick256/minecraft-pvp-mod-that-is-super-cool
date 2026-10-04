@@ -97,8 +97,11 @@ public final class LearnedMeleeTactic implements Tactic {
 		boolean armed = weapon < 0 || inv.selectedSlot() == weapon;
 		boolean shieldReady = inv.offhand().is(io.github.flick256.sparbot.core.item.ItemKind.SHIELD) && !inv.offhand().onCooldown();
 		boolean block = d.block() && shieldReady && c.allows(Technique.BLOCK_HIT);
-		// Never into a block under the crosshair (it never saw one in training; a player sees the outline).
-		boolean attack = d.attack() && !block && armed && self.holdingMeleeWeapon() && !inv.usingItem()
+		// Never into a block under the crosshair (a player sees the outline), and only with the opponent within
+		// the reach the bot judges it has: a player can't tell 2.9 blocks from 3.1, so they don't swing from the
+		// very edge of reach every time (the same rule the scripted melee follows).
+		boolean inJudgedReach = c.targetDistance() <= self.attackReach() + m.reachError;
+		boolean attack = d.attack() && !block && armed && self.holdingMeleeWeapon() && !inv.usingItem() && inJudgedReach
 			&& !c.crosshairBlockedBeforeTarget(self.attackReach() + 0.5);
 		if (attack) {
 			m.ticksSinceOwnClick = 0;
