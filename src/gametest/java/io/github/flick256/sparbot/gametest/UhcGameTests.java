@@ -210,4 +210,61 @@ public class UhcGameTests {
 			TestSupport.remove(bot, target);
 		});
 	}
+
+	@GameTest(maxTicks = 300)
+	public void botScoopsUpLeftoverWater(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Tidy", 1.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot : new int[] {2, 4, 6}) {
+			body.getInventory().setItem(slot, ItemStack.EMPTY); // no bow, lava or webs
+		}
+		body.getInventory().setItem(5, new ItemStack(Items.BUCKET)); // its water is already down
+		helper.setBlock(new BlockPos(3, 1, 3), Blocks.WATER);
+		Bot target = TestSupport.dummy(helper, "Far", 6.5, 1, 6.5, 90, "basic_sword");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		int waterBefore = body.getInventory().countItem(Items.WATER_BUCKET);
+		helper.succeedWhen(() -> {
+			helper.assertTrue(!helper.getBlockState(new BlockPos(3, 1, 3)).getFluidState().isSource(), "the water was scooped up");
+			helper.assertValueEqual(body.getInventory().countItem(Items.WATER_BUCKET), waterBefore + 1, "water buckets");
+			TestSupport.remove(bot, target);
+		});
+	}
+
+	@GameTest(maxTicks = 300)
+	public void botBlocksUpLavaNextToIt(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Mason2", 1.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot : new int[] {2, 4, 5, 6, 10, 11}) {
+			body.getInventory().setItem(slot, ItemStack.EMPTY); // no bow, no buckets at all, no webs: only blocks
+		}
+		helper.setBlock(new BlockPos(3, 1, 3), Blocks.LAVA);
+		Bot target = TestSupport.dummy(helper, "Far2", 6.5, 1, 6.5, 90, "basic_sword");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		helper.succeedWhen(() -> {
+			helper.assertTrue(!helper.getBlockState(new BlockPos(3, 1, 3)).getFluidState().isSource(), "the lava was blocked up");
+			TestSupport.remove(bot, target);
+		});
+	}
+
+	@GameTest(maxTicks = 300)
+	public void botSwimsOutOfAWaterPocket(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		// A raised floor with a one-block water pocket in it.
+		for (int x = 1; x < 7; x++) {
+			for (int z = 1; z < 7; z++) {
+				helper.setBlock(new BlockPos(x, 1, z), x == 2 && z == 3 ? Blocks.WATER : Blocks.STONE);
+			}
+		}
+		Bot bot = TestSupport.spawnBot(helper, "Swimmer", 2.5, 1, 3.5, -90, "pro", "basic_sword");
+		BotPlayer body = TestSupport.body(bot);
+		Bot target = TestSupport.dummy(helper, "Dry", 5.5, 2, 3.5, 90, "basic_sword");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		helper.succeedWhen(() -> {
+			helper.assertTrue(body.getY() >= helper.absoluteVec(new net.minecraft.world.phys.Vec3(0, 2, 0)).y - 0.01 && !body.isInWater(),
+				"climbed out of the water onto the floor");
+			TestSupport.remove(bot, target);
+		});
+	}
 }

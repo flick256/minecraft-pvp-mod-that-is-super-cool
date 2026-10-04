@@ -53,7 +53,7 @@ public final class DuelBrain implements Policy {
 		this.tactics = List.of(melee, new RetreatTactic(), new SearchTactic(), new HealTactic(),
 			new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
 			new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
-			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic());
+			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic(), new CleanupTactic());
 		this.profile = style.applyTo(profile);
 		this.style = style;
 		this.rng = new Rng(seed);
@@ -128,7 +128,7 @@ public final class DuelBrain implements Policy {
 			active = best;
 		}
 
-		Inputs inputs = Reflexes.apply(context, active, active.act(context));
+		Inputs inputs = Unstuck.apply(context, Reflexes.apply(context, active, active.act(context)));
 
 		memory.ticksSinceOwnClick++;
 		if (memory.retreatCooldown > 0) {

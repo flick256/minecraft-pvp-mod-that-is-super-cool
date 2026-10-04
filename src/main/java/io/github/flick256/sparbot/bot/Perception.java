@@ -212,8 +212,20 @@ public final class Perception {
 	 * else uses it.
 	 */
 	private static Surroundings surroundings(BotPlayer self, double awarenessRadius) {
-		if (!self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL) || stack.is(Items.TNT_MINECART))) {
+		boolean blockModes = self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL) || stack.is(Items.TNT_MINECART));
+		// Fluids matter to a bot that can scoop them (buckets) or block them up (blocks).
+		boolean buckets = self.getInventory().contains(stack -> stack.is(Items.BUCKET) || stack.is(Items.WATER_BUCKET) || stack.is(Items.LAVA_BUCKET)
+			|| stack.getItem() instanceof net.minecraft.world.item.BlockItem);
+		if (!blockModes && !buckets) {
 			return Surroundings.EMPTY;
+		}
+		List<BlockSpot> water = new ArrayList<>();
+		List<BlockSpot> lava = new ArrayList<>();
+		if (buckets) {
+			fluidSources(self, water, lava);
+		}
+		if (!blockModes) {
+			return new Surroundings(List.of(), List.of(), List.of(), List.of(), List.of(), water, lava);
 		}
 		ServerLevel level = self.level();
 		AABB around = self.getBoundingBox().inflate(awarenessRadius);
@@ -260,7 +272,29 @@ public final class Perception {
 				}
 			}
 		}
-		return new Surroundings(crystals, bases, groundSpots, carts, rails);
+		return new Surroundings(crystals, bases, groundSpots, carts, rails, water, lava);
+	}
+
+	/** Water and lava source blocks within block reach (what a player sees lying around them). */
+	private static void fluidSources(BotPlayer self, List<BlockSpot> water, List<BlockSpot> lava) {
+		ServerLevel level = self.level();
+		BlockPos feet = self.blockPosition();
+		for (int dx = -BLOCK_SCAN; dx <= BLOCK_SCAN; dx++) {
+			for (int dz = -BLOCK_SCAN; dz <= BLOCK_SCAN; dz++) {
+				for (int dy = -3; dy <= 2; dy++) {
+					BlockPos pos = feet.offset(dx, dy, dz);
+					net.minecraft.world.level.material.FluidState fluid = level.getFluidState(pos);
+					if (fluid.isEmpty() || !fluid.isSource() || !self.isWithinBlockInteractionRange(pos, 0.0)) {
+						continue;
+					}
+					// A waterlogged block isn't a source a bucket can take.
+					if (!level.getBlockState(pos).is(fluid.getType().defaultFluidState().createLegacyBlock().getBlock())) {
+						continue;
+					}
+					(fluid.is(FluidTags.WATER) ? water : lava).add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
+				}
+			}
+		}
 	}
 
 	/**

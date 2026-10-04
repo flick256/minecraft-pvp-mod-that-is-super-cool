@@ -40,6 +40,8 @@ public final class DuelMemory {
 	/** How far the bot actually moved last tick (what a thrown or shot projectile inherits). */
 	Vec3 selfMotion = Vec3.ZERO;
 	Vec3 lastSelfPosition;
+	/** Ticks spent pressing to move without moving (see Unstuck). */
+	int stuckTicks;
 	/** Ticks spent walking into a wall too high to jump; past a few, the bot sidesteps along it. */
 	int blockedTicks;
 	/** Ticks of sidestepping left after the wall ends, to clear its corner. */

@@ -15,9 +15,17 @@ import java.util.List;
  *     rail), with two free blocks above
  * @param tntCarts positions of TNT minecarts within the awareness radius and in sight
  * @param rails rail blocks within block reach with no minecart on them
+ * @param waterSources water source blocks within block reach (filled in when the bot carries a bucket)
+ * @param lavaSources lava source blocks within block reach (filled in when the bot carries a bucket)
  */
-public record Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots, List<Vec3> tntCarts, List<BlockSpot> rails) {
+public record Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots, List<Vec3> tntCarts, List<BlockSpot> rails,
+	List<BlockSpot> waterSources, List<BlockSpot> lavaSources) {
 	public static final Surroundings EMPTY = new Surroundings(List.of(), List.of(), List.of(), List.of(), List.of());
+
+	/** No fluids known. */
+	public Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots, List<Vec3> tntCarts, List<BlockSpot> rails) {
+		this(crystals, crystalBases, groundSpots, tntCarts, rails, List.of(), List.of());
+	}
 
 	/** Crystal PvP surroundings only. */
 	public Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots) {
