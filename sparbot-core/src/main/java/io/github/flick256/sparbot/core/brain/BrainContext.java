@@ -82,7 +82,7 @@ public final class BrainContext {
 
 	/**
 	 * Whether a click now would hit the opponent: the crosshair is on them within {@code maxDistance}
-	 * and no end crystal or TNT minecart is in front of them (the click would hit that instead).
+	 * and no block, end crystal or TNT minecart is in front of them (the click would hit that instead).
 	 */
 	public boolean clickHitsTarget(double maxDistance) {
 		TargetState t = seen();
@@ -93,7 +93,8 @@ public final class BrainContext {
 		Vec3 dir = Angles.lookVector(self.yaw(), self.pitch());
 		double entry = rayEntry(eye, dir, new Vec3(t.position().x() - t.halfWidth(), t.position().y(), t.position().z() - t.halfWidth()),
 			new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth()), maxDistance);
-		if (entry < 0) {
+		// A block (or a web's outline) under the crosshair before them takes the click.
+		if (entry < 0 || entry >= self.crosshairBlockDistance()) {
 			return false;
 		}
 		for (Vec3 p : world.crystals()) {

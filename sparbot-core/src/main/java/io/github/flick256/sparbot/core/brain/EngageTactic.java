@@ -28,6 +28,10 @@ public final class EngageTactic implements Tactic {
 	private static final int STUN_WINDOW = 8;
 	/** An axe disables a shield for 5 s (the axe's disable_blocking_for_seconds). */
 	private static final int SHIELD_DISABLE_TICKS = 100;
+	/** Ticks a raised shield takes before it blocks. */
+	private static final int SHIELD_DELAY_TICKS = 5;
+	/** Ticks to see the opponent's shield come down after an axe swing (perception lags a tick or two). */
+	private static final int AXE_CONFIRM_TICKS = 4;
 
 	@Override
 	public String name() {
@@ -150,6 +154,23 @@ public final class EngageTactic implements Tactic {
 		}
 		// A shield our axe just disabled can't block, whatever it looks like.
 		boolean shieldUp = seen != null && seen.blocking() && m.shieldDisabledTicks == 0;
+		// The axe swing may have missed: only a shield that actually came down was disabled.
+		if (m.axeConfirmTicks > 0) {
+			m.axeConfirmTicks--;
+			if (seen != null && !seen.blocking()) {
+				m.axeConfirmTicks = 0;
+				m.shieldDisabledTicks = SHIELD_DISABLE_TICKS;
+				// Shield stun: the shield is down for 5 s, so the next hit can't be blocked. A skilled player
+				// has the follow-up ready: switch straight back and hit at once (any charge still knocks them
+				// up, and a mace smash bonus isn't scaled by charge at all).
+				m.stunTicks = c.allows(Technique.SHIELD_STUN) ? STUN_WINDOW : 0;
+				m.stunPlanned = c.rng.chance(c.skill(Technique.SHIELD_STUN));
+				m.axeMode = false;
+				shieldUp = false;
+			} else if (m.axeConfirmTicks == 0) {
+				m.axeMode = shieldUp && axeSlotOf(self.inventory()) >= 0; // missed: go again
+			}
+		}
 		int axeSlot = inv.bestHotbarWeapon(ItemKind.AXE);
 		if (shieldUp && axeSlot >= 0 && !m.axeMode && m.axeDecision.get(c.rng, c.profile.items().axeSkill(), 30)) {
 			m.axeMode = true;
@@ -166,23 +187,19 @@ public final class EngageTactic implements Tactic {
 		// Facing a raised shield without an axe, a skilled player circles to its side instead of
 		// wasting swings on it (a shield blocks hits within 90 degrees of where its holder faces).
 		boolean inFrontOfShield = shieldUp && !m.axeMode && inFrontOf(seen, self.position());
-		boolean holdFire = inFrontOfShield && c.rng.chance(c.profile.items().shieldSkill());
+		// (Decided per window, not per tick: a skilled player doesn't keep tapping a raised shield.)
+		boolean holdFire = inFrontOfShield && m.respectShieldDecision.get(c.rng, c.profile.items().shieldSkill(), 20);
 		if (inFrontOfShield) {
 			strafe = m.strafeDirection;
 		}
 
 		boolean attack = armed && !inv.usingItem() && !holdFire && wantsToClick(c, distance, judgedReach);
-		if (m.axeMode && armed && !inv.usingItem() && c.crosshairOnTarget(judgedReach + 0.5) && distance <= judgedReach
+		if (m.axeMode && m.axeConfirmTicks == 0 && armed && !inv.usingItem() && c.crosshairOnTarget(judgedReach + 0.5) && distance <= judgedReach
 			&& self.attackStrength() >= AXE_MIN_CHARGE) {
-			// Disabling the shield only needs the hit to land, not a full charge.
+			// Disabling the shield only needs the hit to land, not a full charge. Whether it did shows in the
+			// next few ticks (see above).
 			attack = true;
-			// Shield stun: the axe hit disables the shield for 5 s, so the next hit can't be blocked.
-			// A skilled player has the follow-up ready: switch straight back and hit at once (any charge
-			// still knocks them up, and a mace smash bonus isn't scaled by charge at all).
-			m.axeMode = false;
-			m.shieldDisabledTicks = SHIELD_DISABLE_TICKS;
-			m.stunTicks = c.allows(Technique.SHIELD_STUN) ? STUN_WINDOW : 0;
-			m.stunPlanned = c.rng.chance(c.skill(Technique.SHIELD_STUN));
+			m.axeConfirmTicks = AXE_CONFIRM_TICKS;
 		} else if (stun) {
 			m.stunTicks--;
 			if (armed && !inv.usingItem() && distance <= judgedReach && c.crosshairOnTarget(judgedReach + 0.5)) {
@@ -196,8 +213,12 @@ public final class EngageTactic implements Tactic {
 		boolean use = false;
 		boolean shieldReady = inv.offhand().is(ItemKind.SHIELD) && !inv.offhand().onCooldown();
 		boolean axeThreat = seen != null && seen.mainHand() == ItemKind.AXE && c.rng.chance(c.profile.items().shieldSkill());
+		// A shield only blocks 0.25 s (5 ticks) after it goes up (BlocksAttacks block_delay_seconds), so it
+		// is only worth raising with longer than that to wait; a player reading swings only raises it
+		// while the opponent is charged (nothing to block otherwise).
+		boolean worthBlocking = SwordPlan.ticksToReady(c) >= SHIELD_DELAY_TICKS + 2 && (!m.reading || SwordPlan.opponentCharge(c) >= 0.85);
 		if (shieldReady && armed && !attack && !axeThreat && m.critPhase == DuelMemory.CritPhase.NONE && distance <= judgedReach + 1.0
-			&& self.attackStrength() < m.cooldownThreshold - BLOCK_HIT_RELEASE_MARGIN
+			&& self.attackStrength() < m.cooldownThreshold - BLOCK_HIT_RELEASE_MARGIN && worthBlocking
 			&& m.blockHitDecision.get(c.rng, c.skill(Technique.BLOCK_HIT), 40)) {
 			use = true;
 			sprint = false;
@@ -259,6 +280,10 @@ public final class EngageTactic implements Tactic {
 			return true;
 		}
 		return aimed && inReach && charged;
+	}
+
+	private static int axeSlotOf(InventoryState inv) {
+		return inv.bestHotbarWeapon(ItemKind.AXE);
 	}
 
 	/** Whether {@code point} is within the 90-degree half-angle a target's shield covers. */

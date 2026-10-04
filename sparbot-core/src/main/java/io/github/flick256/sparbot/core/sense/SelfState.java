@@ -18,6 +18,8 @@ import java.util.List;
  * @param onFire burning (the fire overlay on screen)
  * @param inLava standing in lava
  * @param inWeb caught in a cobweb (moving at a crawl)
+ * @param crosshairBlockDistance how far along the crosshair the first block outline is (what a player sees
+ *     highlighted), or infinity if none within reach: a click there hits the block, not what's behind it
  */
 public record SelfState(
 	Vec3 position,
@@ -43,14 +45,26 @@ public record SelfState(
 	List<EffectInfo> effects,
 	boolean onFire,
 	boolean inLava,
-	boolean inWeb
+	boolean inWeb,
+	double crosshairBlockDistance
 ) {
+	/** Nothing known about blocks under the crosshair. */
+	public SelfState(Vec3 position, Vec3 eyePosition, Vec3 velocity, float yaw, float pitch, float health, float maxHealth, float absorption,
+		int foodLevel, boolean onGround, boolean sprinting, boolean inWater, boolean horizontalCollision, double fallDistance, float attackStrength,
+		double attackReach, int hurtTime, boolean holdingMeleeWeapon, int[] dropDepth, InventoryState inventory, List<EffectInfo> effects,
+		boolean onFire, boolean inLava, boolean inWeb) {
+		this(position, eyePosition, velocity, yaw, pitch, health, maxHealth, absorption, foodLevel, onGround, sprinting, inWater, horizontalCollision,
+			fallDistance, attackStrength, attackReach, hurtTime, holdingMeleeWeapon, dropDepth, inventory, effects, onFire, inLava, inWeb,
+			Double.POSITIVE_INFINITY);
+	}
+
 	/** Not burning and not in lava. */
 	public SelfState(Vec3 position, Vec3 eyePosition, Vec3 velocity, float yaw, float pitch, float health, float maxHealth, float absorption,
 		int foodLevel, boolean onGround, boolean sprinting, boolean inWater, boolean horizontalCollision, double fallDistance, float attackStrength,
 		double attackReach, int hurtTime, boolean holdingMeleeWeapon, int[] dropDepth, InventoryState inventory, List<EffectInfo> effects) {
 		this(position, eyePosition, velocity, yaw, pitch, health, maxHealth, absorption, foodLevel, onGround, sprinting, inWater, horizontalCollision,
-			fallDistance, attackStrength, attackReach, hurtTime, holdingMeleeWeapon, dropDepth, inventory, effects, false, false, false);
+			fallDistance, attackStrength, attackReach, hurtTime, holdingMeleeWeapon, dropDepth, inventory, effects, false, false, false,
+			Double.POSITIVE_INFINITY);
 	}
 
 	public static final int VOID_DROP = 64;

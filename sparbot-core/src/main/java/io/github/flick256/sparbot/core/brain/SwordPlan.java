@@ -79,8 +79,11 @@ final class SwordPlan {
 		}
 		m.observedTick = c.observation.tick();
 		float s = self.attackStrength();
-		if (s > m.lastStrength && s < 1.0F) {
-			m.chargeRate = s - m.lastStrength;
+		// A plausible one-tick rise (the fastest item, an empty hand, charges 0.2 a tick); not the first
+		// sample or a jump after switching items.
+		float rise = s - m.lastStrength;
+		if (rise > 0 && rise <= 0.21F && s < 1.0F && m.lastStrength > 0) {
+			m.chargeRate = rise;
 		}
 		m.lastStrength = s;
 		m.reading = m.readDecision.get(c.rng, c.skill(Technique.READING), 40);
@@ -123,7 +126,8 @@ final class SwordPlan {
 		}
 		// There is no hit stun: chasing a charged opponent just walks into their hit. A player who reads
 		// swings only chases while the opponent is recharging too.
-		boolean opponentCharged = m.reading && opponentCharge(c) >= DANGEROUS_CHARGE;
+		// A raised shield can't attack: nothing to stay away from.
+		boolean opponentCharged = m.reading && opponentCharge(c) >= DANGEROUS_CHARGE && (c.target == null || !c.target.blocking());
 		boolean comboing = m.sinceOwnHit < COMBO_TICKS && !opponentCharged && m.comboDecision.get(c.rng, c.skill(Technique.COMBOS), 30);
 		if (comboing) {
 			// Let them fly to the edge of reach, so the next hit lands there at full charge.

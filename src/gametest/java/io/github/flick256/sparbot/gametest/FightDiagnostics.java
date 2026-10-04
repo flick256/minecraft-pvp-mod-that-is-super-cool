@@ -29,6 +29,10 @@ final class FightDiagnostics {
 	private int longestStall;
 	private String longestStallAt = "";
 	private final java.util.Map<String, Integer> ticksPerTactic = new java.util.TreeMap<>();
+	private int ticks;
+	private int blockingTicks;
+	/** Ticks blocking while the opponent could actually hit (within 3.5 blocks). */
+	private int usefulBlockingTicks;
 
 	FightDiagnostics(Bot bot, Bot opponent) {
 		this.bot = bot;
@@ -43,6 +47,13 @@ final class FightDiagnostics {
 			return;
 		}
 		long tick = helper.getTick();
+		ticks++;
+		if (self.isBlocking()) {
+			blockingTicks++;
+			if (self.distanceTo(other) < 3.5) {
+				usefulBlockingTicks++;
+			}
+		}
 		DecisionTrace trace = bot.trace();
 		String tactic = trace.tactic() + (trace.note().contains("step=") ? "/" + trace.note().substring(trace.note().indexOf("step=") + 5) : "");
 		ticksPerTactic.merge(trace.tactic(), 1, Integer::sum);
@@ -72,7 +83,8 @@ final class FightDiagnostics {
 	String report() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(bot.name()).append(" (").append(bot.profile().id()).append(", ").append(bot.kit().id()).append("): longest stall ").append(longestStall)
-			.append(" ticks").append(longestStall > 0 ? " ending " + longestStallAt : "").append("; ticks per tactic ").append(ticksPerTactic)
+			.append(" ticks").append(longestStall > 0 ? " ending " + longestStallAt : "").append("; blocking ").append(blockingTicks).append('/').append(ticks)
+			.append(" ticks (").append(usefulBlockingTicks).append(" in reach); ticks per tactic ").append(ticksPerTactic)
 			.append("; ").append(bot.stats().summary());
 		for (String line : timeline) {
 			sb.append("\n    ").append(line);

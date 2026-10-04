@@ -123,12 +123,15 @@ class UhcTacticsTest {
 			Inputs in = h.tick();
 			if (in.attack() && h.slots[h.selected].kind() == ItemKind.AXE && axeHit < 0) {
 				axeHit = i;
+				// The axe hit disables the shield: it comes down.
+				h.target = TestFixtures.target(new Vec3(0, 0, 2.5), 0, ItemKind.SWORD, ItemKind.SHIELD, ItemKind.EMPTY, false);
 			} else if (in.attack() && axeHit >= 0 && h.slots[h.selected].kind() == ItemKind.SWORD) {
 				followUp = i;
 			}
 		}
 		assertTrue(axeHit >= 0, "disabled the shield with the axe");
-		assertTrue(followUp >= 0 && followUp - axeHit <= 4, "switched back and hit within 4 ticks (axe " + axeHit + ", sword " + followUp + ")");
+		// Seeing the shield come down takes a tick or two, then the switch and the hit.
+		assertTrue(followUp >= 0 && followUp - axeHit <= 6, "switched back and hit within 6 ticks (axe " + axeHit + ", sword " + followUp + ")");
 	}
 
 	@Test

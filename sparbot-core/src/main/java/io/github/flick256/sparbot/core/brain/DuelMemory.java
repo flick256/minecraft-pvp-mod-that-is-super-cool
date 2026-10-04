@@ -7,6 +7,8 @@ public final class DuelMemory {
 	final Hands hands = new Hands();
 	final Decision axeDecision = new Decision();
 	final Decision blockHitDecision = new Decision();
+	/** Whether the bot holds its swings while in front of a raised shield (decided per window). */
+	final Decision respectShieldDecision = new Decision();
 	/** Whether the bot stops strafing to take its shots (decided per window from bow skill). */
 	final Decision plantsFeet = new Decision();
 	// Sword plan (see SwordPlan).
@@ -31,6 +33,8 @@ public final class DuelMemory {
 	int sinceOwnHit = Integer.MAX_VALUE / 2;
 	boolean axeMode;
 	int axeModeTicks;
+	/** Ticks left to see whether the last axe swing brought the opponent's shield down. */
+	int axeConfirmTicks;
 	/** Ticks left to follow an axe hit on a raised shield (a shield stun) with the next weapon. */
 	int stunTicks;
 	/** The follow-up was planned before the axe hit, so the weapon switch is a single key press. */

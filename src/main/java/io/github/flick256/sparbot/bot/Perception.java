@@ -194,7 +194,14 @@ public final class Perception {
 			effects(self),
 			self.isOnFire(),
 			self.isInLava(),
-			inWeb(self));
+			inWeb(self),
+			crosshairBlockDistance(self));
+	}
+
+	/** Distance to the block outline under the crosshair (Entity#pick, as the client highlights it), infinity if none within 6 blocks. */
+	private static double crosshairBlockDistance(BotPlayer self) {
+		net.minecraft.world.phys.HitResult hit = self.pick(6.0, 1.0F, false);
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK ? hit.getLocation().distanceTo(self.getEyePosition(1.0F)) : Double.POSITIVE_INFINITY;
 	}
 
 	private static List<EffectInfo> effects(BotPlayer self) {

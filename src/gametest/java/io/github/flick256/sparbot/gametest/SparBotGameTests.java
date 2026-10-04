@@ -291,4 +291,53 @@ public class SparBotGameTests {
 		helper.assertTrue(body.connection.hasClientLoaded(), "loaded, so no join protection");
 		helper.assertFalse(body.isClientAuthoritative(), "server-authoritative so fall damage applies");
 	}
+
+	/**
+	 * A bot whose brain is paused, made to look at the chest of a target {@code gap} blocks from its eyes
+	 * (to the hitbox) and click every tick through the normal client emulation.
+	 */
+	private static Bot[] reachSetup(GameTestHelper helper, double gap) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.spawnBot(helper, "Reacher", 1.5, 1, 3.5, -90, "pro", "basic_sword");
+		io.github.flick256.sparbot.bot.BotTestAccess.pauseBrain(bot, true);
+		Bot target = TestSupport.dummy(helper, "Edge", 1.5 + gap + 0.3, 1, 3.5, 90, "basic_sword");
+		helper.onEachTick(() -> {
+			BotPlayer body = bot.body();
+			BotPlayer t = target.body();
+			if (body == null || t == null) {
+				return;
+			}
+			net.minecraft.world.phys.Vec3 eye = body.getEyePosition();
+			net.minecraft.world.phys.Vec3 chest = t.position().add(0, 1.2, 0);
+			double dx = chest.x - eye.x;
+			double dz = chest.z - eye.z;
+			body.setYRot((float) Math.toDegrees(Math.atan2(-dx, dz)));
+			body.setXRot((float) -Math.toDegrees(Math.atan2(chest.y - eye.y, Math.sqrt(dx * dx + dz * dz))));
+			io.github.flick256.sparbot.bot.BotTestAccess.press(bot, new io.github.flick256.sparbot.core.act.Inputs(0, 0, 0, 0, false, false, false, true,
+				false, -1));
+		});
+		return new Bot[] {bot, target};
+	}
+
+	@GameTest(maxTicks = 120)
+	public void botsHaveNoExtraReach(GameTestHelper helper) {
+		Bot[] b = reachSetup(helper, 3.15);
+		helper.runAfterDelay(100, () -> {
+			BotPlayer t = TestSupport.body(b[1]);
+			helper.assertTrue(b[0].stats().swings() > 0, "the bot clicked at it");
+			helper.assertValueEqual(t.getHealth(), t.getMaxHealth(), "health of a target 3.15 blocks away (vanilla reach is 3)");
+			TestSupport.remove(b);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(maxTicks = 120)
+	public void botsHitWithinVanillaReach(GameTestHelper helper) {
+		Bot[] b = reachSetup(helper, 2.8);
+		helper.succeedWhen(() -> {
+			BotPlayer t = TestSupport.body(b[1]);
+			helper.assertTrue(t.getHealth() < t.getMaxHealth(), "a target 2.8 blocks away gets hit");
+			TestSupport.remove(b);
+		});
+	}
 }
