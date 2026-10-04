@@ -1,6 +1,26 @@
 # Changelog
 
-The version is in the jar's name, the menu's title and the server log ("SparBot 0.3.0 initialised").
+The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
+
+## 0.4.0
+
+- UHC brain: the bundled `uhc` model now chooses tactics as well as fighting in melee. A second network
+  shifts the scripted brain's tactic scores (lava, webs, water, walls, healing, bow, boosts...), trained
+  together with the melee network in full-kit simulated UHC fights. It beats the scripted pro in about
+  95% of simulated fights and won 11 of 12 in game. It plays aggressively: it learned that lava, webs
+  and walls rarely pay off against an opponent who carries water, and that pressure, the bow at range,
+  healing and quick escapes do. `/sparbot train uhc <name>` trains the whole brain; `uhcmelee` the melee alone.
+- New UHC simulator: blocks, water and lava that flow by vanilla's rules (lava turns to obsidian or
+  cobblestone next to water), cobwebs, fire, fall damage, buckets, placing blocks and webs, the bow, and
+  the real kits. Checked against the game with parity tests (fight length, tactic time, hits, utility,
+  escape times agree).
+- Webs: bots pour water onto the web they're actually caught in (it used to miss a web diagonally next
+  to them and loop), cut themselves out with the sword when there's no water to hand, and keep a spare
+  water bucket in the hotbar. Time stuck in webs roughly halved.
+- Bow standoffs end: after a while a bot pushes in at any distance.
+- A blocked hit no longer pushes a bot (a real client never feels it).
+- Simulator accuracy: a click at nothing locks clicks for 10 ticks and only a real attack resets the
+  charge (as on a server); sprinting continues while using an item.
 
 ## 0.3.0
 

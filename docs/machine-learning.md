@@ -45,10 +45,54 @@ limit and ping. It doesn't get to see or do anything a player couldn't.
 - **What it decides**: forward/back, left/right, jump, sprint, click (UHC: also shield up, and sword or
   axe). Aiming stays with the profile's aim model, so a learned bot aims no better than its profile
   allows. Eating, water, lava, webs and walls stay with the scripted tactics.
-- **Where it hands over**: the simulator has flat ground and no blocks or fluids, so when either fighter
-  is webbed, in water or lava, or the bot is burning, the scripted melee takes over for those ticks.
-  The learned melee never clicks when a block is under the crosshair before the opponent, and it obeys
-  the technique switches (strafe, block-hit).
+- **Where it hands over**: when either fighter is webbed, in water or lava, or the bot is burning, the
+  scripted melee takes over for those ticks. The learned melee never clicks when a block is under the
+  crosshair before the opponent, and it obeys the technique switches (strafe, block-hit).
+
+## The UHC simulator
+
+For UHC the simulator is a small voxel world (`SimWorld`): a walled 32 x 32 stone arena (sometimes with
+uneven ground), with vanilla 26.2's rules re-done from the decompiled code:
+
+- water and lava flow (`FlowingFluid`): water 7 blocks, a step every 5 ticks; overworld lava 3 blocks,
+  every 30 ticks; two water sources make a third; lava next to water turns to obsidian (a source) or
+  cobblestone (flowing), and lava flowing down into water makes stone;
+- cobwebs (no collision, so fluids wash them away; a body in one moves at a quarter speed), lava (4
+  damage and 15 s of fire), fire (1 damage a second, water puts it out), fall damage, swimming;
+- the whole kit from the mod's kit files: buckets (a filled one empties next to the block the crosshair
+  is on, an empty one takes a source), blocks and webs placed through the crosshair, the bow and arrows,
+  golden apples, the shield and axe, breaking a cobweb with the sword, inventory swaps;
+- what each bot sees is built the way the mod's Perception builds it in game (line of sight, nearby
+  sources and webs), so the same scripted and learned brains run in it unchanged.
+
+It was checked against the game with the parity GameTests (`UhcParityGameTests`): the same scripted
+pros fighting under UHC rules in a 32 x 32 arena, in game and in the simulator.
+
+| Per bot per fight | Game | Simulator |
+|---|---|---|
+| Fight length (ticks) | 1607 | 1673 |
+| Time in melee / with the bow | 48% / 7.9% | 50% / 8.2% |
+| Hits / swings / crits | 20 / 31 / 6.1 | 21 / 30 / 5.9 |
+| Golden apples eaten | 5.1 | 5.5 |
+| Webs placed, water pours, scoops | 5.8, 6.1, 7.9 | 5.8, 6.4, 7.6 |
+| Getting out of a web (ticks) | 7-15 | 8-16 |
+
+The simulator found real bugs in the scripted UHC play this way (see the changelog for 0.4.0), and it
+runs about 30 full UHC fights a second on 4 cores.
+
+## The UHC brain
+
+The `uhc` model is a whole UHC brain: the melee network plus a **tactic chooser** (`LearnedTactics`), a
+second network (90 inputs, two hidden layers of 32, 13 outputs) that shifts each UHC tactic's score up or
+down by up to 0.3 every tick: engage, retreat, heal, ranged, guard, refill, lava, web, water, wall,
+cleanup, boost, breakweb. It sees the fight as the brain sees it (distance, both players' health, webs,
+water, fire, what the opponent holds or uses), its own kit, what lies around, the scripted scores and
+which tactic is running. It can't make a tactic possible that isn't, and the tactics themselves still do
+the aiming, timing and hands under the profile's limits. With all-zero outputs it plays exactly like the
+scripted brain, which is where training starts.
+
+Training (`UhcBrainTraining`) is evolution strategies over both networks together, in full-kit fights:
+the scripted pro, the pro with the learned melee, and snapshots of the brain itself.
 
 ## Training: imitation, then self-play
 
@@ -76,12 +120,14 @@ cover them. The whole loop needs no GPU.
 |---|---|---|---|
 | `sword` (0.3.0) | imitation + 400 generations, about 4 min | 0.98, strafing 7% of the time | 8 of 8 fights won |
 | `sword` (0.2.0) | imitation + 300 generations | 0.97, strafing 45% of the time | 6 of 8 |
-| `uhc` (0.3.0) | imitation + 300 generations, about 8 min | 0.99 (melee with shield, axe and golden apples) | about even in full-kit UHC |
+| `uhc` (0.4.0, whole brain) | the 0.3.0 melee + 60 generations in full-kit fights, about 11 min | 0.95 in full-kit UHC | 11 of 12 fights won |
+| `uhc` (0.3.0, melee only) | imitation + 300 generations, about 8 min | 0.99 in flat melee | about even in full-kit UHC |
 
-The UHC model is about even in the real game because a full UHC fight is decided as much by water,
-lava, webs and walls as by melee, and those are still the scripted tactics for both bots. To make the
-UHC bot properly strong, the simulator needs blocks, fluids and webs so the network can learn those
-too (see the next steps).
+What the UHC brain found: against the scripted pro it stopped using lava, webs, walls and boosts and
+wins by pressure (in melee 73% of the time, the bow at range, healing, getting out of webs and fire
+quickly). Every player carries water and puts fire out within a couple of ticks, so in these fights the
+scripted lava and web plays cost more time than they win. The scripted pro still uses all of it, so
+practise against both.
 
 What the network found on its own: in sword it barely strafes and wins with sprint-knockback hits
 from the edge of reach (about 10 of its 11 hits a fight); extra reward for crits hardly changed that,
@@ -112,9 +158,9 @@ needs. It runs on Windows, Linux and macOS, including Apple silicon natively. It
 given, and on a machine with more cores it also tries more changes per generation (4 per core), so a
 bigger machine learns faster and better, not only sooner.
 
-| Machine | Cores | Roughly (UHC, 300 generations) |
+| Machine | Cores | Roughly (UHC brain, 100 generations) |
 |---|---|---|
-| This build machine | 4 | 8 minutes |
+| This build machine | 4 | 18 minutes |
 | A gaming PC | 8-16 | 2-4x faster |
 | MacBook Pro M5 | 10 (4 performance, 6 efficiency) | about 2x faster |
 
@@ -126,7 +172,8 @@ already have; every best is saved as it goes, so you can stop at any time.
 In game (no setup needed), as an operator:
 
 ```
-/sparbot train uhc myuhc 300          # a UHC model: imitation, then 300 generations of self-play
+/sparbot train uhc myuhc 300          # a UHC brain: from the bundled one, 300 generations of full-kit self-play
+/sparbot train uhcmelee mymelee 300   # UHC melee only (flat fights)
 /sparbot train sword mysword 300      # a sword model
 /sparbot train status                 # how it's going
 /sparbot train stop                   # stop early; the best so far is kept
@@ -138,7 +185,8 @@ It runs in the background on all cores but one, saves every new best to
 `config/sparbot/models/<name>.json`, and the model can be used straight away. From a checkout:
 
 ```
-./gradlew :sparbot-core:trainUhc -Pgenerations=1000 -Pout=uhc.json [-Pstart=old.json]
+./gradlew :sparbot-core:trainUhc -Pgenerations=300 -Pout=uhc.json [-Pstart=old.json]
+./gradlew :sparbot-core:uhcLab -Pfights=200 -Pa=pro -Pb=pro     # full-kit fights with statistics
 ./gradlew :sparbot-core:trainSword -Pgenerations=300 -Pout=sword.json
 ```
 
@@ -151,8 +199,8 @@ then copy the file to `config/sparbot/models/` and run `/sparbot reload`.
   well as) the scripted pro, so a bot picks up a real player's habits; self-play then sharpens them.
 - **Per-level models.** Snapshots from different stages of training make natural opponents in between
   the levels.
-- **UHC utility in the simulator (next).** Blocks, water, lava and webs in a small voxel world, so the
-  network also learns when to pour, web, wall and boost, instead of the scripted rules deciding those.
+- **Stronger utility.** Web-then-lava and web-then-crit combos executed well enough that the brain
+  chooses them, and an opponent league with more varied UHC players.
 - **More modes.** The same loop works for any mode the simulator can play: crystal and mace need
   explosions and wind charges added to it.
 - **A better simulator.** Regeneration, terrain and connection jitter, measured against recorded real
