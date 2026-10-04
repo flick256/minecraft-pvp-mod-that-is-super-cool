@@ -35,18 +35,21 @@ test {
 	useJUnitPlatform()
 }
 
-// Trains a sword model in the duel simulator: ./gradlew :sparbot-core:trainSword -Pgenerations=200 -Pout=build/models/sword.json
-tasks.register('trainSword', JavaExec) {
-	group = 'sparbot'
-	description = 'Trains a learned sword policy (imitation, then self-play) in the duel simulator.'
-	classpath = sourceSets.main.runtimeClasspath
-	mainClass = 'io.github.flick256.sparbot.core.ml.TrainSword'
-	args = [
-		project.findProperty('generations') ?: '100',
-		project.findProperty('out') ?: layout.buildDirectory.file('models/sword.json').get().asFile.path,
-		project.findProperty('start') ?: ''
-	]
-	jvmArgs = ['-Xmx2g']
+// Trains a model in the duel simulator: ./gradlew :sparbot-core:trainSword (or trainUhc) -Pgenerations=300 -Pout=model.json [-Pstart=old.json]
+['sword', 'uhc'].each { mode ->
+	tasks.register("train${mode.capitalize()}", JavaExec) {
+		group = 'sparbot'
+		description = "Trains a learned ${mode} melee model (imitation, then self-play) in the duel simulator."
+		classpath = sourceSets.main.runtimeClasspath
+		mainClass = 'io.github.flick256.sparbot.core.ml.Train'
+		args = [
+			mode,
+			project.findProperty('generations') ?: '100',
+			project.findProperty('out') ?: layout.buildDirectory.file("models/${mode}.json").get().asFile.path,
+			project.findProperty('start') ?: ''
+		]
+		jvmArgs = ['-Xmx2g']
+	}
 }
 
 // The scripted tiers against each other in the simulator: ./gradlew :sparbot-core:tournament -Pfights=400

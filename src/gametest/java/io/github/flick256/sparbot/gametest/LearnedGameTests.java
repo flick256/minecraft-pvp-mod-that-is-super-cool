@@ -29,10 +29,14 @@ public class LearnedGameTests {
 	}
 
 	private static void fight(GameTestHelper helper, int round) {
+		fight(helper, round, "sword", "basic_sword");
+	}
+
+	private static void fight(GameTestHelper helper, int round, String model, String kit) {
 		FightGameTests.ring(helper);
-		Bot learned = TestSupport.spawnBot(helper, "Learned", 4.5, 1, 7.5, -90, "pro", "basic_sword");
-		learned.setModel("sword", SparBot.models().get("sword").orElseThrow());
-		Bot scripted = TestSupport.spawnBot(helper, "Scripted", 11.5, 1, 7.5, 90, "pro", "basic_sword");
+		Bot learned = TestSupport.spawnBot(helper, "Learned", 4.5, 1, 7.5, -90, "pro", kit);
+		learned.setModel(model, SparBot.models().get(model).orElseThrow());
+		Bot scripted = TestSupport.spawnBot(helper, "Scripted", 11.5, 1, 7.5, 90, "pro", kit);
 		learned.setAssignedTarget(TestSupport.body(scripted).getUUID());
 		scripted.setAssignedTarget(TestSupport.body(learned).getUUID());
 		FightDiagnostics diagnostics = new FightDiagnostics(learned, scripted);
@@ -46,10 +50,11 @@ public class LearnedGameTests {
 				float la = a == null || !a.isAlive() ? 0 : a.getHealth();
 				float lb = b == null || !b.isAlive() ? 0 : b.getHealth();
 				String winner = la > lb ? "learned" : lb > la ? "scripted" : "draw";
-				SparBot.LOGGER.info("Learned vs scripted pro, round {}: {} wins ({} vs {} health, {} ticks); learned {}; scripted {}", round, winner, la, lb,
+				SparBot.LOGGER.info("Learned {} vs scripted pro, round {}: {} wins ({} vs {} health, {} ticks); learned {}; scripted {}", model, round, winner, la, lb,
 					helper.getTick(), learned.stats().summary(), scripted.stats().summary());
+				diagnostics.log();
 				int stall = diagnostics.longestStall();
-				float dealt = 20 - lb;
+				double dealt = learned.stats().damageDealt();
 				TestSupport.remove(learned, scripted);
 				helper.assertTrue(stall <= FightDiagnostics.STALL_LIMIT, "the learned bot locked up for " + stall + " ticks");
 				helper.assertTrue(dealt >= 4, "the learned bot fought (dealt " + dealt + ")");
@@ -78,11 +83,31 @@ public class LearnedGameTests {
 		fight(helper, 4);
 	}
 
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 40)
+	public void learnedUhcVsScriptedRound1(GameTestHelper helper) {
+		fight(helper, 1, "uhc", "sparbot_uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 40)
+	public void learnedUhcVsScriptedRound2(GameTestHelper helper) {
+		fight(helper, 2, "uhc", "sparbot_uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 40)
+	public void learnedUhcVsScriptedRound3(GameTestHelper helper) {
+		fight(helper, 3, "uhc", "sparbot_uhc");
+	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 40)
+	public void learnedUhcVsScriptedRound4(GameTestHelper helper) {
+		fight(helper, 4, "uhc", "sparbot_uhc");
+	}
+
 	@GameTest(maxTicks = 2400)
 	public void trainingOnTheServerProducesAUsableModel(GameTestHelper helper) {
 		java.util.List<String> lines = new java.util.concurrent.CopyOnWriteArrayList<>();
 		io.github.flick256.sparbot.model.TrainingJob job = io.github.flick256.sparbot.model.TrainingJob.start(helper.getLevel().getServer(),
-			SparBot.modelsDir(), "gametest_model", 10, null, lines::add);
+			SparBot.modelsDir(), io.github.flick256.sparbot.core.ml.Train.Mode.SWORD, "gametest_model", 10, null, lines::add);
 		// Game ticks run as fast as they can in a test, so wait for the real time the first step takes.
 		try {
 			helper.assertTrue(job.awaitFirstModel(180), "the imitation step finished within 3 minutes");

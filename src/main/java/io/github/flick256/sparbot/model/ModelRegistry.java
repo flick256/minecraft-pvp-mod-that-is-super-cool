@@ -1,7 +1,6 @@
 package io.github.flick256.sparbot.model;
 
 import io.github.flick256.sparbot.SparBot;
-import io.github.flick256.sparbot.core.brain.MeleeFeatures;
 import io.github.flick256.sparbot.core.ml.Mlp;
 import io.github.flick256.sparbot.core.ml.Models;
 import java.io.IOException;
@@ -38,7 +37,7 @@ public final class ModelRegistry {
 				String id = file.getFileName().toString().replaceFirst("\\.json$", "");
 				try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 					Mlp net = Models.parse(reader);
-					if (net.inputs() != MeleeFeatures.COUNT || net.outputs() != MeleeFeatures.OUTPUTS) {
+					if (!io.github.flick256.sparbot.core.brain.LearnedMeleeTactic.fits(net)) {
 						throw new IllegalArgumentException("not a melee model (" + net + ")");
 					}
 					models.put(id, net);

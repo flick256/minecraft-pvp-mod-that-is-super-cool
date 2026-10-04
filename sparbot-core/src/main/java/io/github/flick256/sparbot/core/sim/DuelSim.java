@@ -26,14 +26,15 @@ public final class DuelSim {
 	 *
 	 * @param winner 0 or 1, or -1 when time ran out with both alive
 	 */
-	public record Result(int winner, int ticks, float[] health, float[] damage, int[] swings, int[] hits, int[] crits, int[] sprintHits) {
+	public record Result(int winner, int ticks, float[] health, float[] damage, int[] swings, int[] hits, int[] crits, int[] sprintHits,
+		int[] strafeTicks, int[] blockedHits, int[] gapplesEaten) {
 		/** Score from side {@code side}'s point of view: 1 for a win, 0 for a loss, health-based in between on a timeout. */
 		public double score(int side) {
 			if (winner >= 0) {
 				return winner == side ? 1.0 : 0.0;
 			}
-			double mine = Math.max(0, health[side]);
-			double theirs = Math.max(0, health[1 - side]);
+			double mine = Math.max(0, Math.min(SimFighter.MAX_HEALTH, health[side]));
+			double theirs = Math.max(0, Math.min(SimFighter.MAX_HEALTH, health[1 - side]));
 			return 0.5 + 0.5 * (mine - theirs) / SimFighter.MAX_HEALTH;
 		}
 	}
@@ -75,14 +76,18 @@ public final class DuelSim {
 					f[i].click(f[1 - i], rng);
 				}
 			}
+			for (int i = 0; i < 2; i++) {
+				f[i].use(in[i]);
+			}
 			for (SimFighter fighter : f) {
 				fighter.move(ARENA_HALF_SIZE);
 			}
 			tick++;
 		}
 		int winner = f[0].dead() == f[1].dead() ? -1 : f[0].dead() ? 1 : 0;
-		return new Result(winner, tick, new float[] {f[0].health, f[1].health}, new float[] {f[0].damageDealt, f[1].damageDealt},
+		return new Result(winner, tick, new float[] {f[0].health + f[0].absorption, f[1].health + f[1].absorption}, new float[] {f[0].damageDealt, f[1].damageDealt},
 			new int[] {f[0].swings, f[1].swings}, new int[] {f[0].hits, f[1].hits}, new int[] {f[0].crits, f[1].crits},
-			new int[] {f[0].sprintHits, f[1].sprintHits});
+			new int[] {f[0].sprintHits, f[1].sprintHits}, new int[] {f[0].strafeTicks, f[1].strafeTicks}, new int[] {f[0].blockedHits, f[1].blockedHits},
+			new int[] {loadout.gapples() - f[0].gapples, loadout.gapples() - f[1].gapples});
 	}
 }

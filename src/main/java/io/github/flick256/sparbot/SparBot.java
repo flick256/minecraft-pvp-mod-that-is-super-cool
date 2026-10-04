@@ -64,7 +64,8 @@ public final class SparBot implements ModInitializer {
 			REPLAYS.stopAll();
 			BOTS.removeAll("server stopping");
 		});
-		LOGGER.info("SparBot initialised: {} skill profiles, enabled={}", PROFILES.ids().size(), config.enabled);
+		LOGGER.info("SparBot {} initialised: {} skill profiles, enabled={}", FabricLoader.getInstance().getModContainer(MOD_ID)
+			.map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("?"), PROFILES.ids().size(), config.enabled);
 	}
 
 	public static void reloadConfigAndProfiles() {

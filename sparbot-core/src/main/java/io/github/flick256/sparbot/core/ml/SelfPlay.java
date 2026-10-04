@@ -36,11 +36,28 @@ public final class SelfPlay {
 	 */
 	public record Config(int pairs, double sigma, double learningRate, int fights, int snapshotEvery, int leagueSize) {
 		public static final Config DEFAULT = new Config(16, 0.03, 0.01, 12, 10, 6);
+
+		/** The same, with the population scaled to use {@code cores} cores well (more cores, more candidates). */
+		public Config scaledTo(int cores) {
+			return new Config(Math.max(pairs, 4 * cores), sigma, learningRate, fights, snapshotEvery, leagueSize);
+		}
+	}
+
+	/**
+	 * Shaping on top of winning: a penalty for strafing more than {@code freeStrafe} of the time (constant
+	 * circling wins against bots but looks dizzy and teaches nothing), a bonus per crit landed.
+	 */
+	public record Shaping(double freeStrafe, double strafePenalty, double critBonus) {
+		public static final Shaping NONE = new Shaping(1.0, 0, 0);
+		/** Prefer timing, crits and spacing over constant strafing. */
+		public static final Shaping HUMAN_LIKE = new Shaping(0.3, 0.3, 0.004);
 	}
 
 	private final SkillProfile limits;
 	private final List<Tournament.Entrant> scripted;
 	private final Config config;
+	private Loadout loadout = Loadout.DIAMOND_SWORD;
+	private Shaping shaping = Shaping.NONE;
 	private final List<Mlp> snapshots = new ArrayList<>();
 
 	/**
@@ -51,6 +68,13 @@ public final class SelfPlay {
 		this.limits = limits;
 		this.scripted = scripted;
 		this.config = config;
+	}
+
+	/** Fights with {@code newLoadout} and scores with {@code newShaping}. */
+	public SelfPlay with(Loadout newLoadout, Shaping newShaping) {
+		this.loadout = newLoadout;
+		this.shaping = newShaping;
+		return this;
 	}
 
 	/** The learned network as a tournament entrant, under the given limits. */
@@ -69,12 +93,14 @@ public final class SelfPlay {
 			long seed = generationSeed * 7919 + i;
 			boolean first = i % 2 == 0;
 			DuelSim.Result r = first
-				? DuelSim.fight(me.side(seed), opponent.side(seed + 1), Loadout.DIAMOND_SWORD, seed, Tournament.MAX_TICKS)
-				: DuelSim.fight(opponent.side(seed + 1), me.side(seed), Loadout.DIAMOND_SWORD, seed, Tournament.MAX_TICKS);
+				? DuelSim.fight(me.side(seed), opponent.side(seed + 1), loadout, seed, Tournament.MAX_TICKS)
+				: DuelSim.fight(opponent.side(seed + 1), me.side(seed), loadout, seed, Tournament.MAX_TICKS);
 			int side = first ? 0 : 1;
 			// Winning is what counts; the damage difference smooths the signal between wins and losses.
 			double damage = Math.max(-1, Math.min(1, (r.damage()[side] - r.damage()[1 - side]) / 20.0));
-			total += 0.7 * r.score(side) + 0.3 * (0.5 + 0.5 * damage);
+			double strafe = r.strafeTicks()[side] / (double) Math.max(1, r.ticks());
+			total += 0.7 * r.score(side) + 0.3 * (0.5 + 0.5 * damage) - shaping.strafePenalty() * Math.max(0, strafe - shaping.freeStrafe())
+				+ Math.min(0.05, shaping.critBonus() * r.crits()[side]);
 		}
 		return total / config.fights();
 	}

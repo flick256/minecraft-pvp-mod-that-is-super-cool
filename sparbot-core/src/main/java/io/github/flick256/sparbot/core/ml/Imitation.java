@@ -28,14 +28,20 @@ public final class Imitation {
 	private Imitation() {
 	}
 
-	/** Runs {@code fights} simulator fights of {@code teacher} against each opponent in turn and records the teacher's decisions. */
+	/** Runs {@code fights} sword fights of {@code teacher} against each opponent in turn and records the teacher's decisions. */
 	public static List<Example> collect(SkillProfile teacher, List<SkillProfile> opponents, int fights, long seed) {
+		return collect(teacher, opponents, fights, seed, Loadout.DIAMOND_SWORD, 1);
+	}
+
+	/** As {@link #collect(SkillProfile, List, int, long)} with a loadout and feature version. */
+	public static List<Example> collect(SkillProfile teacher, List<SkillProfile> opponents, int fights, long seed, Loadout loadout, int version) {
 		List<Example> examples = Collections.synchronizedList(new ArrayList<>());
 		java.util.stream.IntStream.range(0, fights).parallel().forEach(i -> {
 			List<Example> local = new ArrayList<>();
-			DuelBrain student = new DuelBrain(teacher, Playstyle.BALANCED, seed + i, new ImitationRecorder((f, t) -> local.add(new Example(f, t))));
+			DuelBrain student = new DuelBrain(teacher, Playstyle.BALANCED, seed + i,
+				new ImitationRecorder((f, t) -> local.add(new Example(f, t)), version));
 			SkillProfile opponent = opponents.get(i % opponents.size());
-			DuelSim.fight(new DuelSim.Side(student, student.profile()), Tournament.scripted(opponent).side(seed + i + 77), Loadout.DIAMOND_SWORD,
+			DuelSim.fight(new DuelSim.Side(student, student.profile()), Tournament.scripted(opponent).side(seed + i + 77), loadout,
 				seed * 31 + i, Tournament.MAX_TICKS);
 			examples.addAll(local);
 		});
@@ -62,12 +68,16 @@ public final class Imitation {
 				for (int k = start; k < end; k++) {
 					Example e = data.get(k);
 					double[] out = net.forward(e.features());
-					double[] g = new double[MeleeFeatures.OUTPUTS];
+					double[] g = new double[out.length];
 					total += softmaxHead(out, g, 0, (int) e.target()[0]);
 					total += softmaxHead(out, g, 3, (int) e.target()[1]);
 					total += logistic(out, g, 6, e.target()[2], 1.0);
 					total += logistic(out, g, 7, e.target()[3], 1.0);
 					total += logistic(out, g, 8, e.target()[4], 3.0);
+					if (e.target().length > 5) {
+						total += logistic(out, g, 9, e.target()[5], 3.0); // shield up: rare
+						total += logistic(out, g, 10, e.target()[6], 2.0); // axe
+					}
 					net.backward(e.features(), g, grad);
 				}
 				int n = end - start;

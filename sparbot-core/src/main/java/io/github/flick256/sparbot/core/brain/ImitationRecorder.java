@@ -10,10 +10,17 @@ import java.util.function.BiConsumer;
 public final class ImitationRecorder implements Tactic {
 	private final EngageTactic inner = new EngageTactic();
 	private final BiConsumer<double[], double[]> sink;
+	private final int version;
 
-	/** @param sink receives (features, targets) for every tick the scripted melee acts */
+	/** @param sink receives (version 1 features, targets) for every tick the scripted melee acts */
 	public ImitationRecorder(BiConsumer<double[], double[]> sink) {
+		this(sink, 1);
+	}
+
+	/** @param version the feature version to record (1: sword, 2: with shields, axes and golden apples) */
+	public ImitationRecorder(BiConsumer<double[], double[]> sink, int version) {
 		this.sink = sink;
+		this.version = version;
 	}
 
 	@Override
@@ -32,9 +39,9 @@ public final class ImitationRecorder implements Tactic {
 			c.memory.sinceOwnHit = 0;
 		}
 		SwordPlan.observe(c);
-		double[] features = MeleeFeatures.encode(c);
+		double[] features = MeleeFeatures.encode(c, version);
 		Inputs in = inner.act(c);
-		sink.accept(features, MeleeFeatures.target(in));
+		sink.accept(features, MeleeFeatures.target(in, version, c.memory.axeMode));
 		return in;
 	}
 

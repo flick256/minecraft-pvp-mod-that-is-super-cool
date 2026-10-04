@@ -58,7 +58,8 @@ public final class SparBotMenuScreen extends Screen {
 	}
 
 	public SparBotMenuScreen(MenuState state) {
-		super(Component.literal("SparBot"));
+		super(Component.literal("SparBot " + net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("sparbot")
+			.map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("")));
 		this.state = state;
 	}
 

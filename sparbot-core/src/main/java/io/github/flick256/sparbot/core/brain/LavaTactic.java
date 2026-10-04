@@ -51,6 +51,9 @@ public final class LavaTactic implements Tactic {
 	private BlockSpot lava;
 	private long lastActed;
 	private long lastSpam = Long.MIN_VALUE / 2;
+	/** When a pour last failed (the spot couldn't be clicked): not again for {@link #FAILED_COOLDOWN}. */
+	private long failedAt = Long.MIN_VALUE / 2;
+	private static final int FAILED_COOLDOWN = 60;
 
 	@Override
 	public String name() {
@@ -73,7 +76,8 @@ public final class LavaTactic implements Tactic {
 		}
 		TargetState t = c.seen();
 		InventoryState inv = c.self.inventory();
-		if (c.target == null || t == null || !t.visible() || inv.hotbarSlot(ItemKind.LAVA_BUCKET) < 0 || !inRange(c, t)) {
+		if (c.target == null || t == null || !t.visible() || inv.hotbarSlot(ItemKind.LAVA_BUCKET) < 0 || !inRange(c, t)
+			|| c.observation.tick() - failedAt < FAILED_COOLDOWN) {
 			return 0;
 		}
 		double skill = c.profile.items().uhcSkill();
@@ -116,6 +120,7 @@ public final class LavaTactic implements Tactic {
 	public void reset() {
 		phase = Phase.IDLE;
 		willLava.reset();
+		failedAt = Long.MIN_VALUE / 2;
 		lava = null;
 		lastSpam = Long.MIN_VALUE / 2;
 	}
@@ -146,6 +151,9 @@ public final class LavaTactic implements Tactic {
 					return aimAtLava(c, inv);
 				}
 				if (t == null || ticks > PLACE_TIMEOUT || !inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET) || !inRange(c, t)) {
+					if (ticks > PLACE_TIMEOUT) {
+						failedAt = c.observation.tick();
+					}
 					return finish(c);
 				}
 				// On a webbed opponent the bucket is emptied onto the web: the lava lands above it, on their head.

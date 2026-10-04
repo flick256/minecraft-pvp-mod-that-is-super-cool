@@ -30,6 +30,12 @@ import java.util.List;
  *   <li>LivingEntity#knockback: velocity / 2 minus the push; upwards min(0.4, vy / 2 + power) on the ground</li>
  *   <li>CombatRules#getDamageAfterAbsorb for armor</li>
  *   <li>Knockback reaches a player one tick later (the server sends it, the client applies it)</li>
+ *   <li>Items (when the loadout carries them): switching the held item resets the charge; a shield
+ *       blocks hits from within 90 degrees of its holder's facing once it has been up 5 ticks
+ *       (BlocksAttacks), and an axe hit on it disables it for 5 s; a golden apple takes 32 ticks to eat
+ *       and gives Absorption I (4) and Regeneration II (1 health every 25 ticks for 5 s); using an item
+ *       slows movement to 0.2 and stops sprinting, and clicks do nothing meanwhile; Protection takes 4%
+ *       per level off what armor lets through; absorption soaks damage first; no natural regeneration</li>
  * </ul>
  */
 public final class SimFighter {
@@ -51,7 +57,18 @@ public final class SimFighter {
 	private static final double SPRINT_KNOCKBACK = 0.5;
 	private static final int JUMP_DELAY = 10;
 	static final float MAX_HEALTH = 20.0F;
-	private static final ItemInfo SWORD = new ItemInfo(ItemKind.SWORD, "minecraft:diamond_sword", 1, 7.0, 1.0, false, false, null);
+	static final int SWORD_SLOT = 0;
+	static final int AXE_SLOT = 1;
+	static final int GAPPLE_SLOT = 2;
+	private static final int EAT_TICKS = 32;
+	private static final int SHIELD_DELAY_TICKS = 5;
+	private static final int SHIELD_DISABLE_TICKS = 100;
+	private static final double USE_SLOWDOWN = 0.2;
+	private static final int REGEN_TICKS = 100;
+	private static final int REGEN_INTERVAL = 25;
+	private static final float GAPPLE_ABSORPTION = 4.0F;
+	/** Minecraft#startUseItem: holding right click retries every 4 ticks. */
+	private static final int RIGHT_CLICK_DELAY = 4;
 	private static final int[] FLAT = new int[SelfState.DIRECTIONS];
 
 	final Loadout loadout;
@@ -83,12 +100,28 @@ public final class SimFighter {
 	int ticksSinceSwing = 100;
 	Inputs keys = Inputs.IDLE;
 
+	// Items.
+	int selected = SWORD_SLOT;
+	int gapples;
+	float absorption;
+	int regenTicks;
+	/** Using an item: eating (main hand) or holding the shield up (offhand). */
+	boolean using;
+	boolean usingShield;
+	int useTicks;
+	int shieldCooldown;
+	private boolean useHeld;
+	private int rightClickDelay;
+
 	// Statistics.
 	int swings;
 	int hits;
 	int crits;
 	int sprintHits;
 	float damageDealt;
+	int blockedHits;
+	int strafeTicks;
+	int ticks;
 
 	SimFighter(Loadout loadout, double x, double z, float yaw) {
 		this.loadout = loadout;
@@ -98,6 +131,7 @@ public final class SimFighter {
 		this.yaw = yaw;
 		this.lastX = x;
 		this.lastZ = z;
+		this.gapples = loadout.gapples();
 	}
 
 	public double x() {
@@ -116,9 +150,35 @@ public final class SimFighter {
 		return sprinting;
 	}
 
-	/** Player#getAttackStrengthScale(0.5). */
+	/** Player#getAttackStrengthScale(0.5), for the held item. */
 	float attackStrength() {
-		return (float) Math.max(0, Math.min(1, (attackTicker + 0.5) / loadout.chargeTicks()));
+		return (float) Math.max(0, Math.min(1, (attackTicker + 0.5) / chargeTicks()));
+	}
+
+	private double chargeTicks() {
+		return switch (selected) {
+			case SWORD_SLOT -> loadout.chargeTicks();
+			case AXE_SLOT -> loadout.hasAxe() ? 20.0 / Loadout.AXE_SPEED : 5.0;
+			default -> 5.0; // hand or a golden apple: attack speed 4
+		};
+	}
+
+	private ItemKind held() {
+		return switch (selected) {
+			case SWORD_SLOT -> ItemKind.SWORD;
+			case AXE_SLOT -> loadout.hasAxe() ? ItemKind.AXE : ItemKind.EMPTY;
+			case GAPPLE_SLOT -> gapples > 0 ? ItemKind.GOLDEN_APPLE : ItemKind.EMPTY;
+			default -> ItemKind.EMPTY;
+		};
+	}
+
+	/** A shield up long enough to block. */
+	boolean blocking() {
+		return using && usingShield && useTicks >= SHIELD_DELAY_TICKS;
+	}
+
+	private ItemKind usingKind() {
+		return !using ? ItemKind.EMPTY : usingShield ? ItemKind.SHIELD : ItemKind.GOLDEN_APPLE;
 	}
 
 	Vec3 position() {
@@ -131,23 +191,39 @@ public final class SimFighter {
 
 	SelfState selfState() {
 		InventoryState inv = inventory();
-		return new SelfState(position(), eye(), new Vec3(vx, vy, vz), yaw, pitch, health, MAX_HEALTH, 0, 20, onGround, sprinting, false,
-			horizontalCollision, fallDistance, attackStrength(), REACH, hurtTime, true, FLAT, inv, List.of());
+		List<io.github.flick256.sparbot.core.sense.EffectInfo> effects = new java.util.ArrayList<>();
+		if (absorption > 0) {
+			effects.add(new io.github.flick256.sparbot.core.sense.EffectInfo("minecraft:absorption", 0, 2400));
+		}
+		if (regenTicks > 0) {
+			effects.add(new io.github.flick256.sparbot.core.sense.EffectInfo("minecraft:regeneration", 1, regenTicks));
+		}
+		ItemKind held = held();
+		return new SelfState(position(), eye(), new Vec3(vx, vy, vz), yaw, pitch, health, MAX_HEALTH, absorption, 20, onGround, sprinting, false,
+			horizontalCollision, fallDistance, attackStrength(), REACH, hurtTime, held == ItemKind.SWORD || held == ItemKind.AXE, FLAT, inv, effects);
 	}
 
 	/** This fighter as its opponent sees it. */
 	TargetState asTarget(int id) {
 		Vec3 velocity = new Vec3(x - lastX, y - lastY, z - lastZ);
-		return new TargetState(id, "Sim" + id, position(), velocity, yaw, health, MAX_HEALTH, onGround, hurtTime, false, true, 0, HALF_WIDTH, HEIGHT,
-			ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, loadout.armor(), false, false, false, Math.min(TargetState.NO_SWING, ticksSinceSwing));
+		return new TargetState(id, "Sim" + id, position(), velocity, yaw, health + absorption, MAX_HEALTH, onGround, hurtTime, blocking(), true, 0, HALF_WIDTH,
+			HEIGHT, held(), loadout.shield() ? ItemKind.SHIELD : ItemKind.EMPTY, usingKind(), loadout.armor(), false, false, false,
+			Math.min(TargetState.NO_SWING, ticksSinceSwing));
 	}
 
-	private static InventoryState inventory() {
+	private InventoryState inventory() {
 		ItemInfo[] slots = new ItemInfo[InventoryState.SIZE];
 		java.util.Arrays.fill(slots, ItemInfo.EMPTY);
-		slots[0] = SWORD;
+		slots[SWORD_SLOT] = new ItemInfo(ItemKind.SWORD, "minecraft:diamond_sword", 1, loadout.attackDamage(), 1.0, false, false, null);
+		if (loadout.hasAxe()) {
+			slots[AXE_SLOT] = new ItemInfo(ItemKind.AXE, "minecraft:diamond_axe", 1, loadout.axeDamage(), 1.0, false, false, null);
+		}
+		if (gapples > 0) {
+			slots[GAPPLE_SLOT] = new ItemInfo(ItemKind.GOLDEN_APPLE, "minecraft:golden_apple", gapples, 1.0, 1.0, false, false, null);
+		}
+		ItemInfo offhand = loadout.shield() ? new ItemInfo(ItemKind.SHIELD, "minecraft:shield", 1, 1.0, 1.0, shieldCooldown > 0, false, null) : ItemInfo.EMPTY;
 		ItemInfo[] armor = {ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY};
-		return new InventoryState(slots, ItemInfo.EMPTY, armor, 0, false, false, 0, ItemKind.EMPTY, false);
+		return new InventoryState(slots, offhand, armor, selected, using, using && usingShield, using ? useTicks : 0, usingKind(), blocking());
 	}
 
 	/** Start of tick: knockback sent last tick arrives. */
@@ -165,10 +241,48 @@ public final class SimFighter {
 		keys = in;
 		yaw = Angles.wrapDegrees(yaw + in.yawDelta());
 		pitch = Math.max(-90.0F, Math.min(90.0F, pitch + in.pitchDelta()));
+		if (in.hotbarSlot() >= 0 && in.hotbarSlot() != selected) {
+			ItemKind before = held();
+			selected = in.hotbarSlot();
+			if (held() != before) {
+				attackTicker = 0; // Player#tick: a different item in hand resets the charge
+			}
+			if (using && !usingShield) {
+				using = false; // the apple left the hand
+			}
+		}
+	}
+
+	/** Right click (Minecraft#handleKeybinds / startUseItem): release, start, or keep using. */
+	void use(Inputs in) {
+		if (rightClickDelay > 0) {
+			rightClickDelay--;
+		}
+		if (using) {
+			if (!in.use()) {
+				using = false;
+			}
+		} else if (in.use() && (!useHeld || rightClickDelay == 0)) {
+			rightClickDelay = RIGHT_CLICK_DELAY;
+			if (held() == ItemKind.GOLDEN_APPLE) {
+				using = true;
+				usingShield = false;
+				useTicks = 0;
+			} else if (loadout.shield() && shieldCooldown == 0) {
+				// A sword or axe has no use of its own: the click falls through to the offhand shield.
+				using = true;
+				usingShield = true;
+				useTicks = 0;
+			}
+		}
+		useHeld = in.use();
 	}
 
 	/** A left click: hits {@code other} if the crosshair is on it within reach, and resets the charge either way. */
 	void click(SimFighter other, Rng rng) {
+		if (using) {
+			return; // clicks do nothing while an item is in use
+		}
 		swings++;
 		ticksSinceSwing = 0;
 		Vec3 eye = eye();
@@ -183,8 +297,10 @@ public final class SimFighter {
 
 	private void attack(SimFighter other, Rng rng) {
 		float strength = attackStrength();
-		double base = loadout.attackDamage() * (0.2 + strength * strength * 0.8);
-		double magic = strength * loadout.enchantBonus();
+		ItemKind weapon = held();
+		double itemDamage = weapon == ItemKind.SWORD ? loadout.attackDamage() : weapon == ItemKind.AXE ? loadout.axeDamage() : 1.0;
+		double base = itemDamage * (0.2 + strength * strength * 0.8);
+		double magic = weapon == ItemKind.SWORD ? strength * loadout.enchantBonus() : 0;
 		boolean full = strength > 0.9F;
 		boolean knockbackAttack = sprinting && full;
 		boolean crit = full && fallDistance > 0 && !onGround && !sprinting;
@@ -193,7 +309,7 @@ public final class SimFighter {
 		}
 		float damage = (float) (base + magic);
 		Vec3 oldMovement = new Vec3(other.vx, other.vy, other.vz);
-		int landed = other.hurt(damage, this);
+		int landed = other.hurt(damage, this, weapon == ItemKind.AXE);
 		boolean fullHit = landed == FULL;
 		if (landed != MISSED) {
 			hits++;
@@ -215,11 +331,28 @@ public final class SimFighter {
 	private static final int MISSED = 0;
 	private static final int PARTIAL = 1;
 	private static final int FULL = 2;
+	private static final int BLOCKED = 3;
 
 	/** LivingEntity#hurtServer: {@link #FULL} (with knockback), {@link #PARTIAL} (the difference, while invulnerable) or {@link #MISSED}. */
-	private int hurt(float damage, SimFighter attacker) {
+	private int hurt(float damage, SimFighter attacker, boolean axe) {
 		boolean full;
 		float dealt;
+		if (blocking() && facingTowards(attacker)) {
+			// BlocksAttacks: all of it blocked. An axe disables the shield; the hit still starts the
+			// invulnerability (hurtServer carries on with 0 damage), with no knockback for a player.
+			blockedHits++;
+			if (axe) {
+				shieldCooldown = SHIELD_DISABLE_TICKS;
+				using = false;
+			}
+			if (invulnerableTime > 10) {
+				return MISSED;
+			}
+			lastHurt = 0;
+			invulnerableTime = 20;
+			hurtTime = 10;
+			return BLOCKED;
+		}
 		if (invulnerableTime > 10) {
 			if (damage <= lastHurt) {
 				return MISSED;
@@ -234,13 +367,27 @@ public final class SimFighter {
 			dealt = afterArmor(damage);
 			full = true;
 		}
-		health -= dealt;
+		dealt *= (float) (1.0 - Math.min(20, loadout.protection()) / 25.0);
+		float soaked = Math.min(absorption, dealt);
+		absorption -= soaked;
+		health -= dealt - soaked;
 		attacker.damageDealt += dealt;
 		if (full) {
 			// Default knockback: away from the attacker.
 			knockback(DEFAULT_KNOCKBACK, attacker.x - x, attacker.z - z, new Vec3(vx, vy, vz));
 		}
 		return full ? FULL : PARTIAL;
+	}
+
+	/** Whether {@code attacker} is within 90 degrees of where this fighter faces (a shield covers that). */
+	private boolean facingTowards(SimFighter attacker) {
+		double rad = Math.toRadians(yaw);
+		double lx = -Math.sin(rad);
+		double lz = Math.cos(rad);
+		double dx = attacker.x - x;
+		double dz = attacker.z - z;
+		double len = Math.sqrt(dx * dx + dz * dz);
+		return len < 1e-6 || (lx * dx + lz * dz) / len >= 0;
 	}
 
 	/** CombatRules#getDamageAfterAbsorb. */
@@ -270,11 +417,16 @@ public final class SimFighter {
 	/** One tick of the body: sprint state, jumping, LivingEntity#travelInAir, timers. */
 	void move(double arenaHalfSize) {
 		Inputs in = keys;
+		ticks++;
+		if (in.strafe() != 0) {
+			strafeTicks++;
+		}
 		boolean forwardKey = in.forward() > 0;
-		// ClientEmulator#updateSprint (LocalPlayer#aiStep): the sprint key starts a sprint while moving forward.
-		if (!sprinting && forwardKey && in.sprint()) {
+		// ClientEmulator#updateSprint (LocalPlayer#aiStep): the sprint key starts a sprint while moving
+		// forward; using an item stops it.
+		if (!sprinting && forwardKey && in.sprint() && !using) {
 			sprinting = true;
-		} else if (sprinting && (!forwardKey || horizontalCollision)) {
+		} else if (sprinting && (!forwardKey || horizontalCollision || using)) {
 			sprinting = false;
 		}
 
@@ -283,8 +435,9 @@ public final class SimFighter {
 		double forward = in.forward();
 		double length = Math.sqrt(left * left + forward * forward);
 		if (length > 0) {
-			left = left / length * 0.98;
-			forward = forward / length * 0.98;
+			double scale = using ? 0.98 * USE_SLOWDOWN : 0.98;
+			left = left / length * scale;
+			forward = forward / length * scale;
 			double scaled = Math.sqrt(left * left + forward * forward);
 			double dirX = Math.abs(left / scaled);
 			double dirY = Math.abs(forward / scaled);
@@ -370,6 +523,25 @@ public final class SimFighter {
 
 		attackTicker++;
 		ticksSinceSwing++;
+		if (using) {
+			useTicks++;
+			if (!usingShield && useTicks >= EAT_TICKS) {
+				// A golden apple: Absorption I and Regeneration II.
+				using = false;
+				gapples--;
+				absorption = Math.max(absorption, GAPPLE_ABSORPTION);
+				regenTicks = REGEN_TICKS;
+			}
+		}
+		if (shieldCooldown > 0) {
+			shieldCooldown--;
+		}
+		if (regenTicks > 0) {
+			if (regenTicks % REGEN_INTERVAL == 0) {
+				health = Math.min(MAX_HEALTH, health + 1);
+			}
+			regenTicks--;
+		}
 		if (invulnerableTime > 0) {
 			invulnerableTime--;
 		}

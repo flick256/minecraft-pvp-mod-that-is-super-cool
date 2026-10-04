@@ -44,14 +44,19 @@ public final class Tournament {
 		});
 	}
 
-	/** Mean score of {@code a} against {@code b} over {@code fights} fights (sides swapped every other fight), run in parallel. */
+	/** Mean score of {@code a} against {@code b} over {@code fights} sword fights (sides swapped every other fight), run in parallel. */
 	public static double score(Entrant a, Entrant b, int fights, long seed) {
+		return score(a, b, fights, seed, Loadout.DIAMOND_SWORD);
+	}
+
+	/** As {@link #score(Entrant, Entrant, int, long)} with the given loadout. */
+	public static double score(Entrant a, Entrant b, int fights, long seed, Loadout loadout) {
 		return IntStream.range(0, fights).parallel().mapToDouble(i -> {
 			long s = seed * 1_000_003L + i;
 			if (i % 2 == 0) {
-				return DuelSim.fight(a.side(s), b.side(s ^ 0x9E3779B9L), Loadout.DIAMOND_SWORD, s, MAX_TICKS).score(0);
+				return DuelSim.fight(a.side(s), b.side(s ^ 0x9E3779B9L), loadout, s, MAX_TICKS).score(0);
 			}
-			return DuelSim.fight(b.side(s ^ 0x9E3779B9L), a.side(s), Loadout.DIAMOND_SWORD, s, MAX_TICKS).score(1);
+			return DuelSim.fight(b.side(s ^ 0x9E3779B9L), a.side(s), loadout, s, MAX_TICKS).score(1);
 		}).average().orElse(0.5);
 	}
 

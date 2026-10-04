@@ -2,7 +2,7 @@ package io.github.flick256.sparbot.model;
 
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.core.ml.Mlp;
-import io.github.flick256.sparbot.core.ml.TrainSword;
+import io.github.flick256.sparbot.core.ml.Train;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -15,7 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Trains a sword model in the background while the server runs: imitation, then self-play in the duel
+ * Trains a melee model (sword or UHC) in the background while the server runs: imitation, then self-play in the duel
  * simulator (not the world, so nothing in game is touched). It leaves one core free for the server.
  * Every new best is saved to {@code config/sparbot/models/<name>.json} and can be given to bots at once.
  */
@@ -41,7 +41,7 @@ public final class TrainingJob {
 	 * @param from a model to continue from, or null to start from the scripted pro
 	 * @param report progress lines (called on the server thread)
 	 */
-	public static synchronized TrainingJob start(MinecraftServer server, Path modelsDir, String name, int generations, @Nullable Mlp from,
+	public static synchronized TrainingJob start(MinecraftServer server, Path modelsDir, Train.Mode mode, String name, int generations, @Nullable Mlp from,
 		Consumer<String> report) {
 		if (running != null) {
 			throw new IllegalStateException("Already training " + running.name + " (" + running.status + ")");
@@ -52,7 +52,7 @@ public final class TrainingJob {
 		Thread thread = new Thread(() -> {
 			ForkJoinPool pool = new ForkJoinPool(cores);
 			try {
-				double best = pool.submit(() -> TrainSword.run(from, generations, line -> {
+				double best = pool.submit(() -> Train.run(mode, from, generations, line -> {
 					job.status = line;
 					SparBot.LOGGER.info("[train {}] {}", name, line);
 					server.execute(() -> report.accept(line));

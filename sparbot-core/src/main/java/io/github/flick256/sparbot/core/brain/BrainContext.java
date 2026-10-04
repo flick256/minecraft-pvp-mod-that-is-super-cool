@@ -110,6 +110,19 @@ public final class BrainContext {
 		return true;
 	}
 
+	/** Whether a block's outline under the crosshair comes before the opponent (a click would hit the block). */
+	public boolean crosshairBlockedBeforeTarget(double maxDistance) {
+		TargetState t = seen();
+		if (t == null) {
+			return false;
+		}
+		Vec3 eye = self.eyePosition();
+		double entry = rayEntry(eye, Angles.lookVector(self.yaw(), self.pitch()), new Vec3(t.position().x() - t.halfWidth(), t.position().y(),
+			t.position().z() - t.halfWidth()), new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth()),
+			maxDistance);
+		return entry >= 0 && entry >= self.crosshairBlockDistance();
+	}
+
 	/** Mouse movement this tick towards looking at the given angles (smoothed, jittered by the aim model). */
 	public float[] lookAt(float goalYaw, float goalPitch) {
 		return aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);

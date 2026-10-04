@@ -170,13 +170,9 @@ public final class SparBotCommand {
 				io.github.flick256.sparbot.model.TrainingJob job = io.github.flick256.sparbot.model.TrainingJob.running();
 				return ok(ctx, job == null ? "Nothing is training" : "Training " + job.name() + ": " + job.status());
 			}))
-			.then(Commands.argument("name", StringArgumentType.word())
-				.executes(ctx -> train(ctx, 200, null))
-				.then(Commands.argument("generations", com.mojang.brigadier.arguments.IntegerArgumentType.integer(10, 5000))
-					.executes(ctx -> train(ctx, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"), null))
-					.then(Commands.argument("from", StringArgumentType.word()).suggests(MODEL_IDS)
-						.executes(ctx -> train(ctx, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"),
-							StringArgumentType.getString(ctx, "from")))))));
+			.then(Commands.literal("sword").then(trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode.SWORD)))
+			.then(Commands.literal("uhc").then(trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode.UHC)))
+			.then(trainArguments(null)));
 
 		root.then(Commands.literal("technique").then(botArgument()
 			.executes(ctx -> {
@@ -336,8 +332,20 @@ public final class SparBotCommand {
 			+ provenanceNote(kit));
 	}
 
-	/** Starts training a sword model in the background (see TrainingJob). */
-	private static int train(CommandContext<CommandSourceStack> ctx, int generations, String from) throws CommandSyntaxException {
+	/** {@code <name> [generations] [from]} for a training of {@code mode} (null: from the model continued from, else sword). */
+	private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> trainArguments(io.github.flick256.sparbot.core.ml.Train.Mode mode) {
+		return Commands.argument("name", StringArgumentType.word())
+			.executes(ctx -> train(ctx, mode, 200, null))
+			.then(Commands.argument("generations", com.mojang.brigadier.arguments.IntegerArgumentType.integer(10, 5000))
+				.executes(ctx -> train(ctx, mode, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"), null))
+				.then(Commands.argument("from", StringArgumentType.word()).suggests(MODEL_IDS)
+					.executes(ctx -> train(ctx, mode, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"),
+						StringArgumentType.getString(ctx, "from")))));
+	}
+
+	/** Starts training a model in the background (see TrainingJob). */
+	private static int train(CommandContext<CommandSourceStack> ctx, io.github.flick256.sparbot.core.ml.Train.Mode chosen, int generations, String from)
+		throws CommandSyntaxException {
 		String name = StringArgumentType.getString(ctx, "name");
 		if (!name.matches("[a-z0-9_\\-]{1,32}") || name.equals("off") || SparBot.models().bundled(name)) {
 			throw new SimpleCommandExceptionType(Component.literal("Model names are 1-32 lowercase letters, digits, _ or - (and not a bundled model)")).create();
@@ -346,14 +354,19 @@ public final class SparBotCommand {
 		if (from != null) {
 			start = SparBot.models().get(from).orElseThrow(() -> new SimpleCommandExceptionType(Component.literal("Unknown model " + from)).create());
 		}
+		io.github.flick256.sparbot.core.ml.Train.Mode mode = chosen != null ? chosen
+			: start != null ? io.github.flick256.sparbot.core.ml.Train.Mode.of(start) : io.github.flick256.sparbot.core.ml.Train.Mode.SWORD;
+		if (start != null && io.github.flick256.sparbot.core.ml.Train.Mode.of(start) != mode) {
+			throw new SimpleCommandExceptionType(Component.literal(from + " is not a " + mode.id() + " model")).create();
+		}
 		CommandSourceStack source = ctx.getSource();
 		try {
-			io.github.flick256.sparbot.model.TrainingJob.start(source.getServer(), SparBot.modelsDir(), name, generations, start,
+			io.github.flick256.sparbot.model.TrainingJob.start(source.getServer(), SparBot.modelsDir(), mode, name, generations, start,
 				line -> source.sendSuccess(() -> Component.literal("[train " + name + "] " + line), false));
 		} catch (IllegalStateException e) {
 			throw new SimpleCommandExceptionType(Component.literal(e.getMessage())).create();
 		}
-		return ok(ctx, "Training " + name + " for " + generations + " generations in the background (" + (from == null ? "starting from the scripted pro"
+		return ok(ctx, "Training " + mode.id() + " model " + name + " for " + generations + " generations in the background (" + (from == null ? "starting from the scripted pro"
 			: "continuing from " + from) + "). Progress shows here; /sparbot train stop ends it early");
 	}
 

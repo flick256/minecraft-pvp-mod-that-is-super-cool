@@ -25,6 +25,13 @@ public final class RangedTactic implements Tactic {
 	private static final double STILL = 0.04;
 	private static final int MAX_HOLD_TICKS = 70;
 
+	/** Longest stretch of bow play (6 s) before pushing in for {@link #PUSH_IN_TICKS}. */
+	private static final int MAX_RANGED_TICKS = 120;
+	private static final int PUSH_IN_TICKS = 200;
+	/** Farther than this, the bow is still the way to go. */
+	private static final double FAR = 20.0;
+	private int rangedTicks;
+	private long pushInFrom = Long.MIN_VALUE / 2;
 	private final Decision wantsRanged = new Decision();
 	private boolean crossbowFiring;
 
@@ -51,17 +58,38 @@ public final class RangedTactic implements Tactic {
 		if (distance < MIN_RANGE || distance > MAX_RANGE) {
 			return 0;
 		}
+		// A bow exchange going nowhere: after a while a player pushes in instead (unless they're far off).
+		long now = c.observation.tick();
+		if (now - pushInFrom < PUSH_IN_TICKS && distance < FAR) {
+			return 0;
+		}
+		if (rangedTicks > MAX_RANGED_TICKS) {
+			rangedTicks = 0;
+			pushInFrom = now;
+			return 0;
+		}
 		return wantsRanged.get(c.rng, c.profile.items().bowSkill(), 60) ? Scores.SPECIALIST : 0;
 	}
 
 	@Override
+	public void onExit(BrainContext c) {
+		// Short breaks (a hotbar switch, a heal) don't reset the count; a fight that moved on does.
+		if (c.targetDistance() < MIN_RANGE) {
+			rangedTicks = 0;
+		}
+	}
+
+	@Override
 	public void reset() {
+		rangedTicks = 0;
+		pushInFrom = Long.MIN_VALUE / 2;
 		wantsRanged.reset();
 		crossbowFiring = false;
 	}
 
 	@Override
 	public Inputs act(BrainContext c) {
+		rangedTicks++;
 		InventoryState inv = c.self.inventory();
 		int slot = weaponSlot(inv);
 		int press = c.memory.hands.request(c, slot);

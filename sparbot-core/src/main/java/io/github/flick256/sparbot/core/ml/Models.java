@@ -10,8 +10,11 @@ import java.util.Map;
 
 /** Learned models shipped with SparBot ({@code /sparbot/models/<id>.json}). */
 public final class Models {
-	/** sword: melee for sword duels, trained by imitation of the scripted pro and then self-play. */
-	public static final List<String> BUNDLED_IDS = List.of("sword");
+	/**
+	 * sword: melee for sword duels; uhc: melee with shield, axe and golden apples, for UHC. Both trained
+	 * by imitating the scripted pro, then self-play.
+	 */
+	public static final List<String> BUNDLED_IDS = List.of("sword", "uhc");
 
 	private Models() {
 	}
