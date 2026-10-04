@@ -85,9 +85,11 @@ public final class EngageTactic implements Tactic {
 
 		// React to our own landed hit (perceived via the target's hurt animation starting).
 		boolean targetJustHurt = target.hurtTime() > m.lastTargetHurtTime && m.ticksSinceOwnClick < 6;
-		SwordPlan.observe(c);
 		if (targetJustHurt) {
 			m.sinceOwnHit = 0;
+		}
+		SwordPlan.observe(c);
+		if (targetJustHurt) {
 			if (c.rng.chance(c.skill(Technique.W_TAP))) {
 				m.wTapTicks = c.rng.nextInt(2, 4);
 			} else if (c.rng.chance(c.skill(Technique.S_TAP))) {

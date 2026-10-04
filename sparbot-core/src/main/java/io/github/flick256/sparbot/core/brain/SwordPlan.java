@@ -74,6 +74,10 @@ final class SwordPlan {
 	static void observe(BrainContext c) {
 		SelfState self = c.self;
 		DuelMemory m = c.memory;
+		if (m.observedTick == c.observation.tick()) {
+			return; // once per tick
+		}
+		m.observedTick = c.observation.tick();
 		float s = self.attackStrength();
 		if (s > m.lastStrength && s < 1.0F) {
 			m.chargeRate = s - m.lastStrength;

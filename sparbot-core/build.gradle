@@ -34,3 +34,26 @@ tasks.withType(JavaCompile).configureEach {
 test {
 	useJUnitPlatform()
 }
+
+// Trains a sword model in the duel simulator: ./gradlew :sparbot-core:trainSword -Pgenerations=200 -Pout=build/models/sword.json
+tasks.register('trainSword', JavaExec) {
+	group = 'sparbot'
+	description = 'Trains a learned sword policy (imitation, then self-play) in the duel simulator.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.flick256.sparbot.core.ml.TrainSword'
+	args = [
+		project.findProperty('generations') ?: '100',
+		project.findProperty('out') ?: layout.buildDirectory.file('models/sword.json').get().asFile.path,
+		project.findProperty('start') ?: ''
+	]
+	jvmArgs = ['-Xmx2g']
+}
+
+// The scripted tiers against each other in the simulator: ./gradlew :sparbot-core:tournament -Pfights=400
+tasks.register('tournament', JavaExec) {
+	group = 'sparbot'
+	description = 'Prints how often each skill level beats each other one in the duel simulator.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.flick256.sparbot.core.sim.Tournament'
+	args = [project.findProperty('fights') ?: '100']
+}

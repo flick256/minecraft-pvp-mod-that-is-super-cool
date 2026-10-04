@@ -72,3 +72,10 @@ jar {
 		rename { "${it}_$projectName" }
 	}
 }
+
+// Run only some GameTests: ./gradlew runGameTest -PgametestFilter=learned
+if (project.hasProperty('gametestFilter')) {
+	tasks.named('runGameTest') {
+		jvmArgs "-Dfabric-api.gametest.filter=${project.property('gametestFilter')}"
+	}
+}

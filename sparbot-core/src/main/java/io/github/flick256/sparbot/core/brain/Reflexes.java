@@ -17,7 +17,7 @@ final class Reflexes {
 	}
 
 	static Inputs apply(BrainContext c, Tactic active, Inputs in) {
-		if (active instanceof EngageTactic || active instanceof SpearTactic || active instanceof MaceTactic || active instanceof SearchTactic || in.inventoryOpen() || c.target == null
+		if (active instanceof EngageTactic || active instanceof LearnedMeleeTactic || active instanceof ImitationRecorder || active instanceof SpearTactic || active instanceof MaceTactic || active instanceof SearchTactic || in.inventoryOpen() || c.target == null
 			|| !c.allows(Technique.REFLEXES)) {
 			return in;
 		}

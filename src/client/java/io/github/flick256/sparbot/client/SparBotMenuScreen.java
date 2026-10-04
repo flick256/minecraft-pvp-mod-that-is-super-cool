@@ -174,7 +174,7 @@ public final class SparBotMenuScreen extends Screen {
 		pager(center, kits.size());
 	}
 
-	/** On/off switches for each of one bot's techniques. */
+	/** The melee (scripted or a learned model) and on/off switches for each of one bot's techniques. */
 	private void initTechniques(int center) {
 		MenuState.BotEntry bot = state.bots().stream().filter(b -> b.name().equals(techniquesBot)).findFirst().orElse(null);
 		if (bot == null) {
@@ -182,16 +182,27 @@ public final class SparBotMenuScreen extends Screen {
 			return;
 		}
 		Technique[] all = Technique.values();
-		int first = clampPage(all.length) * rows();
-		for (int i = first; i < Math.min(first + rows(), all.length); i++) {
-			Technique technique = all[i];
-			int y = TOP + (i - first) * ROW_HEIGHT;
+		int rowsTotal = all.length + 1;
+		int first = clampPage(rowsTotal) * rows();
+		for (int row = first; row < Math.min(first + rows(), rowsTotal); row++) {
+			int y = TOP + (row - first) * ROW_HEIGHT;
+			if (row == 0) {
+				// First row: scripted melee or a learned model.
+				List<String> melee = new ArrayList<>();
+				melee.add("scripted");
+				melee.addAll(state.models());
+				String current = bot.model().isEmpty() ? "scripted" : bot.model();
+				labels.add(new Label(bot.name() + ": melee", center - 190, y + 6, WHITE));
+				addRenderableWidget(cycle("melee", melee, current, v -> run(MenuCommands.model(bot.name(), v.equals("scripted") ? "off" : v)), center + 20, y, 120));
+				continue;
+			}
+			Technique technique = all[row - 1];
 			labels.add(new Label(bot.name() + ": " + technique.id(), center - 190, y + 6, WHITE));
 			boolean on = !bot.disabledTechniques().contains(technique.id());
 			addRenderableWidget(CycleButton.onOffBuilder(on).displayOnlyValue().create(center + 20, y, 120, 20, Component.literal(technique.id()),
 				(button, value) -> run(MenuCommands.technique(bot.name(), technique.id(), value))));
 		}
-		pager(center, all.length);
+		pager(center, rowsTotal);
 	}
 
 	private void initSettings(int center) {
@@ -228,9 +239,14 @@ public final class SparBotMenuScreen extends Screen {
 	}
 
 	private CycleButton<String> cycle(String name, List<String> values, String initial, java.util.function.Consumer<String> onChange, int x, int y) {
+		return cycle(name, values, initial, onChange, x, y, 200);
+	}
+
+	private CycleButton<String> cycle(String name, List<String> values, String initial, java.util.function.Consumer<String> onChange, int x, int y,
+		int width) {
 		List<String> options = values.isEmpty() ? List.of("-") : values;
 		return CycleButton.builder(Component::literal, options.contains(initial) ? initial : options.get(0)).withValues(options)
-			.create(x, y, 200, 20, Component.literal(name), (button, value) -> onChange.accept(value));
+			.create(x, y, width, 20, Component.literal(name), (button, value) -> onChange.accept(value));
 	}
 
 	private void show(Tab next) {

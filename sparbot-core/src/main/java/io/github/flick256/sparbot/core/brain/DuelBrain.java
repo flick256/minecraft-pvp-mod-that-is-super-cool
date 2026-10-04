@@ -30,10 +30,7 @@ public final class DuelBrain implements Policy {
 	private final Rng rng;
 	private final AimController aim;
 	private final PerceptionDelay perception = new PerceptionDelay();
-	private final List<Tactic> tactics = List.of(new EngageTactic(), new RetreatTactic(), new SearchTactic(), new HealTactic(),
-		new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
-		new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
-		new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic());
+	private final List<Tactic> tactics;
 	private DuelMemory memory = new DuelMemory();
 	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
@@ -45,6 +42,18 @@ public final class DuelBrain implements Policy {
 
 	/** @param profile how well the bot plays; @param style how it prefers to fight (biases are applied to the profile) */
 	public DuelBrain(SkillProfile profile, Playstyle style, long seed) {
+		this(profile, style, seed, new EngageTactic());
+	}
+
+	/**
+	 * @param melee what fights in melee: the scripted {@link EngageTactic}, a {@link LearnedMeleeTactic}, or
+	 *     an {@link ImitationRecorder}
+	 */
+	public DuelBrain(SkillProfile profile, Playstyle style, long seed, Tactic melee) {
+		this.tactics = List.of(melee, new RetreatTactic(), new SearchTactic(), new HealTactic(),
+			new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
+			new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
+			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic());
 		this.profile = style.applyTo(profile);
 		this.style = style;
 		this.rng = new Rng(seed);

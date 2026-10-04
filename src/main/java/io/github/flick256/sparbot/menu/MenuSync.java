@@ -47,14 +47,16 @@ public final class MenuSync {
 			BotPlayer body = bot.body();
 			boolean alive = body != null && body.isAlive();
 			bots.add(new MenuState.BotEntry(bot.name(), bot.profile().id(), bot.playstyle().id(), alive, alive ? body.getHealth() : 0,
-				bot.disabledTechniques().stream().map(io.github.flick256.sparbot.core.brain.Technique::id).sorted().toList()));
+				bot.disabledTechniques().stream().map(io.github.flick256.sparbot.core.brain.Technique::id).sorted().toList(),
+				bot.modelId() == null ? "" : bot.modelId()));
 		}
 		List<MenuState.Setting> settings = ConfigEditor.settings(SparBot.config()).stream()
 			.map(s -> new MenuState.Setting(s.key(), s.type(), s.value())).toList();
 		return new MenuState(open, sorted(SparBot.profiles().ids()), sorted(SparBot.kits().ids()), sorted(SparBot.playstyles().ids()),
 			sorted(SparBot.matches().modes().ids()), bots, settings, sorted(SparBot.kits().ids()).stream()
 				.flatMap(id -> SparBot.kits().get(id).stream())
-				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList());
+				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList(),
+			sorted(SparBot.models().ids()));
 	}
 
 	private static List<String> sorted(java.util.Collection<String> ids) {

@@ -42,6 +42,11 @@ public final class MenuCommands {
 		return "sparbot technique " + name(bot) + " " + id(technique) + (on ? " on" : " off");
 	}
 
+	/** Has a bot fight in melee with a learned model ({@code off}: the scripted melee). */
+	public static String model(String bot, String model) {
+		return "sparbot model " + name(bot) + " " + id(model);
+	}
+
 	public static String remove(String bot) {
 		return "sparbot remove " + name(bot);
 	}

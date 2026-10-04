@@ -36,6 +36,7 @@ public final class SparBot implements ModInitializer {
 	private static final KitRegistry KITS = new KitRegistry();
 	private static final BotManager BOTS = new BotManager();
 	private static final PlaystyleRegistry STYLES = new PlaystyleRegistry();
+	private static final io.github.flick256.sparbot.model.ModelRegistry MODELS = new io.github.flick256.sparbot.model.ModelRegistry();
 	private static final DebugOverlay DEBUG = new DebugOverlay();
 	private static final MatchManager MATCHES = new MatchManager();
 	private static final Recorder RECORDER = new Recorder();
@@ -70,6 +71,7 @@ public final class SparBot implements ModInitializer {
 		config = SparBotConfig.load(configDir().resolve("sparbot.json"));
 		PROFILES.reload(configDir().resolve("sparbot").resolve("profiles"));
 		STYLES.reload(configDir().resolve("sparbot").resolve("playstyles"));
+		MODELS.reload(configDir().resolve("sparbot").resolve("models"));
 		RECORDER.setDirectory(configDir().resolve("sparbot").resolve("recordings"));
 	}
 
@@ -80,6 +82,11 @@ public final class SparBot implements ModInitializer {
 	public static void reloadKits(MinecraftServer server) {
 		KITS.reload(configDir().resolve("sparbot").resolve("kits"), configDir().resolve("sparbot").resolve("layouts"), server.registryAccess());
 		LOGGER.info("SparBot kits loaded: {}; layouts: {}", KITS.ids(), KITS.layoutIds());
+	}
+
+	/** Where trained models are saved and loaded from. */
+	public static Path modelsDir() {
+		return configDir().resolve("sparbot").resolve("models");
 	}
 
 	private static Path configDir() {
@@ -100,6 +107,10 @@ public final class SparBot implements ModInitializer {
 
 	public static PlaystyleRegistry playstyles() {
 		return STYLES;
+	}
+
+	public static io.github.flick256.sparbot.model.ModelRegistry models() {
+		return MODELS;
 	}
 
 	public static Recorder recorder() {

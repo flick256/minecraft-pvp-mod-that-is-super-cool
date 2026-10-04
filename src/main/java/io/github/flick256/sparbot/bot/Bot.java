@@ -41,6 +41,9 @@ public final class Bot {
 	private final long seed;
 	private SkillProfile profile;
 	private Playstyle playstyle = Playstyle.BALANCED;
+	/** Learned melee model in use, or null for the scripted melee. */
+	private @Nullable String modelId;
+	private io.github.flick256.sparbot.core.ml.@Nullable Mlp model;
 	private Set<Technique> disabledTechniques =
 		EnumSet.noneOf(Technique.class);
 	private Kit kit;
@@ -183,8 +186,20 @@ public final class Bot {
 		return Collections.unmodifiableSet(disabledTechniques);
 	}
 
+	/** Fights in melee with a learned model ({@code null}: the scripted melee). */
+	public void setModel(@Nullable String id, io.github.flick256.sparbot.core.ml.@Nullable Mlp net) {
+		this.modelId = net == null ? null : id;
+		this.model = net;
+		rebuildBrain();
+	}
+
+	public @Nullable String modelId() {
+		return modelId;
+	}
+
 	private void rebuildBrain() {
-		DuelBrain brain = new DuelBrain(profile, playstyle, seed);
+		DuelBrain brain = new DuelBrain(profile, playstyle, seed, model == null ? new io.github.flick256.sparbot.core.brain.EngageTactic()
+			: new io.github.flick256.sparbot.core.brain.LearnedMeleeTactic(model));
 		if (disabledTechniques != null) {
 			brain.setDisabledTechniques(disabledTechniques);
 		}

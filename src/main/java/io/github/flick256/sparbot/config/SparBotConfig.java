@@ -48,6 +48,8 @@ public final class SparBotConfig {
 	 * spacing, blockhit, shieldstun, reflexes); "" uses them all. Per bot: /sparbot technique.
 	 */
 	public String disabledTechniques = "";
+	/** Learned melee model new bots start with ("" = the scripted melee). Per bot: /sparbot model. */
+	public String defaultModel = "";
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */

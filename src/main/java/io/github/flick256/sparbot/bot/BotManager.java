@@ -73,6 +73,10 @@ public final class BotManager {
 			SparBot.LOGGER.error("config defaultPlaystyle is invalid ({}); using balanced", e.getMessage());
 		}
 		bot.setDisabledTechniques(io.github.flick256.sparbot.core.brain.Technique.parse(config.disabledTechniques));
+		if (!config.defaultModel.isBlank() && !"none".equals(config.defaultModel)) {
+			SparBot.models().get(config.defaultModel).ifPresentOrElse(net -> bot.setModel(config.defaultModel, net),
+				() -> SparBot.LOGGER.error("config defaultModel '{}' doesn't exist; using the scripted melee", config.defaultModel));
+		}
 		BotPlayer player = new BotPlayer(server, level, gameProfile, ClientInformation.createDefault(), bot);
 		player.snapTo(pos.x, pos.y, pos.z, yaw, 0.0F);
 

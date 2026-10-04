@@ -42,6 +42,8 @@ public final class SparBotCommand {
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().ids(), builder);
 	private static final SuggestionProvider<CommandSourceStack> STYLE_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.playstyles().ids(), builder);
+	private static final SuggestionProvider<CommandSourceStack> MODEL_IDS =
+		(ctx, builder) -> SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.stream.Stream.of("off"), SparBot.models().ids().stream()), builder);
 	private static final SuggestionProvider<CommandSourceStack> TECHNIQUE_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Technique.values()).map(Technique::id), builder);
 	private static final SuggestionProvider<CommandSourceStack> LAYOUT_IDS =
@@ -136,6 +138,45 @@ public final class SparBotCommand {
 					p.deviations() == null || p.deviations().isEmpty() ? "" : ", deviations=" + p.deviations()));
 			})))
 			.then(Commands.literal("list").executes(SparBotCommand::listKits)));
+
+		root.then(Commands.literal("model").then(botArgument()
+			.executes(ctx -> {
+				Bot bot = bot(ctx);
+				return ok(ctx, bot.name() + " fights with " + (bot.modelId() == null ? "the scripted melee" : "the learned model " + bot.modelId())
+					+ " (models: " + String.join(", ", SparBot.models().ids()) + ")");
+			})
+			.then(Commands.argument("model", StringArgumentType.word()).suggests(MODEL_IDS).executes(ctx -> {
+				Bot bot = bot(ctx);
+				String id = StringArgumentType.getString(ctx, "model");
+				if (id.equals("off")) {
+					bot.setModel(null, null);
+					return ok(ctx, bot.name() + " now fights with the scripted melee");
+				}
+				bot.setModel(id, SparBot.models().get(id).orElseThrow(() -> new SimpleCommandExceptionType(Component.literal("Unknown model " + id
+					+ " (models: " + String.join(", ", SparBot.models().ids()) + ")")).create()));
+				return ok(ctx, bot.name() + " now fights with the learned model " + id);
+			}))));
+		root.then(Commands.literal("models").executes(ctx -> ok(ctx, "Models: " + String.join(", ", SparBot.models().ids()))));
+		root.then(Commands.literal("train")
+			.then(Commands.literal("stop").executes(ctx -> {
+				io.github.flick256.sparbot.model.TrainingJob job = io.github.flick256.sparbot.model.TrainingJob.running();
+				if (job == null) {
+					throw new SimpleCommandExceptionType(Component.literal("Nothing is training")).create();
+				}
+				job.stop();
+				return ok(ctx, "Stopping " + job.name() + " after the current generations; the best so far is kept");
+			}))
+			.then(Commands.literal("status").executes(ctx -> {
+				io.github.flick256.sparbot.model.TrainingJob job = io.github.flick256.sparbot.model.TrainingJob.running();
+				return ok(ctx, job == null ? "Nothing is training" : "Training " + job.name() + ": " + job.status());
+			}))
+			.then(Commands.argument("name", StringArgumentType.word())
+				.executes(ctx -> train(ctx, 200, null))
+				.then(Commands.argument("generations", com.mojang.brigadier.arguments.IntegerArgumentType.integer(10, 5000))
+					.executes(ctx -> train(ctx, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"), null))
+					.then(Commands.argument("from", StringArgumentType.word()).suggests(MODEL_IDS)
+						.executes(ctx -> train(ctx, com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "generations"),
+							StringArgumentType.getString(ctx, "from")))))));
 
 		root.then(Commands.literal("technique").then(botArgument()
 			.executes(ctx -> {
@@ -293,6 +334,27 @@ public final class SparBotCommand {
 		}
 		return ok(ctx, "Equipped " + (given == 1 ? players.iterator().next().getPlainTextName() : given + " players") + " with " + kit.displayName()
 			+ provenanceNote(kit));
+	}
+
+	/** Starts training a sword model in the background (see TrainingJob). */
+	private static int train(CommandContext<CommandSourceStack> ctx, int generations, String from) throws CommandSyntaxException {
+		String name = StringArgumentType.getString(ctx, "name");
+		if (!name.matches("[a-z0-9_\\-]{1,32}") || name.equals("off") || SparBot.models().bundled(name)) {
+			throw new SimpleCommandExceptionType(Component.literal("Model names are 1-32 lowercase letters, digits, _ or - (and not a bundled model)")).create();
+		}
+		io.github.flick256.sparbot.core.ml.Mlp start = null;
+		if (from != null) {
+			start = SparBot.models().get(from).orElseThrow(() -> new SimpleCommandExceptionType(Component.literal("Unknown model " + from)).create());
+		}
+		CommandSourceStack source = ctx.getSource();
+		try {
+			io.github.flick256.sparbot.model.TrainingJob.start(source.getServer(), SparBot.modelsDir(), name, generations, start,
+				line -> source.sendSuccess(() -> Component.literal("[train " + name + "] " + line), false));
+		} catch (IllegalStateException e) {
+			throw new SimpleCommandExceptionType(Component.literal(e.getMessage())).create();
+		}
+		return ok(ctx, "Training " + name + " for " + generations + " generations in the background (" + (from == null ? "starting from the scripted pro"
+			: "continuing from " + from) + "). Progress shows here; /sparbot train stop ends it early");
 	}
 
 	private static int setTechnique(CommandContext<CommandSourceStack> ctx, boolean on) throws CommandSyntaxException {

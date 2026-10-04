@@ -35,10 +35,13 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			context.clickScreenButton("Tech");
 			context.waitTicks(2);
 			context.takeScreenshot("sparbot-menu-techniques");
-			// The first switch is strafe: turn it off.
+			// Switch strafing off, and the melee to the learned sword model.
 			context.clickScreenButton("strafe");
 			world.getServer().waitFor(server -> SparBot.bots().get("Bot1").map(b -> b.disabledTechniques().contains(
 				io.github.flick256.sparbot.core.brain.Technique.STRAFE)).orElse(false));
+			context.waitTicks(10);
+			context.clickScreenButton("melee");
+			world.getServer().waitFor(server -> SparBot.bots().get("Bot1").map(b -> "sword".equals(b.modelId())).orElse(false));
 
 			context.clickScreenButton("Kits");
 			context.waitTicks(2);

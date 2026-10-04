@@ -59,6 +59,7 @@ final class ConfigCommands {
 		boolean known = switch (key) {
 			case "defaultProfile" -> SparBot.profiles().get(value).isPresent();
 			case "defaultKit" -> SparBot.kits().get(value).isPresent();
+			case "defaultModel" -> value.isBlank() || "none".equals(value) || SparBot.models().get(value).isPresent();
 			case "defaultPlaystyle" -> {
 				try {
 					SparBot.playstyles().resolve(value);

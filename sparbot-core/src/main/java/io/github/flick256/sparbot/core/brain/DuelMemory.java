@@ -14,6 +14,7 @@ public final class DuelMemory {
 	final Decision comboDecision = new Decision();
 	final Decision feintDecision = new Decision();
 	final Decision critDecision = new Decision();
+	long observedTick = Long.MIN_VALUE;
 	/** Reading the opponent's swings this window. */
 	boolean reading;
 	float lastStrength;
