@@ -32,9 +32,17 @@ public final class BrainContext {
 	public final Playstyle style;
 	/** Crystals and placeable blocks around the bot (empty unless it carries crystals). */
 	public final Surroundings world;
+	/** Techniques switched off for this bot. */
+	public final java.util.Set<Technique> disabled;
 
 	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Playstyle style, Rng rng, AimController aim,
 		DuelMemory memory) {
+		this(observation, tracked, trackingDelayTicks, profile, style, rng, aim, memory, java.util.Set.of());
+	}
+
+	BrainContext(Observation observation, TargetState tracked, int trackingDelayTicks, SkillProfile profile, Playstyle style, Rng rng, AimController aim,
+		DuelMemory memory, java.util.Set<Technique> disabled) {
+		this.disabled = disabled;
 		this.style = style;
 		this.observation = observation;
 		this.world = observation.surroundings();
@@ -72,6 +80,35 @@ public final class BrainContext {
 		return rayHitsBox(eye, dir, min, max, maxDistance);
 	}
 
+	/**
+	 * Whether a click now would hit the opponent: the crosshair is on them within {@code maxDistance}
+	 * and no end crystal or TNT minecart is in front of them (the click would hit that instead).
+	 */
+	public boolean clickHitsTarget(double maxDistance) {
+		TargetState t = seen();
+		if (t == null) {
+			return false;
+		}
+		Vec3 eye = self.eyePosition();
+		Vec3 dir = Angles.lookVector(self.yaw(), self.pitch());
+		double entry = rayEntry(eye, dir, new Vec3(t.position().x() - t.halfWidth(), t.position().y(), t.position().z() - t.halfWidth()),
+			new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth()), maxDistance);
+		if (entry < 0) {
+			return false;
+		}
+		for (Vec3 p : world.crystals()) {
+			if (rayHitsBox(eye, dir, new Vec3(p.x() - 1.0, p.y(), p.z() - 1.0), new Vec3(p.x() + 1.0, p.y() + 2.0, p.z() + 1.0), entry)) {
+				return false;
+			}
+		}
+		for (Vec3 p : world.tntCarts()) {
+			if (rayHitsBox(eye, dir, new Vec3(p.x() - 0.49, p.y(), p.z() - 0.49), new Vec3(p.x() + 0.49, p.y() + 0.7, p.z() + 0.49), entry)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/** Mouse movement this tick towards looking at the given angles (smoothed, jittered by the aim model). */
 	public float[] lookAt(float goalYaw, float goalPitch) {
 		return aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);
@@ -82,6 +119,15 @@ public final class BrainContext {
 		float dy = Angles.wrapDegrees(goalYaw - self.yaw());
 		float dp = goalPitch - self.pitch();
 		return (float) Math.sqrt(dy * dy + dp * dp);
+	}
+
+	public boolean allows(Technique technique) {
+		return !disabled.contains(technique);
+	}
+
+	/** How often and how well the bot uses a technique: the profile's skill, or 0 when it is switched off. */
+	public double skill(Technique technique) {
+		return allows(technique) ? technique.skill(profile) : 0;
 	}
 
 	public boolean mistake(Mistake kind) {

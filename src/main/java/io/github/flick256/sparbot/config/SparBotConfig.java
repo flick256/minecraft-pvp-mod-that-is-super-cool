@@ -43,6 +43,11 @@ public final class SparBotConfig {
 	public String defaultKit = "basic_sword";
 	/** Playstyle (or mix, e.g. "aggressive_rusher:0.7,kiter:0.3") new bots start with. */
 	public String defaultPlaystyle = "balanced";
+	/**
+	 * Techniques new bots start with switched off, comma-separated (strafe, wtap, stap, jumpreset, crits,
+	 * spacing, blockhit, shieldstun, reflexes); "" uses them all. Per bot: /sparbot technique.
+	 */
+	public String disabledTechniques = "";
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */
@@ -79,6 +84,11 @@ public final class SparBotConfig {
 		}
 		if (autoRespawnDelayTicks < 1) {
 			errors.add("autoRespawnDelayTicks must be >= 1");
+		}
+		for (String id : (disabledTechniques == null ? "" : disabledTechniques).split(",")) {
+			if (!id.isBlank() && io.github.flick256.sparbot.core.brain.Technique.byId(id).isEmpty()) {
+				errors.add("disabledTechniques: unknown technique " + id.trim());
+			}
 		}
 		return errors;
 	}

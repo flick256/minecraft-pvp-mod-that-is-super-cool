@@ -105,7 +105,7 @@ public final class RangedTactic implements Tactic {
 		if (c.self.horizontalCollision()) {
 			c.memory.strafeDirection = -c.memory.strafeDirection;
 		}
-		Inputs inputs = new Inputs(look[0], look[1], 0, plantFeet ? 0 : c.memory.strafeDirection, false, false, false, false, use, press);
+		Inputs inputs = new Inputs(look[0], look[1], 0, plantFeet || !c.allows(Technique.STRAFE) ? 0 : c.memory.strafeDirection, false, false, false, false, use, press);
 		return Movement.guardEdges(c, inputs);
 	}
 

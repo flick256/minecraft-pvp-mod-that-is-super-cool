@@ -83,7 +83,7 @@ final class BlockPlay {
 		if (--m.ticksUntilStrafeSwitch <= 0) {
 			m.strafeDirection = -m.strafeDirection;
 			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
-			m.strafeActive = c.rng.chance(c.profile.technique().strafeSkill() * 0.25);
+			m.strafeActive = c.rng.chance(c.skill(Technique.STRAFE) * 0.25);
 		}
 		int strafe = m.strafeActive ? m.strafeDirection : 0;
 		boolean jump = c.self.horizontalCollision() && c.self.onGround() && forward > 0;

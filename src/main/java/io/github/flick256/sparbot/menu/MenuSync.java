@@ -46,7 +46,8 @@ public final class MenuSync {
 		for (Bot bot : SparBot.bots().all()) {
 			BotPlayer body = bot.body();
 			boolean alive = body != null && body.isAlive();
-			bots.add(new MenuState.BotEntry(bot.name(), bot.profile().id(), bot.playstyle().id(), alive, alive ? body.getHealth() : 0));
+			bots.add(new MenuState.BotEntry(bot.name(), bot.profile().id(), bot.playstyle().id(), alive, alive ? body.getHealth() : 0,
+				bot.disabledTechniques().stream().map(io.github.flick256.sparbot.core.brain.Technique::id).sorted().toList()));
 		}
 		List<MenuState.Setting> settings = ConfigEditor.settings(SparBot.config()).stream()
 			.map(s -> new MenuState.Setting(s.key(), s.type(), s.value())).toList();

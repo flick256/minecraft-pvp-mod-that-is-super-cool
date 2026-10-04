@@ -7,6 +7,7 @@ import io.github.flick256.sparbot.core.act.Inputs;
 import io.github.flick256.sparbot.core.brain.DecisionTrace;
 import io.github.flick256.sparbot.core.brain.DuelBrain;
 import io.github.flick256.sparbot.core.brain.Policy;
+import io.github.flick256.sparbot.core.brain.Technique;
 import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.kit.Layout;
 import io.github.flick256.sparbot.core.math.Rng;
@@ -14,7 +15,10 @@ import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.core.sense.Observation;
 import io.github.flick256.sparbot.core.stats.FightStats;
 import io.github.flick256.sparbot.core.style.Playstyle;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
@@ -37,6 +41,8 @@ public final class Bot {
 	private final long seed;
 	private SkillProfile profile;
 	private Playstyle playstyle = Playstyle.BALANCED;
+	private Set<Technique> disabledTechniques =
+		EnumSet.noneOf(Technique.class);
 	private Kit kit;
 	private @Nullable Layout layout;
 	private Policy policy;
@@ -164,8 +170,24 @@ public final class Bot {
 		return playstyle;
 	}
 
+	/** Switches techniques off for this bot (the rest on). Takes effect at once. */
+	public void setDisabledTechniques(Set<Technique> techniques) {
+		this.disabledTechniques = techniques.isEmpty() ? EnumSet.noneOf(Technique.class)
+			: EnumSet.copyOf(techniques);
+		if (policy instanceof DuelBrain brain) {
+			brain.setDisabledTechniques(disabledTechniques);
+		}
+	}
+
+	public Set<Technique> disabledTechniques() {
+		return Collections.unmodifiableSet(disabledTechniques);
+	}
+
 	private void rebuildBrain() {
 		DuelBrain brain = new DuelBrain(profile, playstyle, seed);
+		if (disabledTechniques != null) {
+			brain.setDisabledTechniques(disabledTechniques);
+		}
 		this.policy = brain;
 		// The shaper enforces limits from the effective (playstyle-biased) profile.
 		this.shaper = new InputShaper(brain.profile(), new Rng(seed ^ 0x5EED), SparBot.config().maxCps);

@@ -37,6 +37,11 @@ public final class MenuCommands {
 		return "sparbot kit give " + id(kit);
 	}
 
+	/** Switches one of a bot's techniques on or off. */
+	public static String technique(String bot, String technique, boolean on) {
+		return "sparbot technique " + name(bot) + " " + id(technique) + (on ? " on" : " off");
+	}
+
 	public static String remove(String bot) {
 		return "sparbot remove " + name(bot);
 	}

@@ -149,7 +149,7 @@ public final class SpearTactic implements Tactic {
 		if (--m.ticksUntilStrafeSwitch <= 0) {
 			m.strafeDirection = -m.strafeDirection;
 			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
-			m.strafeActive = c.rng.chance(c.profile.technique().strafeSkill());
+			m.strafeActive = c.rng.chance(c.skill(Technique.STRAFE));
 		}
 		int strafe = distance < 6.0 && m.strafeActive ? m.strafeDirection : 0;
 		boolean jump = self.horizontalCollision() && self.onGround() && forward > 0;

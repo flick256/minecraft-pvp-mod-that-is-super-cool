@@ -17,7 +17,7 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 	private static final Gson GSON = new Gson();
 
 	/** A bot as the menu lists it. */
-	public record BotEntry(String name, String profile, String style, boolean alive, float health) {
+	public record BotEntry(String name, String profile, String style, boolean alive, float health, List<String> disabledTechniques) {
 	}
 
 	/** A kit as the Kits tab lists it; unverified layouts are marked. */

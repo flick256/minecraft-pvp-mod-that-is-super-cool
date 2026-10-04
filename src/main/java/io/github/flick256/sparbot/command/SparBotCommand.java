@@ -11,6 +11,7 @@ import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.bot.Bot;
 import io.github.flick256.sparbot.bot.BotPlayer;
 import io.github.flick256.sparbot.core.brain.DecisionTrace;
+import io.github.flick256.sparbot.core.brain.Technique;
 import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.kit.Layout;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
@@ -41,6 +42,8 @@ public final class SparBotCommand {
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().ids(), builder);
 	private static final SuggestionProvider<CommandSourceStack> STYLE_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.playstyles().ids(), builder);
+	private static final SuggestionProvider<CommandSourceStack> TECHNIQUE_IDS =
+		(ctx, builder) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Technique.values()).map(Technique::id), builder);
 	private static final SuggestionProvider<CommandSourceStack> LAYOUT_IDS =
 		(ctx, builder) -> SharedSuggestionProvider.suggest(SparBot.kits().layoutIds(), builder);
 
@@ -133,6 +136,16 @@ public final class SparBotCommand {
 					p.deviations() == null || p.deviations().isEmpty() ? "" : ", deviations=" + p.deviations()));
 			})))
 			.then(Commands.literal("list").executes(SparBotCommand::listKits)));
+
+		root.then(Commands.literal("technique").then(botArgument()
+			.executes(ctx -> {
+				Bot bot = bot(ctx);
+				return ok(ctx, bot.name() + " techniques: " + java.util.Arrays.stream(Technique.values())
+					.map(t -> t.id() + (bot.disabledTechniques().contains(t) ? " off" : " on")).collect(Collectors.joining(", ")));
+			})
+			.then(Commands.argument("technique", StringArgumentType.word()).suggests(TECHNIQUE_IDS)
+				.then(Commands.literal("on").executes(ctx -> setTechnique(ctx, true)))
+				.then(Commands.literal("off").executes(ctx -> setTechnique(ctx, false))))));
 
 		root.then(Commands.literal("layout")
 			.then(Commands.literal("set").then(botArgument()
@@ -280,6 +293,22 @@ public final class SparBotCommand {
 		}
 		return ok(ctx, "Equipped " + (given == 1 ? players.iterator().next().getPlainTextName() : given + " players") + " with " + kit.displayName()
 			+ provenanceNote(kit));
+	}
+
+	private static int setTechnique(CommandContext<CommandSourceStack> ctx, boolean on) throws CommandSyntaxException {
+		Bot bot = bot(ctx);
+		String id = StringArgumentType.getString(ctx, "technique");
+		Technique technique = Technique.byId(id).orElseThrow(() -> new SimpleCommandExceptionType(Component.literal("Unknown technique " + id
+			+ " (" + java.util.Arrays.stream(Technique.values()).map(Technique::id).collect(Collectors.joining(", ")) + ")")).create());
+		java.util.EnumSet<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
+		disabled.addAll(bot.disabledTechniques());
+		if (on) {
+			disabled.remove(technique);
+		} else {
+			disabled.add(technique);
+		}
+		bot.setDisabledTechniques(disabled);
+		return ok(ctx, bot.name() + ": " + technique.id() + (on ? " on" : " off"));
 	}
 
 	private static int captureKit(CommandContext<CommandSourceStack> ctx, String mode) throws CommandSyntaxException {

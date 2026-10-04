@@ -48,7 +48,6 @@ public final class EngageTactic implements Tactic {
 		SelfState self = c.self;
 		// Events (our hit landing) are noticed one reaction time late.
 		TargetState target = c.target;
-		SkillProfile.Technique tech = c.profile.technique();
 		DuelMemory m = c.memory;
 
 		// Aim at the chest of the opponent as currently tracked, leading by a skill-dependent fraction
@@ -72,14 +71,14 @@ public final class EngageTactic implements Tactic {
 		if (--m.ticksUntilStrafeSwitch <= 0) {
 			m.strafeDirection = -m.strafeDirection;
 			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
-			m.strafeActive = c.rng.chance(tech.strafeSkill());
+			m.strafeActive = c.rng.chance(c.skill(Technique.STRAFE));
 		}
 		if (distance < 5.0 && m.strafeActive) {
 			strafe = m.strafeDirection;
 		}
 
 		// Spacing: good players back off slightly when pressed too close instead of face-hugging.
-		if (!c.mistake(Mistake.OVERCHASE) && distance < 1.2 && c.rng.chance(tech.spacingSkill() * 0.5)) {
+		if (!c.mistake(Mistake.OVERCHASE) && distance < 1.2 && c.rng.chance(c.skill(Technique.SPACING) * 0.5)) {
 			forward = 0;
 			sprint = false;
 		}
@@ -87,9 +86,9 @@ public final class EngageTactic implements Tactic {
 		// React to our own landed hit (perceived via the target's hurt animation starting).
 		boolean targetJustHurt = target.hurtTime() > m.lastTargetHurtTime && m.ticksSinceOwnClick < 6;
 		if (targetJustHurt) {
-			if (c.rng.chance(tech.wTapSkill())) {
+			if (c.rng.chance(c.skill(Technique.W_TAP))) {
 				m.wTapTicks = c.rng.nextInt(2, 4);
-			} else if (c.rng.chance(tech.sTapSkill())) {
+			} else if (c.rng.chance(c.skill(Technique.S_TAP))) {
 				m.sTapTicks = c.rng.nextInt(2, 3);
 			}
 		}
@@ -105,7 +104,7 @@ public final class EngageTactic implements Tactic {
 
 		// Jump reset: jump the moment knockback lands to cancel part of it.
 		boolean selfJustHurt = self.hurtTime() > m.lastSelfHurtTime;
-		if (selfJustHurt && self.onGround() && c.rng.chance(tech.jumpResetSkill())) {
+		if (selfJustHurt && self.onGround() && c.rng.chance(c.skill(Technique.JUMP_RESET))) {
 			jump = true;
 		}
 
@@ -164,8 +163,8 @@ public final class EngageTactic implements Tactic {
 			// still knocks them up, and a mace smash bonus isn't scaled by charge at all).
 			m.axeMode = false;
 			m.shieldDisabledTicks = SHIELD_DISABLE_TICKS;
-			m.stunTicks = STUN_WINDOW;
-			m.stunPlanned = c.rng.chance(c.profile.items().axeSkill());
+			m.stunTicks = c.allows(Technique.SHIELD_STUN) ? STUN_WINDOW : 0;
+			m.stunPlanned = c.rng.chance(c.skill(Technique.SHIELD_STUN));
 		} else if (stun) {
 			m.stunTicks--;
 			if (armed && !inv.usingItem() && distance <= judgedReach && c.crosshairOnTarget(judgedReach + 0.5)) {
@@ -181,7 +180,7 @@ public final class EngageTactic implements Tactic {
 		boolean axeThreat = seen != null && seen.mainHand() == ItemKind.AXE && c.rng.chance(c.profile.items().shieldSkill());
 		if (shieldReady && armed && !attack && !axeThreat && m.critPhase == DuelMemory.CritPhase.NONE && distance <= judgedReach + 1.0
 			&& self.attackStrength() < m.cooldownThreshold - BLOCK_HIT_RELEASE_MARGIN
-			&& m.blockHitDecision.get(c.rng, c.profile.items().shieldSkill(), 40)) {
+			&& m.blockHitDecision.get(c.rng, c.skill(Technique.BLOCK_HIT), 40)) {
 			use = true;
 			sprint = false;
 		}
@@ -203,7 +202,7 @@ public final class EngageTactic implements Tactic {
 			case NONE -> {
 				boolean nearlyCharged = self.attackStrength() >= 0.6;
 				boolean closeEnough = distance <= judgedReach + 1.2;
-				if (self.onGround() && nearlyCharged && closeEnough && !self.inWater() && c.rng.chance(c.profile.technique().critSkill() * 0.15)) {
+				if (self.onGround() && nearlyCharged && closeEnough && !self.inWater() && c.rng.chance(c.skill(Technique.CRITS) * 0.15)) {
 					m.critPhase = DuelMemory.CritPhase.WINDUP;
 					m.critTicks = 0;
 				}
@@ -229,7 +228,7 @@ public final class EngageTactic implements Tactic {
 		if (!self.holdingMeleeWeapon()) {
 			return false;
 		}
-		boolean aimed = c.crosshairOnTarget(judgedReach + 0.5);
+		boolean aimed = c.clickHitsTarget(judgedReach + 0.5);
 		boolean inReach = distance <= judgedReach;
 		boolean charged = self.attackStrength() >= m.cooldownThreshold;
 		if (m.critPhase == DuelMemory.CritPhase.WINDUP) {
@@ -252,7 +251,7 @@ public final class EngageTactic implements Tactic {
 		return Angles.yawDistance(toPoint, t.yaw()) <= 90.0F;
 	}
 
-	private static double sampleCooldownThreshold(BrainContext c) {
+	static double sampleCooldownThreshold(BrainContext c) {
 		double discipline = c.profile.clicking().cooldownDiscipline();
 		double threshold = 0.3 + (FULL_CHARGE + 0.05 - 0.3) * discipline + c.rng.nextGaussian() * 0.05;
 		return Math.max(0.2, Math.min(1.0, threshold));

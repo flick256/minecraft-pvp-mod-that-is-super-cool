@@ -72,6 +72,7 @@ public final class BotManager {
 		} catch (IllegalArgumentException e) {
 			SparBot.LOGGER.error("config defaultPlaystyle is invalid ({}); using balanced", e.getMessage());
 		}
+		bot.setDisabledTechniques(io.github.flick256.sparbot.core.brain.Technique.parse(config.disabledTechniques));
 		BotPlayer player = new BotPlayer(server, level, gameProfile, ClientInformation.createDefault(), bot);
 		player.snapTo(pos.x, pos.y, pos.z, yaw, 0.0F);
 

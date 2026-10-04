@@ -122,9 +122,16 @@ final class BrainHarness {
 
 	/** A one-off context for calling helpers directly, as the brain would build it for {@code self}. */
 	BrainContext context(SelfState self) {
-		io.github.flick256.sparbot.core.math.Rng rng = new io.github.flick256.sparbot.core.math.Rng(1);
+		return context(self, java.util.Set.of());
+	}
+
+	private int contexts;
+
+	/** Each context gets its own dice, so repeated calls see different rolls. */
+	BrainContext context(SelfState self, java.util.Set<Technique> disabled) {
+		io.github.flick256.sparbot.core.math.Rng rng = new io.github.flick256.sparbot.core.math.Rng(++contexts);
 		return new BrainContext(new Observation(0, self, target, world), target, 0, brain.profile(), brain.style(), rng,
-			new io.github.flick256.sparbot.core.aim.AimController(brain.profile().aim(), rng), new DuelMemory());
+			new io.github.flick256.sparbot.core.aim.AimController(brain.profile().aim(), rng), new DuelMemory(), disabled);
 	}
 
 	boolean any(java.util.function.Predicate<Inputs> p) {

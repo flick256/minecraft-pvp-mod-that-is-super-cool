@@ -35,6 +35,7 @@ public final class DuelBrain implements Policy {
 		new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
 		new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic());
 	private DuelMemory memory = new DuelMemory();
+	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
 
@@ -63,6 +64,15 @@ public final class DuelBrain implements Policy {
 		return memory;
 	}
 
+	/** Switches techniques off (the rest on). */
+	public void setDisabledTechniques(java.util.Set<Technique> techniques) {
+		this.disabled = techniques.isEmpty() ? java.util.EnumSet.noneOf(Technique.class) : java.util.EnumSet.copyOf(techniques);
+	}
+
+	public java.util.Set<Technique> disabledTechniques() {
+		return java.util.Collections.unmodifiableSet(disabled);
+	}
+
 	@Override
 	public Inputs act(Observation raw) {
 		perception.push(raw.target());
@@ -84,7 +94,7 @@ public final class DuelBrain implements Policy {
 			memory.mistake = rng.chance(profile.mistakeRate()) ? pickMistake() : Mistake.NONE;
 		}
 
-		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory);
+		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory, disabled);
 		Map<String, Double> scores = new LinkedHashMap<>();
 		Tactic best = null;
 		double bestScore = Double.NEGATIVE_INFINITY;
@@ -109,7 +119,7 @@ public final class DuelBrain implements Policy {
 			active = best;
 		}
 
-		Inputs inputs = active.act(context);
+		Inputs inputs = Reflexes.apply(context, active, active.act(context));
 
 		memory.ticksSinceOwnClick++;
 		if (memory.retreatCooldown > 0) {

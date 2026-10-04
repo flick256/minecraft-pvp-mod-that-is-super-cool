@@ -1,5 +1,6 @@
 package io.github.flick256.sparbot.client;
 
+import io.github.flick256.sparbot.core.brain.Technique;
 import io.github.flick256.sparbot.core.ui.MenuCommands;
 import io.github.flick256.sparbot.core.ui.MenuState;
 import io.github.flick256.sparbot.menu.MenuRequestPayload;
@@ -32,8 +33,13 @@ public final class SparBotMenuScreen extends Screen {
 		BOTS,
 		SPAWN,
 		KITS,
-		SETTINGS
+		SETTINGS,
+		/** One bot's techniques (opened from its row in the Bots tab). */
+		TECHNIQUES
 	}
+
+	/** The tabs along the top, in order. */
+	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.SETTINGS};
 
 	private MenuState state;
 	private Tab tab = Tab.BOTS;
@@ -42,6 +48,8 @@ public final class SparBotMenuScreen extends Screen {
 	private String spawnProfile;
 	private String spawnKit;
 	private String spawnStyle;
+	/** The bot whose techniques the TECHNIQUES page shows. */
+	private String techniquesBot;
 	private final List<Label> labels = new ArrayList<>();
 	/** Ticks until the menu asks for fresh contents after an action (0: not waiting). */
 	private int refreshIn;
@@ -70,15 +78,16 @@ public final class SparBotMenuScreen extends Screen {
 		labels.clear();
 		int center = width / 2;
 		String[] names = {"Bots", "Spawn", "Kits", "Settings"};
-		for (Tab each : Tab.values()) {
-			addRenderableWidget(Button.builder(Component.literal(names[each.ordinal()]), b -> show(each)).bounds(center - 158 + each.ordinal() * 80, 28, 76, 20)
-				.build()).active = tab != each;
+		for (int i = 0; i < TAB_BAR.length; i++) {
+			Tab each = TAB_BAR[i];
+			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 158 + i * 80, 28, 76, 20).build()).active = tab != each;
 		}
 		switch (tab) {
 			case BOTS -> initBots(center);
 			case SPAWN -> initSpawn(center);
 			case KITS -> initKits(center);
 			case SETTINGS -> initSettings(center);
+			case TECHNIQUES -> initTechniques(center);
 		}
 		addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose()).bounds(center - 50, height - 28, 100, 20).build());
 	}
@@ -95,18 +104,23 @@ public final class SparBotMenuScreen extends Screen {
 			MenuState.BotEntry bot = bots.get(i);
 			int y = TOP + (i - first) * ROW_HEIGHT;
 			String status = bot.alive() ? String.format(Locale.ROOT, "%.1f hp", bot.health()) : "dead";
-			labels.add(new Label(bot.name() + "  " + bot.profile() + " / " + bot.style() + "  " + status, center - 190, y + 6, bot.alive() ? WHITE : GREY));
+			labels.add(new Label(font.plainSubstrByWidth(bot.name() + "  " + bot.profile() + " / " + bot.style() + "  " + status, 196), center - 190, y + 6,
+				bot.alive() ? WHITE : GREY));
+			addRenderableWidget(Button.builder(Component.literal("Tech"), b -> {
+				techniquesBot = bot.name();
+				show(Tab.TECHNIQUES);
+			}).bounds(center + 10, y, 40, 20).build());
 			if (me != null && MenuCommands.validName(me)) {
-				addRenderableWidget(Button.builder(Component.literal("Fight me"), b -> run(MenuCommands.fight(bot.name(), me))).bounds(center + 20, y, 60, 20)
+				addRenderableWidget(Button.builder(Component.literal("Fight"), b -> run(MenuCommands.fight(bot.name(), me))).bounds(center + 54, y, 44, 20)
 					.build()).active = bot.alive();
 			}
 			if (bot.alive()) {
-				addRenderableWidget(Button.builder(Component.literal("Kill"), b -> run(MenuCommands.kill(bot.name()))).bounds(center + 84, y, 50, 20).build());
+				addRenderableWidget(Button.builder(Component.literal("Kill"), b -> run(MenuCommands.kill(bot.name()))).bounds(center + 102, y, 50, 20).build());
 			} else {
-				addRenderableWidget(Button.builder(Component.literal("Respawn"), b -> run(MenuCommands.respawn(bot.name()))).bounds(center + 84, y, 50, 20)
+				addRenderableWidget(Button.builder(Component.literal("Respawn"), b -> run(MenuCommands.respawn(bot.name()))).bounds(center + 102, y, 50, 20)
 					.build());
 			}
-			addRenderableWidget(Button.builder(Component.literal("Remove"), b -> run(MenuCommands.remove(bot.name()))).bounds(center + 138, y, 54, 20).build());
+			addRenderableWidget(Button.builder(Component.literal("Remove"), b -> run(MenuCommands.remove(bot.name()))).bounds(center + 156, y, 48, 20).build());
 		}
 		pager(center, bots.size());
 	}
@@ -158,6 +172,26 @@ public final class SparBotMenuScreen extends Screen {
 		}
 		labels.add(new Label("Replaces your inventory", center + 70, TOP + rows() * ROW_HEIGHT + 10, GREY));
 		pager(center, kits.size());
+	}
+
+	/** On/off switches for each of one bot's techniques. */
+	private void initTechniques(int center) {
+		MenuState.BotEntry bot = state.bots().stream().filter(b -> b.name().equals(techniquesBot)).findFirst().orElse(null);
+		if (bot == null) {
+			labels.add(new Label("That bot is gone", center - 40, TOP + 6, GREY));
+			return;
+		}
+		Technique[] all = Technique.values();
+		int first = clampPage(all.length) * rows();
+		for (int i = first; i < Math.min(first + rows(), all.length); i++) {
+			Technique technique = all[i];
+			int y = TOP + (i - first) * ROW_HEIGHT;
+			labels.add(new Label(bot.name() + ": " + technique.id(), center - 190, y + 6, WHITE));
+			boolean on = !bot.disabledTechniques().contains(technique.id());
+			addRenderableWidget(CycleButton.onOffBuilder(on).displayOnlyValue().create(center + 20, y, 120, 20, Component.literal(technique.id()),
+				(button, value) -> run(MenuCommands.technique(bot.name(), technique.id(), value))));
+		}
+		pager(center, all.length);
 	}
 
 	private void initSettings(int center) {
