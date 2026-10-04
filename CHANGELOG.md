@@ -2,6 +2,35 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.5.0
+
+- Human-like reach: every bot judges its reach the way people do, holding back a little with a
+  judgement that wobbles (a pro by -0.3 +- 0.15 blocks, a beginner +0.4 +- 0.5), and the learned melee
+  only clicks inside that judged reach. No more constant 3-block hits: the learned sword bot's hits land
+  from 2.5 blocks on average and 3% from beyond 2.9 (it was 16%); in game, UHC pros hit from 1.9-2.2.
+  Fight stats show the mean hit distance and the share of far hits. The `sword` model is retrained.
+- UHC utility revamp. Traced every utility play in the simulator and fixed why it lost fights:
+  - lava and webs aimed at the air under a jumping opponent; they now land where the opponent comes down;
+  - blocks, webs and lava only click when the highlighted block is the one meant, and lava is scooped
+    where it actually landed (a wall in front used to catch the pour);
+  - webs flickered (reached for, then dropped a tick later, throwing away the sword's charge); a web is
+    now seen through once started;
+  - utility only in windows that cost no hit: right after the bot's own hit, out of reach, or while the
+    opponent eats or is stuck; melee rushes an opponent who can't hit back;
+  - new plays: lava on an opponent eating an apple, the bow at mid range on a stuck or eating opponent,
+    a web on the chaser to cover a heal; boosts only to catch someone holding back; walls only while the
+    opponent is still out of reach.
+  Against the same pro without them (1000 simulated fights each): lava 0.56, webs 0.58, walls 0.51,
+  boosts 0.51, all utility together 0.88. Lava and webs together went from 0.35 to 0.60.
+- New `uhc` brain, trained utility-first: the tactic chooser may bring lava, webs, the bow, walls and
+  boosts forward but only hold them back slightly, and can't lift plain melee over them; training also
+  rewards utility that lands. It uses more lava, webs and arrows than the scripted pro and beats it in
+  about 79% of simulated fights and 9 of 12 in game. A test checks that no network can train the utility away.
+- Respawn anchors in crystal PvP: anchor next to the opponent, glowstone, set off with the sword (power 5
+  with fire outside the Nether), only when the opponent takes more of the blast. The SparBot crystal kit
+  carries anchors and glowstone.
+- Bot-vs-bot cart fights join the whole-fight lock-up tests.
+
 ## 0.4.0
 
 - UHC brain: the bundled `uhc` model now chooses tactics as well as fighting in melee. A second network

@@ -83,16 +83,25 @@ runs about 30 full UHC fights a second on 4 cores.
 ## The UHC brain
 
 The `uhc` model is a whole UHC brain: the melee network plus a **tactic chooser** (`LearnedTactics`), a
-second network (90 inputs, two hidden layers of 32, 13 outputs) that shifts each UHC tactic's score up or
-down by up to 0.3 every tick: engage, retreat, heal, ranged, guard, refill, lava, web, water, wall,
+second network (74 inputs, two hidden layers of 32, 13 outputs) that shifts each UHC tactic's score up or
+down every tick: engage, retreat, heal, ranged, guard, refill, lava, web, water, wall,
 cleanup, boost, breakweb. It sees the fight as the brain sees it (distance, both players' health, webs,
 water, fire, what the opponent holds or uses), its own kit, what lies around, the scripted scores and
 which tactic is running. It can't make a tactic possible that isn't, and the tactics themselves still do
 the aiming, timing and hands under the profile's limits. With all-zero outputs it plays exactly like the
 scripted brain, which is where training starts.
 
+UHC is a utility mode, so the shifts are lopsided (`LearnedTactics#limit`): lava, web, ranged, wall and
+boost can be brought forward by up to 0.3 but held back by only 0.04, plain melee can't be lifted at all,
+and the shield and running only a little. A held-back utility play still beats melee already under way,
+so the network decides *when* utility pays best but can't learn to fight with the sword alone (a test,
+`noTacticsNetworkCanTrainTheUtilityAway`, plays the worst possible network and checks it still webs,
+pours lava and shoots).
+
 Training (`UhcBrainTraining`) is evolution strategies over both networks together, in full-kit fights:
-the scripted pro, the pro with the learned melee, and snapshots of the brain itself.
+the scripted pro, the pro with the learned melee, and snapshots of the brain itself. The fitness is
+winning (0.65), the damage difference (0.25) and a small style term (0.1) for utility that lands: fire
+and lava damage on the opponent, time they spend stuck in its webs, and arrows that hit.
 
 ## Training: imitation, then self-play
 
@@ -120,14 +129,16 @@ cover them. The whole loop needs no GPU.
 |---|---|---|---|
 | `sword` (0.3.0) | imitation + 400 generations, about 4 min | 0.98, strafing 7% of the time | 8 of 8 fights won |
 | `sword` (0.2.0) | imitation + 300 generations | 0.97, strafing 45% of the time | 6 of 8 |
+| `uhc` (0.5.0, whole brain, utility-first) | the 0.4.0 melee + a fresh tactic chooser, 100 generations, about 20 min | 0.79 in full-kit UHC | 9 of 12 fights won (UHC rules) |
 | `uhc` (0.4.0, whole brain) | the 0.3.0 melee + 160 generations in full-kit fights, about 30 min | 0.93-0.96 in full-kit UHC | 12 of 12 fights won (UHC rules) |
 | `uhc` (0.3.0, melee only) | imitation + 300 generations, about 8 min | 0.99 in flat melee | about even in full-kit UHC |
 
-What the UHC brain found: against the scripted pro it stopped using lava, webs, walls and boosts and
-wins by pressure (in melee 73% of the time, the bow at range, healing, getting out of webs and fire
-quickly). Every player carries water and puts fire out within a couple of ticks, so in these fights the
-scripted lava and web plays cost more time than they win. The scripted pro still uses all of it, so
-practise against both.
+What the 0.4.0 UHC brain found was that the scripted lava and web plays cost more than they won, so it
+stopped using them. Tracing those plays in the simulator showed why (they missed jumping opponents,
+flickered, and were used while the opponent could punish the switch); with that fixed (0.5.0) every
+utility play wins fights on its own, and the 0.5.0 brain, trained with the lopsided limits above, uses
+more lava, webs and arrows than the scripted pro: about 2.3 lava pours, 3 webs and 10 arrows (8 hits) a
+fight.
 
 What the network found on its own: in sword it barely strafes and wins with sprint-knockback hits
 from the edge of reach (about 10 of its 11 hits a fight); extra reward for crits hardly changed that,
