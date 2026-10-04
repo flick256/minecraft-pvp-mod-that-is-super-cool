@@ -32,6 +32,11 @@ public final class MenuCommands {
 		return "sparbot fight " + name(bot) + " " + name(target);
 	}
 
+	/** Equips the player who sends it with a kit (replacing their inventory). */
+	public static String giveKit(String kit) {
+		return "sparbot kit give " + id(kit);
+	}
+
 	public static String remove(String bot) {
 		return "sparbot remove " + name(bot);
 	}

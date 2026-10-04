@@ -117,6 +117,10 @@ public final class SparBotCommand {
 					bot.onKitReset();
 					return ok(ctx, bot.name() + " re-equipped with " + kit.displayName() + provenanceNote(kit));
 				}))))
+			.then(Commands.literal("give").then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS)
+				.executes(ctx -> giveKit(ctx, java.util.List.of(ctx.getSource().getPlayerOrException())))
+				.then(Commands.argument("players", EntityArgument.players())
+					.executes(ctx -> giveKit(ctx, EntityArgument.getPlayers(ctx, "players"))))))
 			.then(Commands.literal("capture").then(Commands.argument("id", StringArgumentType.word())
 				.executes(ctx -> captureKit(ctx, "custom"))
 				.then(Commands.argument("mode", StringArgumentType.word()).executes(ctx -> captureKit(ctx, StringArgumentType.getString(ctx, "mode"))))))
@@ -252,6 +256,30 @@ public final class SparBotCommand {
 		return ok(ctx, "Kits: " + SparBot.kits().ids().stream()
 			.map(id -> id + SparBot.kits().get(id).map(SparBotCommand::provenanceNote).orElse(""))
 			.collect(Collectors.joining(", ")));
+	}
+
+	/**
+	 * Equips players with a kit, as a kit menu on a PvP server does: their inventory and effects are
+	 * replaced and they are healed. Refused for anyone in a match, where it would be a free reset.
+	 */
+	private static int giveKit(CommandContext<CommandSourceStack> ctx, java.util.Collection<ServerPlayer> players) throws CommandSyntaxException {
+		Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
+		int given = 0;
+		for (ServerPlayer player : players) {
+			if (player instanceof BotPlayer) {
+				continue; // bots get kits with /sparbot kit set
+			}
+			if (SparBot.matches().inMatch(player.getUUID())) {
+				throw new SimpleCommandExceptionType(Component.literal(player.getPlainTextName() + " is in a match")).create();
+			}
+			KitApplier.apply(player, kit);
+			given++;
+		}
+		if (given == 0) {
+			throw new SimpleCommandExceptionType(Component.literal("No players to equip")).create();
+		}
+		return ok(ctx, "Equipped " + (given == 1 ? players.iterator().next().getPlainTextName() : given + " players") + " with " + kit.displayName()
+			+ provenanceNote(kit));
 	}
 
 	private static int captureKit(CommandContext<CommandSourceStack> ctx, String mode) throws CommandSyntaxException {

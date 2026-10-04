@@ -12,7 +12,8 @@ class MenuTest {
 	void stateSurvivesTheTripToTheClient() {
 		MenuState state = new MenuState(true, List.of("beginner", "pro"), List.of("basic_sword"), List.of("balanced", "kiter"), List.of("sword_duel"),
 			List.of(new MenuState.BotEntry("Bob", "pro", "kiter", true, 17.5F)),
-			List.of(new MenuState.Setting("maxBots", "int", "8"), new MenuState.Setting("autoTarget", "boolean", "true")));
+			List.of(new MenuState.Setting("maxBots", "int", "8"), new MenuState.Setting("autoTarget", "boolean", "true")),
+			List.of(new MenuState.KitEntry("basic_sword", "Basic sword", true)));
 		assertEquals(state, MenuState.fromJson(state.toJson()));
 	}
 
@@ -27,6 +28,8 @@ class MenuTest {
 		assertEquals("sparbot style set Bob aggressive_rusher:0.7,kiter:0.3", MenuCommands.style("Bob", "aggressive_rusher:0.7,kiter:0.3"));
 		assertEquals("sparbot config set maxBots 12", MenuCommands.setConfig("maxBots", " 12 "));
 		assertEquals("sparbot fight Bob Steve", MenuCommands.fight("Bob", "Steve"));
+		assertEquals("sparbot kit give pvphq_uhc", MenuCommands.giveKit("pvphq_uhc"));
+		assertThrows(IllegalArgumentException.class, () -> MenuCommands.giveKit("uhc @a"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.spawn("Bob op Steve", "pro", "basic_sword"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.spawn("Bob", "pro; op", "basic_sword"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.setConfig("maxBots", "1\nop Steve"));

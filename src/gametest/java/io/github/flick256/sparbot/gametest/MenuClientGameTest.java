@@ -33,6 +33,21 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			context.waitTicks(15);
 			context.takeScreenshot("sparbot-menu-bots");
 
+			context.clickScreenButton("Kits");
+			context.waitTicks(2);
+			context.takeScreenshot("sparbot-menu-kits");
+			context.clickScreenButton("Equip");
+			boolean equipped = world.getServer().computeOnServer(server -> server.getPlayerList().getPlayers().stream()
+				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !p.getInventory().isEmpty()));
+			for (int i = 0; i < 20 && !equipped; i++) {
+				context.waitTick();
+				equipped = world.getServer().computeOnServer(server -> server.getPlayerList().getPlayers().stream()
+					.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !p.getInventory().isEmpty()));
+			}
+			if (!equipped) {
+				throw new AssertionError("Equip didn't give the player a kit");
+			}
+
 			context.clickScreenButton("Settings");
 			context.waitTicks(2);
 			context.takeScreenshot("sparbot-menu-settings");

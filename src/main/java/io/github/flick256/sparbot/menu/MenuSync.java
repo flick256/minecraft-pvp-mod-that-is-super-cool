@@ -51,7 +51,9 @@ public final class MenuSync {
 		List<MenuState.Setting> settings = ConfigEditor.settings(SparBot.config()).stream()
 			.map(s -> new MenuState.Setting(s.key(), s.type(), s.value())).toList();
 		return new MenuState(open, sorted(SparBot.profiles().ids()), sorted(SparBot.kits().ids()), sorted(SparBot.playstyles().ids()),
-			sorted(SparBot.matches().modes().ids()), bots, settings);
+			sorted(SparBot.matches().modes().ids()), bots, settings, sorted(SparBot.kits().ids()).stream()
+				.flatMap(id -> SparBot.kits().get(id).stream())
+				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList());
 	}
 
 	private static List<String> sorted(java.util.Collection<String> ids) {

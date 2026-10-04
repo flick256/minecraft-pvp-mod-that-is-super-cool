@@ -13,11 +13,15 @@ import java.util.List;
  * @param open whether the client should open the menu (false: refresh it if it is open)
  */
 public record MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
-	List<Setting> settings) {
+	List<Setting> settings, List<KitEntry> kitInfo) {
 	private static final Gson GSON = new Gson();
 
 	/** A bot as the menu lists it. */
 	public record BotEntry(String name, String profile, String style, boolean alive, float health) {
+	}
+
+	/** A kit as the Kits tab lists it; unverified layouts are marked. */
+	public record KitEntry(String id, String displayName, boolean verified) {
 	}
 
 	/** A setting: name, type ("boolean", "int", "double" or "string") and current value. */
@@ -30,7 +34,7 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 
 	public static MenuState fromJson(String json) {
 		MenuState state = GSON.fromJson(json, MenuState.class);
-		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null) {
+		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null || state.kitInfo() == null) {
 			throw new JsonParseException("Incomplete SparBot menu state");
 		}
 		return state;

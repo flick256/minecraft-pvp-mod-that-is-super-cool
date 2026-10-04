@@ -16,7 +16,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * The SparBot menu: spawn bots, manage the ones that exist, and change settings. Every button sends an
+ * The SparBot menu: spawn bots, manage the ones that exist, equip yourself with a kit, and change settings. Every button sends an
  * ordinary {@code /sparbot} command, so the server checks permissions and values exactly as if it had
  * been typed, and replies (in chat) the same way. After each action the menu asks for fresh contents.
  */
@@ -31,6 +31,7 @@ public final class SparBotMenuScreen extends Screen {
 	private enum Tab {
 		BOTS,
 		SPAWN,
+		KITS,
 		SETTINGS
 	}
 
@@ -68,13 +69,15 @@ public final class SparBotMenuScreen extends Screen {
 	protected void init() {
 		labels.clear();
 		int center = width / 2;
-		addRenderableWidget(Button.builder(Component.literal("Bots"), b -> show(Tab.BOTS)).bounds(center - 154, 28, 100, 20).build()).active = tab != Tab.BOTS;
-		addRenderableWidget(Button.builder(Component.literal("Spawn"), b -> show(Tab.SPAWN)).bounds(center - 50, 28, 100, 20).build()).active = tab != Tab.SPAWN;
-		addRenderableWidget(Button.builder(Component.literal("Settings"), b -> show(Tab.SETTINGS)).bounds(center + 54, 28, 100, 20).build()).active =
-			tab != Tab.SETTINGS;
+		String[] names = {"Bots", "Spawn", "Kits", "Settings"};
+		for (Tab each : Tab.values()) {
+			addRenderableWidget(Button.builder(Component.literal(names[each.ordinal()]), b -> show(each)).bounds(center - 158 + each.ordinal() * 80, 28, 76, 20)
+				.build()).active = tab != each;
+		}
 		switch (tab) {
 			case BOTS -> initBots(center);
 			case SPAWN -> initSpawn(center);
+			case KITS -> initKits(center);
 			case SETTINGS -> initSettings(center);
 		}
 		addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose()).bounds(center - 50, height - 28, 100, 20).build());
@@ -130,6 +133,31 @@ public final class SparBotMenuScreen extends Screen {
 			run(MenuCommands.spawn(spawnName, spawnProfile, spawnKit), MenuCommands.style(spawnName, spawnStyle));
 			spawnName = nextName(spawnName);
 		}).bounds(x, TOP + 4 * ROW_HEIGHT, 200, 20).build());
+	}
+
+	/** Every kit with an Equip button: it replaces your inventory with the kit, like a server's kit menu. */
+	private void initKits(int center) {
+		List<MenuState.KitEntry> kits = state.kitInfo();
+		if (kits.isEmpty()) {
+			labels.add(new Label("No kits loaded", center - 40, TOP + 6, GREY));
+			return;
+		}
+		int first = clampPage(kits.size()) * rows();
+		for (int i = first; i < Math.min(first + rows(), kits.size()); i++) {
+			MenuState.KitEntry kit = kits.get(i);
+			int y = TOP + (i - first) * ROW_HEIGHT;
+			String name = kit.displayName();
+			int nameWidth = 220;
+			if (!kit.verified() && !name.toLowerCase(Locale.ROOT).contains("unverified")) {
+				labels.add(new Label("unverified", center + 40, y + 6, GREY));
+			}
+			String shown = font.plainSubstrByWidth(name, nameWidth);
+			labels.add(new Label(shown.length() < name.length() ? font.plainSubstrByWidth(name, nameWidth - font.width("...")) + "..." : name, center - 190, y + 6,
+				WHITE));
+			addRenderableWidget(Button.builder(Component.literal("Equip"), b -> run(MenuCommands.giveKit(kit.id()))).bounds(center + 110, y, 80, 20).build());
+		}
+		labels.add(new Label("Replaces your inventory", center + 70, TOP + rows() * ROW_HEIGHT + 10, GREY));
+		pager(center, kits.size());
 	}
 
 	private void initSettings(int center) {
