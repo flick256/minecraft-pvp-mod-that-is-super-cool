@@ -7,7 +7,7 @@ The version is in the jar's name, the menu's title and the server log ("SparBot 
 - UHC brain: the bundled `uhc` model now chooses tactics as well as fighting in melee. A second network
   shifts the scripted brain's tactic scores (lava, webs, water, walls, healing, bow, boosts...), trained
   together with the melee network in full-kit simulated UHC fights. It beats the scripted pro in about
-  95% of simulated fights and won 11 of 12 in game. It plays aggressively: it learned that lava, webs
+  93-96% of simulated fights and won 12 of 12 in game (UHC rules, every win a kill). It plays aggressively: it learned that lava, webs
   and walls rarely pay off against an opponent who carries water, and that pressure, the bow at range,
   healing and quick escapes do. `/sparbot train uhc <name>` trains the whole brain; `uhcmelee` the melee alone.
 - New UHC simulator: blocks, water and lava that flow by vanilla's rules (lava turns to obsidian or

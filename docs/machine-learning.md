@@ -120,7 +120,7 @@ cover them. The whole loop needs no GPU.
 |---|---|---|---|
 | `sword` (0.3.0) | imitation + 400 generations, about 4 min | 0.98, strafing 7% of the time | 8 of 8 fights won |
 | `sword` (0.2.0) | imitation + 300 generations | 0.97, strafing 45% of the time | 6 of 8 |
-| `uhc` (0.4.0, whole brain) | the 0.3.0 melee + 60 generations in full-kit fights, about 11 min | 0.95 in full-kit UHC | 11 of 12 fights won |
+| `uhc` (0.4.0, whole brain) | the 0.3.0 melee + 160 generations in full-kit fights, about 30 min | 0.93-0.96 in full-kit UHC | 12 of 12 fights won (UHC rules) |
 | `uhc` (0.3.0, melee only) | imitation + 300 generations, about 8 min | 0.99 in flat melee | about even in full-kit UHC |
 
 What the UHC brain found: against the scripted pro it stopped using lava, webs, walls and boosts and
