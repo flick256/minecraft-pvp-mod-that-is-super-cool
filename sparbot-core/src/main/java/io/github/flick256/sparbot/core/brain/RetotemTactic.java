@@ -73,6 +73,10 @@ public final class RetotemTactic implements Tactic {
 
 	@Override
 	public Inputs act(BrainContext c) {
+		if (phase == Phase.IDLE) {
+			// Finished one go and chosen again straight away (onEnter only runs on a change of tactic).
+			onEnter(c);
+		}
 		InventoryState inv = c.self.inventory();
 		switch (phase) {
 			case HOTBAR -> {

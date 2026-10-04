@@ -96,6 +96,10 @@ public final class LavaTactic implements Tactic {
 
 	@Override
 	public Inputs act(BrainContext c) {
+		if (phase == Phase.IDLE) {
+			// Finished one go and chosen again straight away (onEnter only runs on a change of tactic).
+			onEnter(c);
+		}
 		SelfState self = c.self;
 		InventoryState inv = self.inventory();
 		TargetState t = c.seen();

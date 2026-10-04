@@ -70,6 +70,10 @@ public final class RefillTactic implements Tactic {
 
 	@Override
 	public Inputs act(BrainContext c) {
+		if (phase == Phase.IDLE) {
+			// Finished one go and chosen again straight away (onEnter only runs on a change of tactic).
+			onEnter(c);
+		}
 		switch (phase) {
 			case OPEN -> {
 				if (--ticksLeft > 0) {

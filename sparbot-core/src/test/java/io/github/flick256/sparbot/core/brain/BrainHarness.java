@@ -120,6 +120,13 @@ final class BrainHarness {
 		};
 	}
 
+	/** A one-off context for calling helpers directly, as the brain would build it for {@code self}. */
+	BrainContext context(SelfState self) {
+		io.github.flick256.sparbot.core.math.Rng rng = new io.github.flick256.sparbot.core.math.Rng(1);
+		return new BrainContext(new Observation(0, self, target, world), target, 0, brain.profile(), brain.style(), rng,
+			new io.github.flick256.sparbot.core.aim.AimController(brain.profile().aim(), rng), new DuelMemory());
+	}
+
 	boolean any(java.util.function.Predicate<Inputs> p) {
 		return history.stream().anyMatch(p);
 	}

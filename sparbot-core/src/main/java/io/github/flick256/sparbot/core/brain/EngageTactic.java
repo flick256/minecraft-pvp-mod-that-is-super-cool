@@ -192,7 +192,8 @@ public final class EngageTactic implements Tactic {
 		}
 
 		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, use, press);
-		return Movement.guardEdges(c, inputs);
+		// Out of sight (behind a wall): find a way round to them.
+		return target.visible() ? Movement.guardEdges(c, inputs) : Movement.navigate(c, inputs);
 	}
 
 	private void updateCrit(BrainContext c, double distance, double judgedReach) {

@@ -49,6 +49,12 @@ public final class Perception {
 	private static final int BLOCK_SCAN = 5;
 	/** Forget an opponent not seen for this long (10 s). */
 	private static final int FORGET_AFTER_TICKS = 200;
+	/**
+	 * An unseen opponent this close can be heard (footsteps, hits, item sounds), which tells a player
+	 * roughly where they went. The bot updates where it thinks they are this often while it can't see them.
+	 */
+	private static final double HEARING_RANGE = 16.0;
+	private static final int HEARING_INTERVAL_TICKS = 10;
 
 	private @Nullable UUID trackedId;
 	private @Nullable TargetState lastSeen;
@@ -57,7 +63,8 @@ public final class Perception {
 
 	Observation observe(Bot bot, BotPlayer self, long tick, double awarenessRadius, boolean autoTarget, boolean autoTargetBots) {
 		LivingEntity target = chooseTarget(bot, self, awarenessRadius, autoTarget, autoTargetBots);
-		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius), surroundings(self, awarenessRadius));
+		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius, bot.assignedTarget() != null),
+			surroundings(self, awarenessRadius));
 	}
 
 	void reset() {
@@ -98,7 +105,11 @@ public final class Perception {
 			&& candidate.distanceToSqr(self) <= radius * radius;
 	}
 
-	private @Nullable TargetState targetState(BotPlayer self, @Nullable LivingEntity target, double radius) {
+	/**
+	 * @param assigned an opponent the bot was told to fight (a duel): it knows the opponent is still
+	 *     around, so it never forgets where it last saw them
+	 */
+	private @Nullable TargetState targetState(BotPlayer self, @Nullable LivingEntity target, double radius, boolean assigned) {
 		if (target == null) {
 			reset();
 			return null;
@@ -124,11 +135,17 @@ public final class Perception {
 			return null;
 		}
 		ticksSinceSeen++;
-		if (ticksSinceSeen > FORGET_AFTER_TICKS) {
+		if (ticksSinceSeen > FORGET_AFTER_TICKS && !assigned) {
 			reset();
 			return null;
 		}
-		// Out of sight: only the stale memory, with no fresh motion information.
+		// Out of sight: only the stale memory, with no fresh motion information, except that an opponent
+		// nearby can be heard moving around.
+		if (ticksSinceSeen % HEARING_INTERVAL_TICKS == 0 && target.distanceToSqr(self) <= HEARING_RANGE * HEARING_RANGE) {
+			lastSeen = new TargetState(lastSeen.entityId(), lastSeen.name(), new Vec3(target.getX(), target.getY(), target.getZ()), Vec3.ZERO, lastSeen.yaw(),
+				lastSeen.health(), lastSeen.maxHealth(), lastSeen.onGround(), 0, false, false, ticksSinceSeen, lastSeen.halfWidth(), lastSeen.height(),
+				lastSeen.mainHand(), lastSeen.offhand(), ItemKind.EMPTY, lastSeen.armorPoints());
+		}
 		return new TargetState(lastSeen.entityId(), lastSeen.name(), lastSeen.position(), Vec3.ZERO, lastSeen.yaw(), lastSeen.health(),
 			lastSeen.maxHealth(), lastSeen.onGround(), 0, false, false, ticksSinceSeen, lastSeen.halfWidth(), lastSeen.height(),
 			lastSeen.mainHand(), lastSeen.offhand(), ItemKind.EMPTY, lastSeen.armorPoints());

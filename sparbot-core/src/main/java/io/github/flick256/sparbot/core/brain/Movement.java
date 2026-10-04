@@ -42,9 +42,50 @@ public final class Movement {
 		return self.dropDepth()[directionIndex(moveYaw)] < DANGEROUS_DROP;
 	}
 
+	/** Walking into a wall this long (ticks) means it is too high to jump: go around it. */
+	private static final int BLOCKED_BEFORE_DETOUR = 4;
+	/** Sidestepping one way this long without getting past means try the other way. */
+	private static final int GIVE_UP_DIRECTION = 40;
+	private static final int CLEAR_CORNER_TICKS = 6;
+
 	/**
-	 * Removes movement keys that would walk the bot off a dangerous drop, preferring to keep as much
-	 * of the intended movement as possible. Skipped while the bot is making an {@link Mistake#EDGE_BLIND} mistake.
+	 * Walking towards something on the other side of a wall (an opponent behind obsidian, say): jump
+	 * one-block steps, and when the wall is too high, sidestep along it until past its corner, trying the
+	 * other way if one side goes on too long.
+	 */
+	public static Inputs navigate(BrainContext context, Inputs in) {
+		DuelMemory m = context.memory;
+		SelfState self = context.self;
+		if (in.forward() > 0 && self.horizontalCollision()) {
+			m.blockedTicks++;
+			if (self.onGround()) {
+				in = in.withJump(true);
+			}
+			if (m.blockedTicks > GIVE_UP_DIRECTION) {
+				m.detourStrafe = -m.detourStrafe;
+				m.blockedTicks = BLOCKED_BEFORE_DETOUR + 1;
+			}
+			if (m.blockedTicks > BLOCKED_BEFORE_DETOUR) {
+				m.detourTicks = CLEAR_CORNER_TICKS;
+			}
+		} else if (m.blockedTicks > 0 && m.detourTicks == 0) {
+			m.blockedTicks = 0;
+		}
+		if (m.detourTicks > 0) {
+			m.detourTicks--;
+			in = in.withMovement(in.forward(), m.detourStrafe);
+		}
+		return guardEdges(context, in);
+	}
+
+	/** A detour may turn this far from the intended direction: enough to walk around a hazard, not back off. */
+	private static final float MAX_DETOUR = 100.0F;
+
+	/**
+	 * Replaces movement keys that would walk the bot off a dangerous drop or into lava with the safe
+	 * keys closest to where it meant to go, so it walks around a lava pool instead of freezing in front
+	 * of it. Stops only when every way forward is unsafe. Skipped while the bot is making an
+	 * {@link Mistake#EDGE_BLIND} mistake.
 	 */
 	public static Inputs guardEdges(BrainContext context, Inputs in) {
 		if (context.mistake(Mistake.EDGE_BLIND) || (in.forward() == 0 && in.strafe() == 0)) {
@@ -55,12 +96,26 @@ public final class Movement {
 		if (isSafe(self, yaw, in.forward(), in.strafe())) {
 			return in;
 		}
-		if (in.strafe() != 0 && isSafe(self, yaw, in.forward(), 0)) {
-			return in.withMovement(in.forward(), 0);
+		float intended = movementYaw(yaw, in.forward(), in.strafe());
+		int bestForward = 0;
+		int bestStrafe = 0;
+		float bestTurn = MAX_DETOUR;
+		for (int forward = -1; forward <= 1; forward++) {
+			for (int strafe = -1; strafe <= 1; strafe++) {
+				if ((forward != 0 || strafe != 0) && isSafe(self, yaw, forward, strafe)) {
+					float turn = Angles.yawDistance(movementYaw(yaw, forward, strafe), intended);
+					if (turn < bestTurn) {
+						bestTurn = turn;
+						bestForward = forward;
+						bestStrafe = strafe;
+					}
+				}
+			}
 		}
-		if (in.forward() != 0 && isSafe(self, yaw, 0, in.strafe())) {
-			return in.withMovement(0, in.strafe()).withSprint(false);
+		if (bestForward == 0 && bestStrafe == 0) {
+			return in.withMovement(0, 0).withSprint(false).withJump(false);
 		}
-		return in.withMovement(0, 0).withSprint(false).withJump(false);
+		Inputs detour = in.withMovement(bestForward, bestStrafe);
+		return bestForward > 0 ? detour : detour.withSprint(false);
 	}
 }
