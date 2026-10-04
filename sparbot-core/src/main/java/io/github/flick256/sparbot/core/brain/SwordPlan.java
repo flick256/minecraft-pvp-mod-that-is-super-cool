@@ -119,6 +119,11 @@ final class SwordPlan {
 			// Ready: go in and hit.
 			return;
 		}
+		if (c.opponentHelpless() && c.rng.chance(c.skill(Technique.READING))) {
+			// Eating, or stuck in a web out of reach: they can't hit back. Get in position for the next hit.
+			set(mv, distance > reach - 0.4 ? 1 : 0, mv.strafe, distance > reach + 1.0);
+			return;
+		}
 		if (m.punishTicks > 0) {
 			m.punishTicks--;
 			set(mv, 1, mv.strafe, true);

@@ -110,6 +110,32 @@ public final class BrainContext {
 		return true;
 	}
 
+	/**
+	 * Whether the opponent can't hit back right now: eating or drinking (a click does nothing while an
+	 * item is in use), or stuck in a cobweb and out of their reach.
+	 */
+	public boolean opponentHelpless() {
+		TargetState t = seen();
+		if (t == null) {
+			return false;
+		}
+		return t.usingKind().isFood() || t.usingKind() == io.github.flick256.sparbot.core.item.ItemKind.DRINK_POTION || t.inWeb() && targetDistance() > 3.3;
+	}
+
+	/**
+	 * Whether switching to utility now (a bucket, a web: the switch, and the switch back, reset the sword's
+	 * charge) costs the bot no hit it would otherwise get: its own charge is low anyway (it has just swung),
+	 * the opponent is out of reach, or can't hit back. A good player uses utility in these windows; using
+	 * it while charged with the opponent in reach hands them free hits.
+	 */
+	public boolean utilityWindow() {
+		TargetState t = seen();
+		if (t == null) {
+			return true;
+		}
+		return self.attackStrength() < 0.5 || targetDistance() > 4.0 || opponentHelpless() || t.usingKind() == io.github.flick256.sparbot.core.item.ItemKind.BOW;
+	}
+
 	/** Whether a block's outline under the crosshair comes before the opponent (a click would hit the block). */
 	public boolean crosshairBlockedBeforeTarget(double maxDistance) {
 		TargetState t = seen();

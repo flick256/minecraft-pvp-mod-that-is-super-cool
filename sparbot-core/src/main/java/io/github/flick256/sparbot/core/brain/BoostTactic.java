@@ -60,6 +60,11 @@ public final class BoostTactic implements Tactic {
 		if (d < MIN_RANGE || d > MAX_RANGE || Math.abs(t.position().y() - self.position().y()) > 1.5) {
 			return 0;
 		}
+		// A boost is for catching someone who holds back or backs off; an opponent already running in
+		// arrives anyway, and a low player has better things to do than rush.
+		if (closing(self, t) > 0.08 || self.healthFraction() < c.profile.items().gappleHealthFraction() + 0.25) {
+			return 0;
+		}
 		return willBoost.get(c.rng, c.profile.items().uhcSkill(), 20) ? Scores.SPECIALIST - 0.02 : 0;
 	}
 
@@ -142,7 +147,8 @@ public final class BoostTactic implements Tactic {
 		Vec3 lookAt = phase == Phase.LAUNCH ? chest : new Vec3(goal.x(), eye.y() - 0.2, goal.z());
 		float[] look = c.lookAt(Angles.yawTowards(eye, lookAt), Angles.pitchTowards(eye, lookAt));
 		int press = c.memory.hands.request(c, Hands.preferredMeleeSlot(c.self.inventory()));
-		return Movement.guardEdges(c, new Inputs(look[0], look[1], 1, 0, jump, false, true, false, false, phase == Phase.STEP ? -1 : press));
+		// The sword goes back in hand as soon as the block is down, so it is charged again on arrival.
+		return Movement.guardEdges(c, new Inputs(look[0], look[1], 1, 0, jump, false, true, false, false, press));
 	}
 
 	private Inputs finish(BrainContext c) {
@@ -150,6 +156,13 @@ public final class BoostTactic implements Tactic {
 		willBoost.reset();
 		last = c.observation.tick();
 		return Inputs.IDLE;
+	}
+
+	/** How fast (blocks per tick) the opponent comes towards the bot. */
+	static double closing(SelfState self, TargetState t) {
+		Vec3 to = self.position().subtract(t.position());
+		double h = Math.hypot(to.x(), to.z());
+		return h < 1e-6 ? 0 : (t.velocity().x() * to.x() + t.velocity().z() * to.z()) / h;
 	}
 
 	private static int slot(InventoryState inv) {

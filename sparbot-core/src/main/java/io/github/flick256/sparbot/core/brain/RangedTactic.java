@@ -31,6 +31,9 @@ public final class RangedTactic implements Tactic {
 	private int rangedTicks;
 	private long pushInFrom = Long.MIN_VALUE / 2;
 	private final Decision wantsRanged = new Decision();
+	private final Decision wantsPunish = new Decision();
+	/** Closest a stationary opponent is shot from (closer, the sword is the better weapon). */
+	static final double PUNISH_RANGE = 4.5;
 	private boolean crossbowFiring;
 
 	@Override
@@ -52,6 +55,11 @@ public final class RangedTactic implements Tactic {
 		boolean drawing = inv.usingItem() && (inv.usingKind() == ItemKind.BOW || inv.usingKind() == ItemKind.CROSSBOW);
 		if (drawing && distance > 5.0) {
 			return Scores.SPECIALIST + 0.02; // finish the shot
+		}
+		if (distance >= PUNISH_RANGE && distance < MIN_RANGE && (t.usingKind().isFood() || t.inWeb() && !t.inWater())) {
+			// Mid range, and they stand still (eating, or stuck in a web): a free arrow. Good players don't
+			// keep the bow for long range only.
+			return wantsPunish.get(c.rng, c.profile.items().bowSkill(), 10) ? Scores.SPECIALIST + 0.05 : 0;
 		}
 		if (distance < MIN_RANGE || distance > MAX_RANGE) {
 			return 0;
@@ -83,6 +91,7 @@ public final class RangedTactic implements Tactic {
 		rangedTicks = 0;
 		pushInFrom = Long.MIN_VALUE / 2;
 		wantsRanged.reset();
+		wantsPunish.reset();
 		crossbowFiring = false;
 	}
 

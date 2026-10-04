@@ -77,7 +77,21 @@ public final class UhcBrainTraining {
 		return SelfPlay.entrant("snapshot", limits, snapshots.get(pick.nextInt(snapshots.size())));
 	}
 
-	/** Mean score over this generation's fights (the same fights for every candidate): winning, smoothed by the damage difference. */
+	/**
+	 * How much of the fight the side's utility made (0-1): fire and lava damage on the opponent, time the
+	 * opponent spent stuck in its webs, and arrows that landed. A small part of the fitness, so that of two
+	 * equally winning brains the one that fights like a UHC player (blocks, webs, lava, the bow) is kept.
+	 */
+	static double style(DuelSim.Result r, int side) {
+		DuelSim.SideStats me = r.sides()[side];
+		DuelSim.SideStats them = r.sides()[1 - side];
+		double fire = (them.lavaDamage() + them.fireDamage()) / 4.0;
+		double webbed = them.ticksInWeb() / 60.0;
+		double arrows = me.arrowHits() / 4.0;
+		return (Math.min(1, fire) + Math.min(1, webbed) + Math.min(1, arrows)) / 3.0;
+	}
+
+	/** Mean score over this generation's fights (the same fights for every candidate): winning, smoothed by the damage difference, and the utility play. */
 	double fitness(Mlp model, long generationSeed) {
 		Random pick = new Random(generationSeed);
 		Tournament.Entrant me = SelfPlay.entrant("candidate", limits, model);
@@ -91,7 +105,7 @@ public final class UhcBrainTraining {
 				: DuelSim.fight(opponent.side(seed + 1), me.side(seed), loadout, arena, seed, MAX_TICKS, null);
 			int side = first ? 0 : 1;
 			double damage = Math.max(-1, Math.min(1, (r.damage()[side] - r.damage()[1 - side]) / 40.0));
-			total += 0.7 * r.score(side) + 0.3 * (0.5 + 0.5 * damage);
+			total += 0.65 * r.score(side) + 0.25 * (0.5 + 0.5 * damage) + 0.1 * style(r, side);
 		}
 		return total / config.fights();
 	}
@@ -155,11 +169,16 @@ public final class UhcBrainTraining {
 	 * self-play, keeping the version that scores best against the scripted pro and the learned-melee pro.
 	 */
 	public static double run(Mlp start, int generations, Consumer<String> log, BooleanSupplier cancelled, Consumer<Mlp> onBest) {
+		return run(start, false, generations, log, cancelled, onBest);
+	}
+
+	/** @param freshTactics start the tactic chooser over from neutral (the scripted choices), keeping the melee */
+	public static double run(Mlp start, boolean freshTactics, int generations, Consumer<String> log, BooleanSupplier cancelled, Consumer<Mlp> onBest) {
 		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
 		SkillProfile pro = presets.get("pro");
 		Mlp bundled = Models.loadBundled().get("uhc");
 		Mlp model = start != null ? start.copy() : bundled.copy();
-		if (model.tactics() == null) {
+		if (model.tactics() == null || freshTactics) {
 			model = model.withTactics(LearnedTactics.neutral(new Random(7)));
 		}
 		Loadout loadout = Loadout.ofKit("sparbot_uhc");
@@ -197,7 +216,7 @@ public final class UhcBrainTraining {
 		return (vsScripted + vsMelee) / 2;
 	}
 
-	/** {@code UhcBrainTraining [generations] [out.json] [start.json]} */
+	/** {@code UhcBrainTraining [generations] [out.json] [start.json] [fresh]} ({@code fresh}: a neutral tactic chooser on the start's melee) */
 	public static void main(String[] args) throws java.io.IOException {
 		int generations = args.length > 0 ? Integer.parseInt(args[0]) : 100;
 		java.nio.file.Path out = java.nio.file.Path.of(args.length > 1 ? args[1] : "build/models/uhc_brain.json");
@@ -205,7 +224,8 @@ public final class UhcBrainTraining {
 		long t0 = System.nanoTime();
 		Consumer<String> log = line -> System.out.printf(Locale.ROOT, "[%7.1f s] %s%n", (System.nanoTime() - t0) / 1e9, line);
 		log.accept("training the UHC brain on " + Runtime.getRuntime().availableProcessors() + " cores");
-		double best = run(start, generations, log, () -> false, net -> {
+		boolean fresh = args.length > 3 && args[3].equals("fresh");
+		double best = run(start, fresh, generations, log, () -> false, net -> {
 			try {
 				if (out.getParent() != null) {
 					java.nio.file.Files.createDirectories(out.getParent());

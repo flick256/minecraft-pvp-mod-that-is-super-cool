@@ -42,7 +42,7 @@ public final class HealTactic implements Tactic {
 		boolean desperate = c.self.healthFraction() < items.gappleHealthFraction() * 0.5;
 		// Already absorbing/regenerating from a previous apple: eating another now is wasteful.
 		boolean buffed = c.self.hasEffect(REGENERATION) && c.self.absorption() > 0;
-		if (healthLow && !buffed && gappleSlot(inv) >= 0 && (distance > SAFE_EAT_DISTANCE || desperate)) {
+		if (healthLow && !buffed && gappleSlot(inv) >= 0 && (distance > SAFE_EAT_DISTANCE || desperate || c.opponentHelpless())) {
 			return desperate ? 0.9 : 0.85;
 		}
 		// The wall was put up to eat behind: eat now, before the opponent gets round it.

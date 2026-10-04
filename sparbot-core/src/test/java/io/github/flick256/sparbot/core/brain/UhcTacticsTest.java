@@ -1,6 +1,7 @@
 package io.github.flick256.sparbot.core.brain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.flick256.sparbot.core.TestFixtures;
@@ -44,6 +45,7 @@ class UhcTacticsTest {
 	@Test
 	void poursLavaUnderTheOpponentAndScoopsItBackUp() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, LAVA), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
+		h.attackStrength = 0.2F; // just swung
 		assertTrue(usesWithin(h, ItemKind.LAVA_BUCKET, 40), "emptied the lava bucket");
 		assertTrue(h.pitch > 15, "onto the ground at the opponent's feet, pitch " + h.pitch);
 		h.slots[1] = BUCKET; // vanilla turns it into an empty bucket
@@ -78,8 +80,22 @@ class UhcTacticsTest {
 	@Test
 	void websTheOpponent() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WEBS), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
+		h.attackStrength = 0.2F; // just swung: the switch to the web costs no hit
 		assertTrue(usesWithin(h, ItemKind.COBWEB, 40), "placed a cobweb");
 		assertEquals("web", h.brain.lastTrace().tactic());
+	}
+
+	@Test
+	void keepsItsChargedHitRatherThanReachingForUtility() {
+		// Charged, with the opponent in reach and able to hit back: a switch to a web or bucket (and back)
+		// throws the hit away, so a skilled player hits instead.
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WEBS, 2, LAVA),
+			TestFixtures.target(new Vec3(0, 0, 3.0), 0));
+		for (int i = 0; i < 40; i++) {
+			h.attackStrength = 1;
+			h.tick();
+			assertFalse(h.selected == 1 || h.selected == 2, "reached for utility at tick " + i + " (" + h.brain.lastTrace().tactic() + ")");
+		}
 	}
 
 	@Test
@@ -137,7 +153,7 @@ class UhcTacticsTest {
 	@Test
 	void wallsOffBeforeHealing() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, TestFixtures.GAPPLE, 2, PLANKS),
-			TestFixtures.target(new Vec3(0, 0, 4.0), 0));
+			TestFixtures.target(new Vec3(0, 0, 6.0), 0));
 		h.health = 6;
 		boolean placed = false;
 		for (int i = 0; i < 40 && !placed; i++) {
@@ -154,7 +170,7 @@ class UhcTacticsTest {
 	@Test
 	void buildsAFullWallThenEatsBehindIt() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, TestFixtures.GAPPLE, 2, PLANKS),
-			TestFixtures.target(new Vec3(0, 0, 4.0), 0));
+			TestFixtures.target(new Vec3(0, 0, 6.0), 0));
 		// Low, but not yet low enough to eat in the open: the wall comes first.
 		h.health = (float) (20 * (uhcPro().items().gappleHealthFraction() + 0.1));
 		int placed = 0;

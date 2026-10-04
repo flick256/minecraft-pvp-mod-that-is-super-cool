@@ -40,13 +40,33 @@ final class BlockPlay {
 		double entry = BrainContext.rayEntry(eye, dir, new Vec3(block.x(), block.y(), block.z()), new Vec3(block.x() + 1, top, block.z() + 1),
 			BLOCK_REACH);
 		boolean onTop = entry >= 0 && eye.y() + dir.y() * entry >= top - 1e-3;
-		boolean click = onTop && self.inventory().selectedSlot() == slot && !self.inventory().usingItem();
+		// The highlighted block must be this one: a wall or another block in front would take the click.
+		boolean highlighted = self.crosshairBlockDistance() >= entry - 0.05;
+		boolean click = onTop && highlighted && self.inventory().selectedSlot() == slot && !self.inventory().usingItem();
 		return spacing(c, look, press).withUse(click);
 	}
 
 	/** The block someone standing at {@code feet} stands on. */
 	static BlockSpot groundUnder(Vec3 feet) {
 		return new BlockSpot((int) Math.floor(feet.x()), (int) Math.floor(feet.y() - 1.0E-3), (int) Math.floor(feet.z()));
+	}
+
+	/**
+	 * The ground block under the opponent; while they are in the air (a jump, a crit, knockback), the one
+	 * under where they will come down, on the ground they last stood on. Clicking the block under an
+	 * airborne opponent's feet clicks air.
+	 */
+	static BlockSpot groundBelow(BrainContext c, io.github.flick256.sparbot.core.sense.TargetState t) {
+		if (t.onGround()) {
+			return groundUnder(t.position());
+		}
+		double groundTop = Double.isNaN(c.memory.targetGroundY) ? Math.floor(c.self.position().y() + 1.0E-3) : c.memory.targetGroundY;
+		if (t.position().y() < groundTop) {
+			// Below the last ground they stood on: falling off it, onto something lower.
+			groundTop = Math.floor(t.position().y());
+		}
+		Vec3 land = landing(t.position(), t.velocity(), groundTop);
+		return new BlockSpot((int) Math.floor(land.x()), (int) Math.floor(groundTop - 1.0E-3), (int) Math.floor(land.z()));
 	}
 
 	/**

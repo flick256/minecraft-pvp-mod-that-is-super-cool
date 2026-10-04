@@ -24,7 +24,8 @@ public final class WallTactic implements Tactic {
 	/** Blocks that are tools of other tactics, not wall material. */
 	private static final Set<String> NOT_WALL = Set.of("minecraft:obsidian", "minecraft:rail", "minecraft:glowstone", "minecraft:respawn_anchor",
 		"minecraft:tnt", "minecraft:cobweb");
-	private static final double MIN_RANGE = 1.5;
+	/** Building with the opponent in reach just hands them hits: a wall goes up before they get there. */
+	private static final double MIN_RANGE = 5.0;
 	private static final double MAX_RANGE = 7.0;
 	/** Starts this far above the health at which the bot eats, so the wall is up in time. */
 	private static final double EARLY = 0.15;

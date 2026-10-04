@@ -85,6 +85,14 @@ public final class LavaTactic implements Tactic {
 			// Webbed: they can't step out of it. Any player who has the lava goes for it.
 			return willLava.get(c.rng, skill, 10) ? Scores.SPECIALIST + 0.1 : 0;
 		}
+		if (t.usingKind().isFood() && !t.inWater() && !t.onFire()) {
+			// Eating stands them still, and putting the fire out means stopping the apple.
+			return willLava.get(c.rng, skill, 10) ? Scores.SPECIALIST + 0.08 : 0;
+		}
+		// A skilled player pours in a window that costs no hit (see BrainContext#utilityWindow).
+		if (!c.utilityWindow() && skill >= 0.6) {
+			return 0;
+		}
 		// Between spams a pause: shorter the better the player.
 		if (c.observation.tick() - lastSpam < cooldown(skill) || !t.onGround() || t.inWater()) {
 			return 0;
@@ -142,7 +150,8 @@ public final class LavaTactic implements Tactic {
 		switch (phase) {
 			case PLACE -> {
 				if (inv.slot(bucketSlot).is(ItemKind.BUCKET) && lava != null) {
-					// The bucket emptied: the lava is down. Leave it a moment, then take it back.
+					// The bucket emptied: the lava is down (where it actually went, if not quite where aimed).
+					lava = landed(c, lava);
 					phase = Phase.HOLD;
 					ticks = 0;
 					double skill = c.profile.items().uhcSkill();
@@ -157,7 +166,7 @@ public final class LavaTactic implements Tactic {
 					return finish(c);
 				}
 				// On a webbed opponent the bucket is emptied onto the web: the lava lands above it, on their head.
-				BlockSpot ground = BlockPlay.groundUnder(t.position());
+				BlockSpot ground = BlockPlay.groundBelow(c, t);
 				BlockSpot clicked = t.inWeb() ? new BlockSpot(ground.x(), ground.y() + 1, ground.z()) : ground;
 				lava = new BlockSpot(clicked.x(), clicked.y() + 1, clicked.z());
 				return BlockPlay.clickTop(c, clicked, 1.0, bucketSlot);
@@ -198,6 +207,20 @@ public final class LavaTactic implements Tactic {
 				return Inputs.IDLE;
 			}
 		}
+	}
+
+	/** The lava source nearest where the lava was aimed (within two blocks), else the aimed spot. */
+	private static BlockSpot landed(BrainContext c, BlockSpot aimed) {
+		BlockSpot best = aimed;
+		double bestDistance = 2.0;
+		for (BlockSpot s : c.world.lavaSources()) {
+			double d = Math.sqrt(Math.pow(s.x() - aimed.x(), 2) + Math.pow(s.y() - aimed.y(), 2) + Math.pow(s.z() - aimed.z(), 2));
+			if (d <= bestDistance) {
+				best = s;
+				bestDistance = d;
+			}
+		}
+		return best;
 	}
 
 	/** Keeps the empty bucket in hand and the crosshair on the lava, ready to scoop, at a safe distance from it. */

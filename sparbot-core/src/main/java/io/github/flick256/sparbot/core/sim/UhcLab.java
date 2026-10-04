@@ -153,8 +153,8 @@ public final class UhcLab {
 	/** Prints one fight tick by tick between two ticks: {@code UhcLab trace seed from to [a] [b]}. */
 	static void trace(long seed, int from, int to, String pa, String pb, String kit, boolean terrain, boolean swap) {
 		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
-		Tournament.Entrant a = Tournament.scripted(presets.get(pa));
-		Tournament.Entrant b = Tournament.scripted(presets.get(pb));
+		Tournament.Entrant a = entrant(pa, presets);
+		Tournament.Entrant b = entrant(pb, presets);
 		Tournament.Entrant first = swap ? b : a;
 		Tournament.Entrant second = swap ? a : b;
 		DuelSim.Watcher watcher = (tick, world, f, in, sides) -> {
@@ -218,6 +218,17 @@ public final class UhcLab {
 				net = io.github.flick256.sparbot.core.ml.Models.loadBundled().get(model);
 			}
 			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get("pro"), net);
+		}
+		if (name.contains("-no:")) {
+			// <profile>-no:<tactic>,<tactic>: the scripted brain never choosing those tactics.
+			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-no:")));
+			Map<String, Double> weights = new java.util.HashMap<>();
+			for (String tactic : name.substring(name.indexOf("-no:") + 4).split(",")) {
+				weights.put(tactic, 0.0);
+			}
+			io.github.flick256.sparbot.core.style.Playstyle style = new io.github.flick256.sparbot.core.style.Playstyle("no-utility", "No utility", "", weights,
+				Map.of(), 0);
+			return new Tournament.Entrant(name, style.applyTo(profile), seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(profile, style, seed));
 		}
 		return Tournament.scripted(presets.get(name));
 	}
@@ -400,7 +411,7 @@ public final class UhcLab {
 		Tournament.Entrant b = entrant(pb, presets);
 		Loadout loadout = Loadout.ofKit("sparbot_uhc");
 		String[] kinds = {"lava pour", "web", "block", "arrow", "water pour", "any tick"};
-		double[][] sums = new double[kinds.length][3];
+		double[][] sums = new double[kinds.length][5];
 		java.util.stream.IntStream.range(0, fights).parallel().forEach(i -> {
 			long seed = 88_000L + i;
 			boolean swap = i % 2 == 1;
@@ -411,7 +422,7 @@ public final class UhcLab {
 			DuelSim.Watcher w = (tick, world, f, in, sides) -> {
 				SimFighter s = f[me];
 				SimFighter o = f[1 - me];
-				health.add(new double[] {s.health + s.absorption, o.health + o.absorption});
+				health.add(new double[] {s.health + s.absorption, o.health + o.absorption, o.inWeb ? 1 : 0, o.inLava || o.onFire() ? 1 : 0});
 				int[] now = {s.lavaPours, s.websPlaced, s.blocksPlaced, s.arrowsShot, s.waterPours};
 				if (last[0] != null) {
 					for (int k = 0; k < now.length; k++) {
@@ -442,14 +453,26 @@ public final class UhcLab {
 					sums[e[0]][0] += 1;
 					sums[e[0]][1] += dealt;
 					sums[e[0]][2] += taken;
+					// Caught: a web the opponent is in, lava they burn in, within 20 ticks (and not already before).
+					int flag = e[0] == 1 ? 2 : e[0] == 0 ? 3 : -1;
+					// (Looked at the tick before: a web or lava can catch them the tick it goes down.)
+					if (flag > 0 && from > 0 && health.get(from - 1)[flag] == 0) {
+						sums[e[0]][4] += 1;
+						for (int t = from; t <= Math.min(health.size() - 1, from + 20); t++) {
+							if (health.get(t)[flag] > 0) {
+								sums[e[0]][3] += 1;
+								break;
+							}
+						}
+					}
 				}
 			}
 		});
 		System.out.printf(Locale.ROOT, "%s vs %s, %d fights: health change in the 60 ticks after each play (positive dealt = opponent lost health)%n", pa, pb, fights);
 		for (int k = 0; k < kinds.length; k++) {
 			double n = Math.max(1, sums[k][0]);
-			System.out.printf(Locale.ROOT, "  %-11s %6.0f times  dealt %5.2f  taken %5.2f  net %+5.2f%n", kinds[k], sums[k][0], sums[k][1] / n, sums[k][2] / n,
-				(sums[k][1] - sums[k][2]) / n);
+			System.out.printf(Locale.ROOT, "  %-11s %6.0f times  dealt %5.2f  taken %5.2f  net %+5.2f%s%n", kinds[k], sums[k][0], sums[k][1] / n, sums[k][2] / n,
+				(sums[k][1] - sums[k][2]) / n, k <= 1 ? String.format(Locale.ROOT, "  caught %.0f%% of %.0f (the rest already caught)", 100 * sums[k][3] / Math.max(1, sums[k][4]), sums[k][4]) : "");
 		}
 	}
 

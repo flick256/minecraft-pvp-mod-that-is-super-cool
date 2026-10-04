@@ -51,6 +51,8 @@ public final class DuelMemory {
 	/** Ticks of sidestepping left after the wall ends, to clear its corner. */
 	int detourTicks;
 	int detourStrafe = 1;
+	/** The height of the ground the opponent last stood on (NaN until seen standing). */
+	double targetGroundY = Double.NaN;
 	/** When the bot last finished putting up a wall to heal behind (the heal tactic eats right after). */
 	long walledAt = Long.MIN_VALUE / 2;
 	Mistake mistake = Mistake.NONE;

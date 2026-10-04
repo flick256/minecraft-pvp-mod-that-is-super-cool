@@ -206,14 +206,15 @@ public class UhcGameTests {
 	@GameTest(maxTicks = 300)
 	public void botWallsOffToHeal(GameTestHelper helper) {
 		TestSupport.arena(helper);
-		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Mason", 2.5, 1, 3.5, -90, "pro", "sparbot_uhc"));
+		// Corner to corner: a wall only goes up while the opponent is still well out of reach.
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Mason", 1.5, 1, 1.5, -45, "pro", "sparbot_uhc"));
 		BotPlayer body = TestSupport.body(bot);
-		Bot target = TestSupport.dummy(helper, "Rusher", 6.5, 1, 3.5, 90, "basic_sword");
+		Bot target = TestSupport.dummy(helper, "Rusher", 6.5, 1, 6.5, 135, "basic_sword");
 		bot.setAssignedTarget(TestSupport.body(target).getUUID());
 		int blocksBefore = body.getInventory().countItem(Items.COBBLESTONE);
 		int gapplesBefore = body.getInventory().countItem(Items.GOLDEN_APPLE);
-		// Hurt mid-fight, once the bot has seen its opponent.
-		helper.runAfterDelay(20, () -> body.setHealth(8));
+		// Hurt before it has closed in (a wall only goes up while the opponent is still well out of reach).
+		helper.runAfterDelay(2, () -> body.setHealth(8));
 		helper.succeedWhen(() -> {
 			helper.assertTrue(blocksBefore - body.getInventory().countItem(Items.COBBLESTONE) >= 4, "a wall of at least four blocks, used "
 				+ (blocksBefore - body.getInventory().countItem(Items.COBBLESTONE)) + ", now " + bot.trace().tactic() + " " + bot.trace().note());

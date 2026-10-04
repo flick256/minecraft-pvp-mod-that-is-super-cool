@@ -113,6 +113,9 @@ public final class DuelBrain implements Policy {
 		TargetState seen = perception.delayed(memory.reactionDelayTicks);
 		TargetState tracked = perception.delayed(memory.trackingDelayTicks);
 		Observation observation = new Observation(raw.tick(), raw.self(), seen, raw.surroundings());
+		if (seen != null && seen.onGround()) {
+			memory.targetGroundY = seen.position().y();
+		}
 
 		if (--memory.ticksUntilMistakeRoll <= 0) {
 			memory.ticksUntilMistakeRoll = MISTAKE_WINDOW_TICKS;

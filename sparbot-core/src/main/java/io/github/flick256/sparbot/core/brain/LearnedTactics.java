@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Tactic choice learned by playing: a network that, every tick, shifts the scripted brain's tactic
- * scores up or down (by up to {@link #MAX_SHIFT}), so it decides when lava, a web, a wall, the bow or a
+ * scores up or down (by up to {@link #MAX_SHIFT}, less for some: see {@link #limit}), so it decides when lava, a web, a wall, the bow or a
  * heal pays off better than the hand-written priorities do. It never makes a tactic possible that isn't
  * (a tactic scoring 0 stays at 0), and the tactics themselves (aim, timing, hands) stay as they are, so
  * the bot is held to the same human limits. A network with all-zero outputs plays exactly like the
@@ -25,6 +25,24 @@ public final class LearnedTactics {
 	public static final int OUTPUTS = TACTICS.size();
 	/** Largest change to a tactic's score: enough to swap the scripted bands (melee 0.6, specialist 0.7, survival 0.8). */
 	static final double MAX_SHIFT = 0.3;
+	/**
+	 * UHC is a utility mode: the network may bring the utility plays forward as much as it likes but hold
+	 * them back only a little, and may not lift plain melee (and the shield or running only a little) over them. So it
+	 * learns when lava, a web, the bow, a wall or a boost pays off best, and can't learn to fight with the
+	 * sword alone.
+	 */
+	private static final java.util.Set<String> UTILITY = java.util.Set.of("lava", "web", "ranged", "wall", "boost");
+	/** Held back by no more than this, a utility play still beats melee that is already running (0.6 + 0.05). */
+	private static final double UTILITY_HOLD_BACK = 0.04;
+	private static final java.util.Map<String, Double> LIFT = java.util.Map.of("engage", 0.0, "guard", 0.05, "retreat", 0.15);
+
+	/** The most the network can lower ({@code up = false}) or raise a tactic's score. */
+	static double limit(String tactic, boolean up) {
+		if (UTILITY.contains(tactic)) {
+			return up ? MAX_SHIFT : UTILITY_HOLD_BACK;
+		}
+		return up ? LIFT.getOrDefault(tactic, MAX_SHIFT) : MAX_SHIFT;
+	}
 
 	private final Mlp net;
 
@@ -57,7 +75,8 @@ public final class LearnedTactics {
 		for (int i = 0; i < tactics.size(); i++) {
 			int k = TACTICS.indexOf(tactics.get(i).name());
 			if (k >= 0 && scores[i] > 0) {
-				scores[i] = Math.max(0.001, scores[i] + MAX_SHIFT * Math.tanh(out[k]));
+				double shift = Math.tanh(out[k]);
+				scores[i] = Math.max(0.001, scores[i] + shift * limit(TACTICS.get(k), shift > 0));
 			}
 		}
 	}
