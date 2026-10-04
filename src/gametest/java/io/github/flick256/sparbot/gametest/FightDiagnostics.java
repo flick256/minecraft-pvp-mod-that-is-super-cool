@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3;
  */
 final class FightDiagnostics {
 	/** A bot standing still for longer than this, with its opponent close, has locked up. */
-	static final int STALL_LIMIT = 40;
+	static final int STALL_LIMIT = 30;
 	private static final double CLOSE = 10.0;
 
 	private final Bot bot;

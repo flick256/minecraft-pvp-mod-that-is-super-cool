@@ -192,11 +192,14 @@ public class UhcGameTests {
 		BotPlayer body = TestSupport.body(bot);
 		Bot target = TestSupport.dummy(helper, "Rusher", 6.5, 1, 3.5, 90, "basic_sword");
 		bot.setAssignedTarget(TestSupport.body(target).getUUID());
-		int planksBefore = body.getInventory().countItem(Items.COBBLESTONE);
+		int blocksBefore = body.getInventory().countItem(Items.COBBLESTONE);
+		int gapplesBefore = body.getInventory().countItem(Items.GOLDEN_APPLE);
 		// Hurt mid-fight, once the bot has seen its opponent.
-		helper.runAfterDelay(20, () -> body.setHealth(6));
+		helper.runAfterDelay(20, () -> body.setHealth(8));
 		helper.succeedWhen(() -> {
-			helper.assertValueEqual(body.getInventory().countItem(Items.COBBLESTONE), planksBefore - 2, "cobblestone used (a two-high wall)");
+			helper.assertTrue(blocksBefore - body.getInventory().countItem(Items.COBBLESTONE) >= 4, "a wall of at least four blocks, used "
+				+ (blocksBefore - body.getInventory().countItem(Items.COBBLESTONE)) + ", now " + bot.trace().tactic() + " " + bot.trace().note());
+			helper.assertTrue(body.getInventory().countItem(Items.GOLDEN_APPLE) < gapplesBefore, "then a golden apple eaten behind it");
 			boolean wall = false;
 			for (int x = 1; x <= 6 && !wall; x++) {
 				for (int z = 1; z <= 6 && !wall; z++) {

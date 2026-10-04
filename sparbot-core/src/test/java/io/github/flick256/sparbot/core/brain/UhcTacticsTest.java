@@ -51,6 +51,31 @@ class UhcTacticsTest {
 	}
 
 	@Test
+	void spamsLavaAndNeverLeavesItDown() {
+		TestFixturesWeb web = new TestFixturesWeb();
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, LAVA), web.webbed(new Vec3(0, 0, 3.0)));
+		int pours = 0;
+		int scoops = 0;
+		int firstPour = -1;
+		int lastScoop = -1;
+		for (int i = 0; i < 200; i++) {
+			Inputs in = h.tick();
+			if (in.use() && h.slots[1].is(ItemKind.LAVA_BUCKET) && h.selected == 1) {
+				h.slots[1] = BUCKET; // the lava is down
+				pours++;
+				firstPour = firstPour < 0 ? i : firstPour;
+			} else if (in.use() && h.slots[1].is(ItemKind.BUCKET) && h.selected == 1) {
+				h.slots[1] = LAVA; // scooped back up
+				scoops++;
+				lastScoop = i;
+			}
+		}
+		assertTrue(pours >= 3, "chained pours on the webbed opponent: " + pours);
+		assertTrue(scoops >= pours - 1, "every pour was scooped back up (the last may still be down when the test stops): " + pours + " pours, " + scoops + " scoops");
+		assertTrue((lastScoop - firstPour) / (double) pours < 25, "a quick rhythm, not one long burn");
+	}
+
+	@Test
 	void websTheOpponent() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WEBS), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
 		assertTrue(usesWithin(h, ItemKind.COBWEB, 40), "placed a cobweb");
@@ -121,6 +146,32 @@ class UhcTacticsTest {
 		}
 		assertTrue(placed, "put a block down between itself and the opponent");
 		assertEquals("wall", h.brain.lastTrace().tactic());
+	}
+
+	@Test
+	void buildsAFullWallThenEatsBehindIt() {
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, TestFixtures.GAPPLE, 2, PLANKS),
+			TestFixtures.target(new Vec3(0, 0, 4.0), 0));
+		// Low, but not yet low enough to eat in the open: the wall comes first.
+		h.health = (float) (20 * (uhcPro().items().gappleHealthFraction() + 0.1));
+		int placed = 0;
+		int ateAt = -1;
+		int lastBlockAt = -1;
+		for (int i = 0; i < 120 && ateAt < 0; i++) {
+			Inputs in = h.tick();
+			ItemInfo held = h.slots[h.selected];
+			if (in.use() && "minecraft:oak_planks".equals(held.id())) {
+				// The harness doesn't place blocks: use one up, as vanilla would.
+				h.slots[h.selected] = TestFixtures.item(ItemKind.BLOCK, held.id(), held.count() - 1, 1);
+				placed++;
+				lastBlockAt = i;
+			} else if (in.use() && held.kind() == ItemKind.GOLDEN_APPLE) {
+				ateAt = i;
+			}
+		}
+		assertEquals(6, placed, "a pro puts up the full three-by-two wall");
+		assertTrue(ateAt > lastBlockAt, "then eats behind it (wall done at " + lastBlockAt + ", eating at " + ateAt + ")");
+		assertTrue(ateAt - lastBlockAt < 20, "straight away");
 	}
 
 	@Test

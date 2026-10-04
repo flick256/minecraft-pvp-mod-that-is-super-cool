@@ -25,6 +25,8 @@ public final class DuelMemory {
 	/** Ticks of sidestepping left after the wall ends, to clear its corner. */
 	int detourTicks;
 	int detourStrafe = 1;
+	/** When the bot last finished putting up a wall to heal behind (the heal tactic eats right after). */
+	long walledAt = Long.MIN_VALUE / 2;
 	Mistake mistake = Mistake.NONE;
 	int ticksUntilMistakeRoll;
 	int strafeDirection = 1;

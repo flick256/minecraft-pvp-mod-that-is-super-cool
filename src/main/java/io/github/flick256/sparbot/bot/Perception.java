@@ -128,7 +128,7 @@ public final class Perception {
 				target.getHealth(), target.getMaxHealth(), target.onGround(), target.hurtTime, target.isBlocking(), true, 0,
 				target.getBbWidth() / 2.0, target.getBbHeight(),
 				ItemClassifier.classify(target.getMainHandItem()), ItemClassifier.classify(target.getOffhandItem()),
-				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire(), inWeb(target));
+				target.isUsingItem() ? ItemClassifier.classify(target.getUseItem()) : ItemKind.EMPTY, target.getArmorValue(), target.isOnFire(), inWeb(target), target.isInWater());
 			return lastSeen;
 		}
 		if (lastSeen == null) {

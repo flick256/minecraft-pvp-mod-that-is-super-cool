@@ -17,6 +17,8 @@ public final class HealTactic implements Tactic {
 	private static final double SAFE_EAT_DISTANCE = 3.5;
 	private static final String REGENERATION = "minecraft:regeneration";
 	private static final String ABSORPTION = "minecraft:absorption";
+	/** Just walled off: eat behind the wall within this many ticks, at any distance. */
+	private static final int BEHIND_WALL_TICKS = 60;
 
 	private boolean started;
 	private int startedCount;
@@ -43,6 +45,11 @@ public final class HealTactic implements Tactic {
 		if (healthLow && !buffed && gappleSlot(inv) >= 0 && (distance > SAFE_EAT_DISTANCE || desperate)) {
 			return desperate ? 0.9 : 0.85;
 		}
+		// The wall was put up to eat behind: eat now, before the opponent gets round it.
+		boolean walled = c.observation.tick() - c.memory.walledAt < BEHIND_WALL_TICKS;
+		if (walled && !buffed && gappleSlot(inv) >= 0 && c.self.healthFraction() < items.gappleHealthFraction() + 0.25) {
+			return 0.9;
+		}
 		if (c.self.foodLevel() < items.eatHungerBelow() && foodSlot(inv) >= 0 && safe) {
 			return 0.55;
 		}
@@ -53,7 +60,8 @@ public final class HealTactic implements Tactic {
 	public void onEnter(BrainContext c) {
 		started = false;
 		InventoryState inv = c.self.inventory();
-		boolean wantsGapple = c.self.healthFraction() < c.profile.items().gappleHealthFraction();
+		boolean walled = c.observation.tick() - c.memory.walledAt < BEHIND_WALL_TICKS;
+		boolean wantsGapple = c.self.healthFraction() < c.profile.items().gappleHealthFraction() + (walled ? 0.25 : 0);
 		slot = wantsGapple ? gappleSlot(inv) : -1;
 		if (slot < 0) {
 			slot = foodSlot(inv);

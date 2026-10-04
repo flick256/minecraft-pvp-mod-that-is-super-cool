@@ -35,14 +35,23 @@ public record TargetState(
 	ItemKind usingKind,
 	double armorPoints,
 	boolean onFire,
-	boolean inWeb
+	boolean inWeb,
+	boolean inWater
 ) {
+	/** A target whose water state isn't known (not in water). */
+	public TargetState(int entityId, String name, Vec3 position, Vec3 velocity, float yaw, float health, float maxHealth, boolean onGround,
+		int hurtTime, boolean blocking, boolean visible, int ticksSinceSeen, double halfWidth, double height, ItemKind mainHand,
+		ItemKind offhand, ItemKind usingKind, double armorPoints, boolean onFire, boolean inWeb) {
+		this(entityId, name, position, velocity, yaw, health, maxHealth, onGround, hurtTime, blocking, visible, ticksSinceSeen, halfWidth, height,
+			mainHand, offhand, usingKind, armorPoints, onFire, inWeb, false);
+	}
+
 	/** A target that isn't burning. */
 	public TargetState(int entityId, String name, Vec3 position, Vec3 velocity, float yaw, float health, float maxHealth, boolean onGround,
 		int hurtTime, boolean blocking, boolean visible, int ticksSinceSeen, double halfWidth, double height, ItemKind mainHand,
 		ItemKind offhand, ItemKind usingKind, double armorPoints) {
 		this(entityId, name, position, velocity, yaw, health, maxHealth, onGround, hurtTime, blocking, visible, ticksSinceSeen, halfWidth, height,
-			mainHand, offhand, usingKind, armorPoints, false, false);
+			mainHand, offhand, usingKind, armorPoints, false, false, false);
 	}
 
 	/** Closest point of the target's hitbox to {@code from}. */
