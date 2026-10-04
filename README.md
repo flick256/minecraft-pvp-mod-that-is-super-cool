@@ -32,6 +32,7 @@ servers, and players don't need to install anything.
 | Buffs | Drinks or splashes Speed, Fire Resistance and Strength again when they wear off and the opponent is not close |
 | Spear | Keeps about 3 blocks away and jabs on a full charge (26.2: a jab hits only from 2 to 4.5 blocks); from a gap, sprints in holding a charge (damage 1 + closing speed x the spear's multiplier), but not at an opponent running straight away; falls back to the sword when the opponent gets inside 2 blocks |
 | End crystals | Puts obsidian down next to the opponent, a crystal on it, and hits the crystal (26.2: power-6 blast, damage falls off over 12 blocks); only uses spots it can reach to hit (blocks reach 4.5, crystals only 3) and, when skilled, only crystals closer to the opponent than to itself |
+| Respawn anchors | Puts an anchor down next to the opponent, charges it with glowstone and sets it off with the sword in hand (26.2: outside the Nether a charged anchor blows up with power 5 and fire); only when the opponent takes more of the blast than the bot |
 | TNT minecarts | Starts a cart only when the opponent is predictable (webbed, standing still or running straight in), puts the rail where they will be by the time the arrow arrives, then finishes the combo: cart on the rail and a quick Flame-bow shot (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
 | Lava, water and cobwebs (UHC) | Webbed itself, it pours water onto the web it's in (flowing water destroys a web in 26.2), or cuts it with the sword if it has no water, and does it again if you drain it, then scoops the water back up; webs you where you stand, or where you'll land after a knock-up; spams lava: pours it onto a webbed opponent's web (it lands on their head) or under their feet, scoops it back a few ticks later and pours again, never leaving it down; puts itself out with water when burning; walks around lava and fire instead of into them |
 | Shield stun | Axe hit on a raised shield (disables it for 5 s), then a pre-planned instant switch back to the sword or mace and a hit before the opponent can react; skill decides how often the follow-up is ready |
@@ -44,7 +45,7 @@ How often each tool is used depends on the profile's item skills, so a Beginner 
 pearls and a Pro almost always does.
 
 Bundled kits for trying it out: `sparbot_combat` (everything above), `sparbot_ranged` (bow focus) and
-`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword), `sparbot_crystal` (end crystals, obsidian, totems), `sparbot_cart` (rails, TNT minecarts, Flame bow) and `sparbot_uhc` (lava, water, cobwebs, bow). All are SparBot originals, not copies of any
+`sparbot_nodebuff` (splash healing, speed, fire resistance) `sparbot_mace` (mace, wind charges), `sparbot_spear` (spear, sword), `sparbot_crystal` (end crystals, obsidian, respawn anchors, glowstone, totems), `sparbot_cart` (rails, TNT minecarts, Flame bow) and `sparbot_uhc` (lava, water, cobwebs, bow). All are SparBot originals, not copies of any
 server's layout.
 > See [docs/architecture.md](docs/architecture.md) for the full plan.
 
