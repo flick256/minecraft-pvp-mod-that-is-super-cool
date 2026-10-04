@@ -50,4 +50,28 @@ public class CrystalGameTests {
 			TestSupport.remove(bot, target);
 		});
 	}
+
+	@GameTest(maxTicks = 400, padding = 24)
+	public void botBlowsUpARespawnAnchorNextToTheOpponent(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Anchorer", 1.5, 1, 3.5, -90, "pro", "sparbot_crystal"));
+		BotPlayer body = TestSupport.body(bot);
+		for (int slot : new int[] {1, 2, 12}) {
+			body.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY); // anchors only: no crystals or obsidian
+		}
+		Bot target = TestSupport.dummy(helper, "Victim", 5.0, 1, 3.5, 90, "basic_sword");
+		BotPlayer victim = TestSupport.body(target);
+		bot.setAssignedTarget(victim.getUUID());
+		int anchorsBefore = body.getInventory().countItem(Items.RESPAWN_ANCHOR);
+		int glowstoneBefore = body.getInventory().countItem(Items.GLOWSTONE);
+		helper.succeedWhen(() -> {
+			helper.assertTrue(body.getInventory().countItem(Items.RESPAWN_ANCHOR) < anchorsBefore, "an anchor was placed, now " + bot.trace().tactic() + " "
+				+ bot.trace().note());
+			helper.assertTrue(body.getInventory().countItem(Items.GLOWSTONE) < glowstoneBefore, "and charged with glowstone");
+			helper.assertTrue(!victim.isAlive() || victim.getHealth() < victim.getMaxHealth(), "then set off, hurting the opponent");
+			helper.assertTrue(body.isAlive(), "the bot survived its own anchor");
+			SparBot.LOGGER.info("Anchor test: victim health {}, bot health {}", victim.getHealth(), body.getHealth());
+			TestSupport.remove(bot, target);
+		});
+	}
 }

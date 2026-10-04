@@ -219,7 +219,7 @@ public final class Perception {
 	 * else uses it.
 	 */
 	private static Surroundings surroundings(BotPlayer self, double awarenessRadius) {
-		boolean blockModes = self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL) || stack.is(Items.TNT_MINECART));
+		boolean blockModes = self.getInventory().contains(stack -> stack.is(Items.END_CRYSTAL) || stack.is(Items.TNT_MINECART) || stack.is(Items.RESPAWN_ANCHOR));
 		// Fluids matter to a bot that can scoop them (buckets) or block them up (blocks).
 		boolean buckets = self.getInventory().contains(stack -> stack.is(Items.BUCKET) || stack.is(Items.WATER_BUCKET) || stack.is(Items.LAVA_BUCKET)
 			|| stack.getItem() instanceof net.minecraft.world.item.BlockItem);
@@ -248,6 +248,7 @@ public final class Perception {
 		List<BlockSpot> bases = new ArrayList<>();
 		List<BlockSpot> groundSpots = new ArrayList<>();
 		List<BlockSpot> rails = new ArrayList<>();
+		List<Surroundings.Anchor> anchors = new ArrayList<>();
 		BlockPos feet = self.blockPosition();
 		for (int dx = -BLOCK_SCAN; dx <= BLOCK_SCAN; dx++) {
 			for (int dz = -BLOCK_SCAN; dz <= BLOCK_SCAN; dz++) {
@@ -257,6 +258,12 @@ public final class Perception {
 						continue;
 					}
 					BlockState state = level.getBlockState(pos);
+					if (state.is(Blocks.RESPAWN_ANCHOR)) {
+						// Its charge shows in the block's glow.
+						anchors.add(new Surroundings.Anchor(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()),
+							state.getValue(net.minecraft.world.level.block.RespawnAnchorBlock.CHARGE)));
+						continue;
+					}
 					if (state.is(BlockTags.RAILS)) {
 						if (level.getEntitiesOfClass(AbstractMinecart.class, new AABB(pos)).isEmpty()) {
 							rails.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
@@ -280,7 +287,7 @@ public final class Perception {
 				}
 			}
 		}
-		return new Surroundings(crystals, bases, groundSpots, carts, rails, water, lava, webs);
+		return new Surroundings(crystals, bases, groundSpots, carts, rails, water, lava, webs, anchors);
 	}
 
 	/** Water and lava source blocks and cobwebs within block reach (what a player sees lying around them). */

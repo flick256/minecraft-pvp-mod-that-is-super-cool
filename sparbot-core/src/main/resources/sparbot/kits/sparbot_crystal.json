@@ -10,7 +10,7 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own crystal kit: netherite armor with Blast Protection leggings, end crystals and obsidian, a sword, golden apples and spare totems. No respawn anchors or pickaxe: the bot doesn't mine or use anchors yet.",
+    "notes": "SparBot's own crystal kit: netherite armor with Blast Protection leggings, end crystals and obsidian, respawn anchors and glowstone, a sword, golden apples and spare totems. No pickaxe: the bot doesn't mine.",
     "deviations": []
   },
   "armor": {
@@ -64,6 +64,14 @@
     },
     "4": {
       "id": "minecraft:totem_of_undying"
+    },
+    "5": {
+      "id": "minecraft:respawn_anchor",
+      "count": 64
+    },
+    "6": {
+      "id": "minecraft:glowstone",
+      "count": 64
     },
     "9": {
       "id": "minecraft:totem_of_undying"

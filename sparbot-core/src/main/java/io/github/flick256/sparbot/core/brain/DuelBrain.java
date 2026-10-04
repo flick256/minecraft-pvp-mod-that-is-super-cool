@@ -54,7 +54,7 @@ public final class DuelBrain implements Policy {
 	public DuelBrain(SkillProfile profile, Playstyle style, long seed, Tactic melee) {
 		this.tactics = List.of(melee, new RetreatTactic(), new SearchTactic(), new HealTactic(),
 			new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
-			new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new CartTactic(),
+			new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new AnchorTactic(), new CartTactic(),
 			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic(), new CleanupTactic(), new BoostTactic(), new BreakWebTactic());
 		this.profile = style.applyTo(profile);
 		this.style = style;

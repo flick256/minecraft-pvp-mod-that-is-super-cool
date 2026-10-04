@@ -12,6 +12,8 @@ import io.github.flick256.sparbot.core.math.Vec3;
 public final class Explosions {
 	/** EndCrystal#hurtServer explodes with power 6. */
 	public static final double CRYSTAL_POWER = 6.0;
+	/** A charged respawn anchor used outside the Nether (RespawnAnchorBlock#explode), centred on the block. */
+	public static final double ANCHOR_POWER = 5.0;
 
 	private Explosions() {
 	}

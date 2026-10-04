@@ -68,4 +68,9 @@ public class FightGameTests {
 	public void crystalProsNeverLockUp(GameTestHelper helper) {
 		fight(helper, "pro", "sparbot_crystal");
 	}
+
+	@GameTest(maxTicks = FIGHT_TICKS + 20, padding = 40)
+	public void cartProsNeverLockUp(GameTestHelper helper) {
+		fight(helper, "pro", "sparbot_cart");
+	}
 }
