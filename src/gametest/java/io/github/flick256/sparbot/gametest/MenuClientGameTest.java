@@ -58,6 +58,19 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				throw new AssertionError("Equip didn't give the player a kit");
 			}
 
+			context.clickScreenButton("Save layout");
+			world.getServer().waitFor(server -> server.getPlayerList().getPlayers().stream()
+				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !SparBot.playerLayouts().kits(p.getUUID()).isEmpty()));
+
+			context.clickScreenButton("You");
+			context.waitTicks(2);
+			context.takeScreenshot("sparbot-menu-you");
+			world.getServer().runOnServer(server -> server.getPlayerList().getPlayers().stream()
+				.filter(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer)).forEach(p -> p.setHealth(5)));
+			context.clickScreenButton("Full heal");
+			world.getServer().waitFor(server -> server.getPlayerList().getPlayers().stream()
+				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && p.getHealth() >= p.getMaxHealth()));
+
 			context.clickScreenButton("Settings");
 			context.waitTicks(2);
 			context.takeScreenshot("sparbot-menu-settings");

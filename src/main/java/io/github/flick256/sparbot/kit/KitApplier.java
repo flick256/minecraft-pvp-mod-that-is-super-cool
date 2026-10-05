@@ -63,6 +63,11 @@ public final class KitApplier {
 	}
 
 	/** Clears the player and equips the kit. The kit must already have passed {@link #resolveErrors}. */
+	/** Equips a player with a kit, arranged as they saved it for that kit if they did (/sparbot layout save). */
+	public static void applyForPlayer(net.minecraft.server.level.ServerPlayer player, Kit kit) {
+		apply(player, io.github.flick256.sparbot.SparBot.playerLayouts().get(player.getUUID(), kit.id()).map(layout -> layout.arrange(kit)).orElse(kit));
+	}
+
 	public static void apply(ServerPlayer player, Kit kit) {
 		HolderLookup.Provider registries = player.level().registryAccess();
 		Inventory inventory = player.getInventory();

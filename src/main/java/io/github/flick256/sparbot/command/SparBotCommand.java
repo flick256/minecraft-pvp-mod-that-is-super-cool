@@ -218,7 +218,40 @@ public final class SparBotCommand {
 					return ok(ctx, "Saved layout " + layout.id() + " for kit " + kit.id() + " (" + layout.slots().size() + " slots"
 						+ (layout.offhand() != null ? ", offhand " + layout.offhand() : "") + ")");
 				}))))
-			.then(Commands.literal("list").executes(ctx -> ok(ctx, "Layouts: " + String.join(", ", SparBot.kits().layoutIds())))));
+			.then(Commands.literal("list").executes(ctx -> ok(ctx, "Layouts: " + String.join(", ", SparBot.kits().layoutIds()))))
+			// Your own layout: arrange the kit's items in your inventory as you like them, save, and every
+			// /sparbot kit give (and the menu's Equip) puts them back that way.
+			.then(Commands.literal("save").then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
+				ServerPlayer player = ctx.getSource().getPlayerOrException();
+				Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
+				Layout layout = KitCapture.captureLayout(player, "mine", kit);
+				if (layout.slots().isEmpty()) {
+					throw new SimpleCommandExceptionType(Component.literal("None of " + kit.displayName() + "'s items are in your inventory: equip it, arrange it, then save"))
+						.create();
+				}
+				try {
+					SparBot.playerLayouts().save(player.getUUID(), layout);
+				} catch (IOException e) {
+					throw new SimpleCommandExceptionType(Component.literal("Could not save your layout: " + e.getMessage())).create();
+				}
+				return ok(ctx, "Saved your layout for " + kit.displayName() + " (" + layout.slots().size() + " slots"
+					+ (layout.offhand() != null ? ", offhand " + layout.offhand() : "") + "): it is used whenever you equip it");
+			})))
+			.then(Commands.literal("reset").then(Commands.argument("kit", StringArgumentType.word()).suggests(KIT_IDS).executes(ctx -> {
+				ServerPlayer player = ctx.getSource().getPlayerOrException();
+				Kit kit = kit(StringArgumentType.getString(ctx, "kit"));
+				try {
+					return SparBot.playerLayouts().remove(player.getUUID(), kit.id()) ? ok(ctx, "Back to the default layout for " + kit.displayName())
+						: ok(ctx, "You have no layout of your own for " + kit.displayName());
+				} catch (IOException e) {
+					throw new SimpleCommandExceptionType(Component.literal("Could not reset your layout: " + e.getMessage())).create();
+				}
+			}))));
+
+		// A full heal outside matches: health, hunger, fire and harmful effects (practice convenience).
+		root.then(Commands.literal("heal")
+			.executes(ctx -> heal(ctx, java.util.List.of(ctx.getSource().getPlayerOrException())))
+			.then(Commands.argument("players", EntityArgument.players()).executes(ctx -> heal(ctx, EntityArgument.getPlayers(ctx, "players")))));
 
 		root.then(Commands.literal("style")
 			.then(Commands.literal("set").then(botArgument()
@@ -309,6 +342,23 @@ public final class SparBotCommand {
 			.collect(Collectors.joining(", ")));
 	}
 
+	private static int heal(CommandContext<CommandSourceStack> ctx, java.util.Collection<ServerPlayer> players) throws CommandSyntaxException {
+		int healed = 0;
+		for (ServerPlayer player : players) {
+			if (SparBot.matches().inMatch(player.getUUID())) {
+				throw new SimpleCommandExceptionType(Component.literal(player.getPlainTextName() + " is in a match")).create();
+			}
+			player.setHealth(player.getMaxHealth());
+			player.getFoodData().setFoodLevel(20);
+			player.getFoodData().setSaturation(20.0F);
+			player.clearFire();
+			player.getActiveEffects().stream().filter(e -> !e.getEffect().value().isBeneficial()).map(e -> e.getEffect()).toList()
+				.forEach(player::removeEffect);
+			healed++;
+		}
+		return ok(ctx, "Healed " + (healed == 1 ? players.iterator().next().getPlainTextName() : healed + " players"));
+	}
+
 	/**
 	 * Equips players with a kit, as a kit menu on a PvP server does: their inventory and effects are
 	 * replaced and they are healed. Refused for anyone in a match, where it would be a free reset.
@@ -323,7 +373,7 @@ public final class SparBotCommand {
 			if (SparBot.matches().inMatch(player.getUUID())) {
 				throw new SimpleCommandExceptionType(Component.literal(player.getPlainTextName() + " is in a match")).create();
 			}
-			KitApplier.apply(player, kit);
+			KitApplier.applyForPlayer(player, kit);
 			given++;
 		}
 		if (given == 0) {

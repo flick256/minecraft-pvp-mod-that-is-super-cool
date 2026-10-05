@@ -33,13 +33,15 @@ public final class SparBotMenuScreen extends Screen {
 		BOTS,
 		SPAWN,
 		KITS,
+		/** Your own things: a full heal, regeneration, your kit layouts. */
+		YOU,
 		SETTINGS,
 		/** One bot's techniques (opened from its row in the Bots tab). */
 		TECHNIQUES
 	}
 
 	/** The tabs along the top, in order. */
-	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.SETTINGS};
+	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.SETTINGS};
 
 	private MenuState state;
 	private Tab tab = Tab.BOTS;
@@ -78,15 +80,16 @@ public final class SparBotMenuScreen extends Screen {
 	protected void init() {
 		labels.clear();
 		int center = width / 2;
-		String[] names = {"Bots", "Spawn", "Kits", "Settings"};
+		String[] names = {"Bots", "Spawn", "Kits", "You", "Settings"};
 		for (int i = 0; i < TAB_BAR.length; i++) {
 			Tab each = TAB_BAR[i];
-			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 158 + i * 80, 28, 76, 20).build()).active = tab != each;
+			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 168 + i * 68, 28, 64, 20).build()).active = tab != each;
 		}
 		switch (tab) {
 			case BOTS -> initBots(center);
 			case SPAWN -> initSpawn(center);
 			case KITS -> initKits(center);
+			case YOU -> initYou(center);
 			case SETTINGS -> initSettings(center);
 			case TECHNIQUES -> initTechniques(center);
 		}
@@ -158,21 +161,43 @@ public final class SparBotMenuScreen extends Screen {
 			return;
 		}
 		int first = clampPage(kits.size()) * rows();
+		List<String> mine = state.myLayouts() == null ? List.of() : state.myLayouts();
 		for (int i = first; i < Math.min(first + rows(), kits.size()); i++) {
 			MenuState.KitEntry kit = kits.get(i);
 			int y = TOP + (i - first) * ROW_HEIGHT;
 			String name = kit.displayName();
-			int nameWidth = 220;
+			int nameWidth = 150;
 			if (!kit.verified() && !name.toLowerCase(Locale.ROOT).contains("unverified")) {
-				labels.add(new Label("unverified", center + 40, y + 6, GREY));
+				labels.add(new Label("unverified", center - 48, y + 6, GREY));
+				nameWidth = 136;
 			}
 			String shown = font.plainSubstrByWidth(name, nameWidth);
 			labels.add(new Label(shown.length() < name.length() ? font.plainSubstrByWidth(name, nameWidth - font.width("...")) + "..." : name, center - 190, y + 6,
 				WHITE));
-			addRenderableWidget(Button.builder(Component.literal("Equip"), b -> run(MenuCommands.giveKit(kit.id()))).bounds(center + 110, y, 80, 20).build());
+			boolean saved = mine.contains(kit.id());
+			addRenderableWidget(Button.builder(Component.literal("Equip"), b -> run(MenuCommands.giveKit(kit.id()))).bounds(center + 10, y, 50, 20).build());
+			addRenderableWidget(Button.builder(Component.literal(saved ? "Save layout*" : "Save layout"), b -> run(MenuCommands.saveLayout(kit.id())))
+				.bounds(center + 64, y, 84, 20).build());
+			addRenderableWidget(Button.builder(Component.literal("Reset"), b -> run(MenuCommands.resetLayout(kit.id()))).bounds(center + 152, y, 44, 20)
+				.build()).active = saved;
 		}
-		labels.add(new Label("Replaces your inventory", center + 70, TOP + rows() * ROW_HEIGHT + 10, GREY));
 		pager(center, kits.size());
+	}
+
+	/** Your own things: a full heal, natural regeneration, and how kit layouts work. */
+	private void initYou(int center) {
+		labels.add(new Label("Health, hunger, fire", center - 190, TOP + 6, WHITE));
+		addRenderableWidget(Button.builder(Component.literal("Full heal"), b -> run(MenuCommands.heal())).bounds(center + 20, TOP, 120, 20).build());
+		labels.add(new Label("Natural regeneration", center - 190, TOP + ROW_HEIGHT + 6, WHITE));
+		boolean regen = !"false".equals(setting("naturalRegeneration"));
+		addRenderableWidget(CycleButton.onOffBuilder(regen).displayOnlyValue().create(center + 20, TOP + ROW_HEIGHT, 120, 20,
+			Component.literal("naturalRegeneration"), (button, value) -> run(MenuCommands.setConfig("naturalRegeneration", value.toString()))));
+		labels.add(new Label("(off: UHC rules outside matches, for you and the bots)", center - 190, TOP + 2 * ROW_HEIGHT + 6, GREY));
+		labels.add(new Label("Kit layouts: equip a kit, arrange your inventory,", center - 190, TOP + 3 * ROW_HEIGHT + 12, WHITE));
+		labels.add(new Label("then Save layout in the Kits tab (* = saved). Equip uses it.", center - 190, TOP + 3 * ROW_HEIGHT + 24, WHITE));
+		List<String> mine = state.myLayouts() == null ? List.of() : state.myLayouts();
+		labels.add(new Label(mine.isEmpty() ? "No layouts of your own yet" : "Your layouts: " + font.plainSubstrByWidth(String.join(", ", mine), 300),
+			center - 190, TOP + 5 * ROW_HEIGHT, GREY));
 	}
 
 	/** The melee (scripted or a learned model) and on/off switches for each of one bot's techniques. */

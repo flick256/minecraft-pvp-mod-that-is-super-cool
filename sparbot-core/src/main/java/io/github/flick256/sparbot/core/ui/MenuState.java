@@ -11,9 +11,16 @@ import java.util.List;
  * validation stay on the server.
  *
  * @param open whether the client should open the menu (false: refresh it if it is open)
+ * @param myLayouts the kits the viewing player has their own layout for
  */
 public record MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
-	List<Setting> settings, List<KitEntry> kitInfo, List<String> models) {
+	List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts) {
+	/** Without per-player layouts. */
+	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
+		List<Setting> settings, List<KitEntry> kitInfo, List<String> models) {
+		this(open, profiles, kits, styles, modes, bots, settings, kitInfo, models, List.of());
+	}
+
 	private static final Gson GSON = new Gson();
 
 	/** A bot as the menu lists it. */
@@ -38,6 +45,7 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null || state.kitInfo() == null || state.models() == null) {
 			throw new JsonParseException("Incomplete SparBot menu state");
 		}
-		return state;
+		return state.myLayouts() == null ? new MenuState(state.open(), state.profiles(), state.kits(), state.styles(), state.modes(), state.bots(),
+			state.settings(), state.kitInfo(), state.models()) : state;
 	}
 }

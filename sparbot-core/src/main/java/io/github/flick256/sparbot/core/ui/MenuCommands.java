@@ -37,6 +37,21 @@ public final class MenuCommands {
 		return "sparbot kit give " + id(kit);
 	}
 
+	/** Saves the sender's current inventory arrangement as their own layout for a kit. */
+	public static String saveLayout(String kit) {
+		return "sparbot layout save " + id(kit);
+	}
+
+	/** Drops the sender's own layout for a kit (back to the kit's default arrangement). */
+	public static String resetLayout(String kit) {
+		return "sparbot layout reset " + id(kit);
+	}
+
+	/** Fully heals the sender (outside matches). */
+	public static String heal() {
+		return "sparbot heal";
+	}
+
 	/** Switches one of a bot's techniques on or off. */
 	public static String technique(String bot, String technique, boolean on) {
 		return "sparbot technique " + name(bot) + " " + id(technique) + (on ? " on" : " off");

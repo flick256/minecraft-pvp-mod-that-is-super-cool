@@ -139,6 +139,41 @@ public class ItemGameTests {
 	}
 
 	@GameTest(maxTicks = 40)
+	public void aPlayersSavedLayoutComesBackEveryTimeTheyEquipTheKit(GameTestHelper helper) {
+		ServerPlayer human = TestSupport.spawnRealPlayer(helper, 2, 1, 2);
+		try {
+			Kit uhc = io.github.flick256.sparbot.SparBot.kits().get("pvphq_uhc").orElseThrow();
+			KitApplier.applyForPlayer(human, uhc);
+			// Arrange it: golden heads to slot 0, the sword to slot 2, the lava where the heads were.
+			ItemStack sword = human.getInventory().getItem(0).copy();
+			ItemStack heads = human.getInventory().getItem(3).copy();
+			ItemStack lava = human.getInventory().getItem(5).copy();
+			human.getInventory().setItem(0, heads);
+			human.getInventory().setItem(3, lava);
+			human.getInventory().setItem(5, human.getInventory().getItem(2).copy());
+			human.getInventory().setItem(2, sword);
+			Layout mine = KitCapture.captureLayout(human, "mine", uhc);
+			io.github.flick256.sparbot.SparBot.playerLayouts().save(human.getUUID(), mine);
+
+			KitApplier.applyForPlayer(human, uhc);
+			helper.assertTrue(io.github.flick256.sparbot.bot.ItemClassifier.isGoldenHead(human.getInventory().getItem(0)), "golden heads back in slot 0, was "
+				+ human.getInventory().getItem(0));
+			helper.assertTrue(human.getInventory().getItem(2).is(Items.DIAMOND_SWORD), "the sword in slot 2");
+			helper.assertTrue(human.getInventory().getItem(3).is(Items.LAVA_BUCKET), "the lava in slot 3");
+			helper.assertTrue(human.getInventory().getItem(5).is(Items.GOLDEN_APPLE) && !io.github.flick256.sparbot.bot.ItemClassifier.isGoldenHead(
+				human.getInventory().getItem(5)), "the golden apples in slot 5 (not mixed up with the heads)");
+			io.github.flick256.sparbot.SparBot.playerLayouts().remove(human.getUUID(), "pvphq_uhc");
+			KitApplier.applyForPlayer(human, uhc);
+			helper.assertTrue(human.getInventory().getItem(0).is(Items.DIAMOND_SWORD), "after a reset, the kit's own layout");
+		} catch (java.io.IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			TestSupport.removeRealPlayer(human);
+		}
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 40)
 	public void layoutRearrangesTheBotsKit(GameTestHelper helper) {
 		Kit kit = kit(Map.of(
 			"0", new Kit.KitItem("minecraft:diamond_sword", null, null, null),

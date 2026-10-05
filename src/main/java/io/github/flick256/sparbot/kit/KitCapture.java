@@ -59,22 +59,30 @@ public final class KitCapture {
 	public static Layout captureLayout(ServerPlayer player, String id, Kit kit) {
 		Set<String> kitItems = new java.util.HashSet<>();
 		if (kit.slots() != null) {
-			kit.slots().values().forEach(item -> kitItems.add(item.id()));
+			kit.slots().values().forEach(item -> kitItems.add(Layout.key(item)));
 		}
 		if (kit.offhand() != null) {
-			kitItems.add(kit.offhand().id());
+			kitItems.add(Layout.key(kit.offhand()));
 		}
 		Map<String, String> slots = new LinkedHashMap<>();
 		for (int i = 0; i < 36; i++) {
 			ItemStack stack = player.getInventory().getItem(i);
-			String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
-			if (!stack.isEmpty() && kitItems.contains(itemId)) {
-				slots.put(Integer.toString(i), itemId);
+			String key = layoutKey(stack);
+			if (!stack.isEmpty() && kitItems.contains(key)) {
+				slots.put(Integer.toString(i), key);
 			}
 		}
 		ItemStack offhand = player.getOffhandItem();
-		String offhandId = offhand.isEmpty() ? null : BuiltInRegistries.ITEM.getKey(offhand.getItem()).toString();
-		return new Layout(id, kit.id(), slots, offhandId != null && kitItems.contains(offhandId) ? offhandId : null);
+		String offhandKey = offhand.isEmpty() ? null : layoutKey(offhand);
+		return new Layout(id, kit.id(), slots, offhandKey != null && kitItems.contains(offhandKey) ? offhandKey : null);
+	}
+
+	/** A stack as a layout names it ({@link Layout#key}): golden heads and potions told apart from their look-alikes. */
+	static String layoutKey(ItemStack stack) {
+		String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+		PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+		String potion = contents != null && contents.potion().isPresent() ? contents.potion().get().getRegisteredName() : null;
+		return Layout.key(id, io.github.flick256.sparbot.bot.ItemClassifier.isGoldenHead(stack), potion);
 	}
 
 	/** One stack as a kit item: id, count, enchantments, base potion, and every other component. */

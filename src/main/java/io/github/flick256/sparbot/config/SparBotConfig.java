@@ -50,6 +50,11 @@ public final class SparBotConfig {
 	public String disabledTechniques = "";
 	/** Learned melee model new bots start with ("" = the scripted melee). Per bot: /sparbot model. */
 	public String defaultModel = "";
+	/**
+	 * Natural regeneration (from a full hunger bar) for players and bots outside matches. Off is UHC
+	 * rules for practice: only golden apples and heads heal. Matches set their own rule.
+	 */
+	public boolean naturalRegeneration = true;
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */

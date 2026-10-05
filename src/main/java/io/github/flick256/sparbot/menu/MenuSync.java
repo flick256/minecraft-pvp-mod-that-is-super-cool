@@ -38,10 +38,15 @@ public final class MenuSync {
 	}
 
 	public static void send(ServerPlayer player, boolean open) {
-		ServerPlayNetworking.send(player, new MenuStatePayload(state(open).toJson()));
+		ServerPlayNetworking.send(player, new MenuStatePayload(state(open, player).toJson()));
 	}
 
 	public static MenuState state(boolean open) {
+		return state(open, null);
+	}
+
+	/** @param viewer the player the menu is for (their own kit layouts), or null */
+	public static MenuState state(boolean open, ServerPlayer viewer) {
 		List<MenuState.BotEntry> bots = new ArrayList<>();
 		for (Bot bot : SparBot.bots().all()) {
 			BotPlayer body = bot.body();
@@ -56,7 +61,7 @@ public final class MenuSync {
 			sorted(SparBot.matches().modes().ids()), bots, settings, sorted(SparBot.kits().ids()).stream()
 				.flatMap(id -> SparBot.kits().get(id).stream())
 				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList(),
-			sorted(SparBot.models().ids()));
+			sorted(SparBot.models().ids()), viewer == null ? List.of() : SparBot.playerLayouts().kits(viewer.getUUID()));
 	}
 
 	private static List<String> sorted(java.util.Collection<String> ids) {

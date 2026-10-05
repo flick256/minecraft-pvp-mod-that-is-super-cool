@@ -26,8 +26,15 @@ public final class MatchRules {
 		}
 	}
 
-	/** Whether natural regeneration applies to {@code player} (FoodDataMixin). */
+	/**
+	 * Whether natural regeneration applies to {@code player} (FoodDataMixin): a match's rule for its
+	 * fighters, the naturalRegeneration setting for everyone else.
+	 */
 	public static boolean regenerates(Player player) {
-		return !NO_REGENERATION.contains(player.getUUID());
+		if (NO_REGENERATION.contains(player.getUUID())) {
+			return false;
+		}
+		io.github.flick256.sparbot.config.SparBotConfig config = io.github.flick256.sparbot.SparBot.config();
+		return config == null || config.naturalRegeneration || io.github.flick256.sparbot.SparBot.matches().inMatch(player.getUUID());
 	}
 }

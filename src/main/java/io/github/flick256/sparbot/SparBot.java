@@ -41,6 +41,8 @@ public final class SparBot implements ModInitializer {
 	private static final MatchManager MATCHES = new MatchManager();
 	private static final Recorder RECORDER = new Recorder();
 	private static final ReplayManager REPLAYS = new ReplayManager();
+	private static final io.github.flick256.sparbot.kit.PlayerLayouts PLAYER_LAYOUTS = new io.github.flick256.sparbot.kit.PlayerLayouts(
+		FabricLoader.getInstance().getConfigDir().resolve("sparbot").resolve("my_layouts"));
 
 	@Override
 	public void onInitialize() {
@@ -92,6 +94,11 @@ public final class SparBot implements ModInitializer {
 
 	private static Path configDir() {
 		return FabricLoader.getInstance().getConfigDir();
+	}
+
+	/** Players' own hotbar layouts per kit. */
+	public static io.github.flick256.sparbot.kit.PlayerLayouts playerLayouts() {
+		return PLAYER_LAYOUTS;
 	}
 
 	public static SparBotConfig config() {

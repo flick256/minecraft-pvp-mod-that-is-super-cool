@@ -11,7 +11,8 @@ import java.util.TreeMap;
  * offhand). Lets a bot copy someone's own hotbar setup without changing what the kit contains.
  *
  * @param kit id of the kit this layout was made for
- * @param slots inventory index (0-35) to item id
+ * @param slots inventory index (0-35) to item key (see {@link #key}: the item id, plus {@code #golden_head} or
+ *     {@code #<potion>} where items of one id differ)
  * @param offhand item id to hold in the offhand, or null to keep the kit's offhand
  */
 public record Layout(String id, String kit, Map<String, String> slots, String offhand) {
@@ -52,9 +53,9 @@ public record Layout(String id, String kit, Map<String, String> slots, String of
 			new TreeMap<>(asInts(source.slots())).forEach((slot, item) -> pool.add(new Placed(slot, item)));
 		}
 		Kit.KitItem offhandItem = source.offhand();
-		if (offhand != null && (offhandItem == null || !offhand.equals(offhandItem.id()))) {
+		if (offhand != null && (offhandItem == null || !matches(offhandItem, offhand))) {
 			for (Placed p : pool) {
-				if (p.item.id().equals(offhand)) {
+				if (matches(p.item, offhand)) {
 					Kit.KitItem previous = offhandItem;
 					offhandItem = p.item;
 					p.item = previous; // the old offhand item takes the vacated slot (or nothing)
@@ -68,7 +69,7 @@ public record Layout(String id, String kit, Map<String, String> slots, String of
 		if (slots != null) {
 			for (Map.Entry<Integer, String> wanted : new TreeMap<>(asInts(slots)).entrySet()) {
 				for (Placed p : pool) {
-					if (!p.assigned && p.item.id().equals(wanted.getValue()) && !result.containsKey(wanted.getKey())) {
+					if (!p.assigned && matches(p.item, wanted.getValue()) && !result.containsKey(wanted.getKey())) {
 						result.put(wanted.getKey(), p.item);
 						p.assigned = true;
 						break;
@@ -96,6 +97,23 @@ public record Layout(String id, String kit, Map<String, String> slots, String of
 		Map<String, Kit.KitItem> arranged = new LinkedHashMap<>();
 		result.forEach((slot, item) -> arranged.put(Integer.toString(slot), item));
 		return new Kit(source.id(), source.displayName(), source.mode(), source.provenance(), source.armor(), offhandItem, arranged, source.effects());
+	}
+
+	/**
+	 * How a layout names a kit item: its id, and for items that share an id but play differently, what
+	 * sets them apart (a golden head is a golden apple underneath; potions differ by their effect).
+	 */
+	public static String key(Kit.KitItem item) {
+		return key(item.id(), item.components() != null && item.components().contains("golden_head"), item.potion());
+	}
+
+	public static String key(String id, boolean goldenHead, String potion) {
+		return id + (goldenHead ? "#golden_head" : "") + (potion != null && !potion.isBlank() ? "#" + potion : "");
+	}
+
+	/** Whether a kit item is the one a layout slot asks for (a plain id, from older layouts, matches any item of that id). */
+	static boolean matches(Kit.KitItem item, String wanted) {
+		return wanted.contains("#") ? key(item).equals(wanted) : item.id().equals(wanted);
 	}
 
 	private static <V> Map<Integer, V> asInts(Map<String, V> map) {
