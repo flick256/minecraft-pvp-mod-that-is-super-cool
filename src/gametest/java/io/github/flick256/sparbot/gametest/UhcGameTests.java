@@ -186,6 +186,7 @@ public class UhcGameTests {
 		bot.setAssignedTarget(t.getUUID());
 		long[] disabledAt = {-1};
 		float[] healthAtDisable = {0};
+		StringBuilder afterStun = new StringBuilder();
 		helper.onEachTick(() -> {
 			if (!t.isUsingItem() && disabledAt[0] < 0 && !t.getCooldowns().isOnCooldown(t.getOffhandItem())) {
 				t.startUsingItem(net.minecraft.world.InteractionHand.OFF_HAND); // keeps the shield raised until it is disabled
@@ -194,11 +195,17 @@ public class UhcGameTests {
 				disabledAt[0] = helper.getTick();
 				healthAtDisable[0] = t.getHealth();
 			}
+			if (disabledAt[0] >= 0 && helper.getTick() - disabledAt[0] <= 12) {
+				afterStun.append(String.format(java.util.Locale.ROOT, "%n  +%d %s %s d=%.2f held=%s charge=%.2f",
+					helper.getTick() - disabledAt[0], bot.trace().tactic(), bot.trace().note().replaceAll("style=.*clickAt=[0-9.]*", ""),
+					body.distanceTo(t), body.getMainHandItem().getItem(), body.getAttackStrengthScale(0)));
+			}
 		});
 		helper.succeedWhen(() -> {
 			helper.assertTrue(disabledAt[0] >= 0, "the axe disabled the shield");
 			helper.assertTrue(t.getHealth() < healthAtDisable[0], "then a hit landed");
-			helper.assertTrue(helper.getTick() - disabledAt[0] <= 10, "right after the stun, " + (helper.getTick() - disabledAt[0]) + " ticks later");
+			helper.assertTrue(helper.getTick() - disabledAt[0] <= 10, "right after the stun, " + (helper.getTick() - disabledAt[0]) + " ticks later (melee "
+				+ bot.modelId() + ")" + afterStun);
 			TestSupport.remove(bot, target);
 		});
 	}

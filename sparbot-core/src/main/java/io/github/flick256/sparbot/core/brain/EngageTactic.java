@@ -25,7 +25,7 @@ public final class EngageTactic implements Tactic {
 	private static final double BLOCK_HIT_RELEASE_MARGIN = 0.2;
 	private static final double AXE_MIN_CHARGE = 0.25;
 	/** How long after a shield stun the bot still goes for the immediate follow-up hit. */
-	private static final int STUN_WINDOW = 8;
+	static final int STUN_WINDOW = 8;
 	/** An axe disables a shield for 5 s (the axe's disable_blocking_for_seconds). */
 	private static final int SHIELD_DISABLE_TICKS = 100;
 	/** Ticks a raised shield takes before it blocks. */
@@ -34,7 +34,7 @@ public final class EngageTactic implements Tactic {
 	private static final int SHIELD_COUNTER_MAX = 20;
 	private static final int SHIELD_COUNTER_COOLDOWN = 30;
 	/** Ticks to see the opponent's shield come down after an axe swing (perception lags a tick or two). */
-	private static final int AXE_CONFIRM_TICKS = 4;
+	static final int AXE_CONFIRM_TICKS = 4;
 
 	@Override
 	public String name() {

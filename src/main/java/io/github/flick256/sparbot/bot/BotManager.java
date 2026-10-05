@@ -77,6 +77,7 @@ public final class BotManager {
 			SparBot.models().get(config.defaultModel).ifPresentOrElse(net -> bot.setModel(config.defaultModel, net),
 				() -> SparBot.LOGGER.error("config defaultModel '{}' doesn't exist; using the scripted melee", config.defaultModel));
 		}
+		bot.autoModel();
 		BotPlayer player = new BotPlayer(server, level, gameProfile, ClientInformation.createDefault(), bot);
 		player.snapTo(pos.x, pos.y, pos.z, yaw, 0.0F);
 

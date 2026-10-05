@@ -285,6 +285,10 @@ These rules never relax, and the build fails if any of them breaks:
 | `defaultProfile` / `defaultKit` | `intermediate` / `basic_sword` | Used when `/sparbot spawn` omits them |
 | `disabledTechniques` | `""` | Techniques new bots start with switched off, comma-separated (e.g. `strafe,feints`) |
 | `defaultModel` | `""` | Learned melee model new bots start with (`""` or `none`: the scripted melee) |
+| `autoModels` | `true` | Bots nobody chose a melee for get the learned brain for their kit and tier: UHC kits the learned UHC brain (`uhc_demon` for demon bots when it is there). It beats the scripted bot of the same tier about 9 times in 10 in the simulator, with as much utility |
+| `shieldStuns` | `true` | A fully blocked hit doesn't start the blocker's invulnerability, so the second click of a stun lands |
+| `matchPlayerKit` | `true` | A bot sent to fight you wears the kit you last equipped |
+| `naturalRegeneration` | `true` | Off: UHC rules outside matches (only golden apples and heads heal) |
 | `logDecisions` | `false` | Log every tactic change |
 | `recordMatches` | `false` | Record every match (for replays, and later for Super Mode training) |
 

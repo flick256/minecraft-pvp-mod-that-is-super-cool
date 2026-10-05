@@ -44,6 +44,8 @@ public final class Bot {
 	/** Learned melee model in use, or null for the scripted melee. */
 	private @Nullable String modelId;
 	private io.github.flick256.sparbot.core.ml.@Nullable Mlp model;
+	/** An operator (or defaultModel) chose this bot's melee: the autoModels setting leaves it alone. */
+	private boolean modelChosen;
 	private Set<Technique> disabledTechniques =
 		EnumSet.noneOf(Technique.class);
 	private Kit kit;
@@ -161,6 +163,7 @@ public final class Bot {
 	public void setProfile(SkillProfile profile) {
 		this.profile = profile;
 		rebuildBrain();
+		autoModel();
 	}
 
 	/** Changes how the bot prefers to fight; its skill level stays the same. */
@@ -188,6 +191,26 @@ public final class Bot {
 
 	/** Fights in melee with a learned model ({@code null}: the scripted melee). */
 	public void setModel(@Nullable String id, io.github.flick256.sparbot.core.ml.@Nullable Mlp net) {
+		this.modelChosen = true;
+		applyModel(id, net);
+	}
+
+	/**
+	 * With the autoModels setting on and no model chosen for it, picks the learned brain for the bot's kit
+	 * and tier ({@link io.github.flick256.sparbot.core.ml.AutoModels}); called when the kit or tier changes.
+	 */
+	public void autoModel() {
+		if (modelChosen || !SparBot.config().autoModels) {
+			return;
+		}
+		String id = io.github.flick256.sparbot.core.ml.AutoModels.choose(kit.mode(), profile.id(), SparBot.models().ids());
+		if (java.util.Objects.equals(id, modelId)) {
+			return;
+		}
+		applyModel(id, id == null ? null : SparBot.models().get(id).orElse(null));
+	}
+
+	private void applyModel(@Nullable String id, io.github.flick256.sparbot.core.ml.@Nullable Mlp net) {
 		this.modelId = net == null ? null : id;
 		this.model = net;
 		rebuildBrain();
@@ -303,6 +326,7 @@ public final class Bot {
 		if (layout != null && !layout.kit().equals(kit.id())) {
 			layout = null;
 		}
+		autoModel();
 	}
 
 	public @Nullable Layout layout() {

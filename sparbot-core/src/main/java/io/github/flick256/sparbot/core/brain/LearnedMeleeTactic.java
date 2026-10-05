@@ -116,12 +116,35 @@ public final class LearnedMeleeTactic implements Tactic {
 			sprint = false;
 			forward = counter;
 		}
+		// The scripted shield stun too: once the axe has disabled their shield, the second click goes in at
+		// once with the axe still in hand (the network would wait for a recharge).
+		if (m.axeConfirmTicks > 0) {
+			m.axeConfirmTicks--;
+			if (seen != null && !seen.blocking()) {
+				m.axeConfirmTicks = 0;
+				m.shieldDisabledTicks = 100;
+				m.stunTicks = c.allows(Technique.SHIELD_STUN) ? EngageTactic.STUN_WINDOW : 0;
+				m.stunPlanned = c.rng.chance(c.skill(Technique.SHIELD_STUN));
+			}
+		}
+		if (m.stunTicks > 0) {
+			m.stunTicks--;
+			if (m.stunPlanned) {
+				// Its own shield comes down first: clicks don't count while it is up.
+				block = false;
+				if (self.holdingMeleeWeapon() && !inv.usingItem() && inJudgedReach && c.crosshairOnTarget(self.attackReach() + 0.5)) {
+					attack = true;
+					m.stunTicks = 0;
+				}
+			}
+		}
 		if (attack) {
 			m.ticksSinceOwnClick = 0;
 			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
 			TargetState t = c.seen();
 			if (inv.mainHand().is(io.github.flick256.sparbot.core.item.ItemKind.AXE) && t != null && t.blocking()) {
-				m.shieldDisabledTicks = 100; // an axe on a raised shield disables it for 5 s
+				// An axe on a raised shield disables it for 5 s, if it lands: the next ticks tell.
+				m.axeConfirmTicks = EngageTactic.AXE_CONFIRM_TICKS;
 			}
 		}
 		// Switched-off techniques stay off for a learned bot too.
