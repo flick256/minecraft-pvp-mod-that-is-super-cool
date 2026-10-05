@@ -50,8 +50,20 @@ final class BrainHarness {
 		return usingOffhand ? offhand.kind() : slots[selected].kind();
 	}
 
+	/** Maxed netherite, as the crystal and cart kits wear (blasts are judged through it). */
+	ItemInfo[] armor = netherite();
+
+	static ItemInfo[] netherite() {
+		String[] ids = {"minecraft:netherite_helmet", "minecraft:netherite_chestplate", "minecraft:netherite_leggings", "minecraft:netherite_boots"};
+		ItemInfo[] armor = new ItemInfo[4];
+		for (int i = 0; i < 4; i++) {
+			armor[i] = new ItemInfo(ItemKind.ARMOR, ids[i], 1, 1, 1, false, false, null, java.util.Set.of("minecraft:protection"));
+		}
+		return armor;
+	}
+
 	InventoryState inventory() {
-		return new InventoryState(slots, offhand, InventoryState.empty().armor(), selected, useTicks > 0, usingOffhand, useTicks, usingKind(),
+		return new InventoryState(slots, offhand, armor, selected, useTicks > 0, usingOffhand, useTicks, usingKind(),
 			useTicks > 5 && usingKind() == ItemKind.SHIELD);
 	}
 

@@ -187,6 +187,16 @@ final class BlockPlay {
 		double toTarget = Explosions.rawDamage(center, c.seen().position(), power);
 		double toSelf = Explosions.rawDamage(center, c.self.position(), power);
 		double maxSelfShare = 1.25 - 0.35 * skill;
-		return toTarget >= 12.0 && toSelf <= toTarget * maxSelfShare;
+		if (toTarget < 12.0 || toSelf > toTarget * maxSelfShare) {
+			return false;
+		}
+		// A practised player never sets off the blast that would pop or kill them (they read their health
+		// and armor); a beginner does.
+		return skill < 0.4 || selfDamage(c, center, power) < c.self.health() + c.self.absorption();
+	}
+
+	/** What a blast of {@code power} at {@code center} would take off the bot, through its armor. */
+	static double selfDamage(BrainContext c, Vec3 center, double power) {
+		return Explosions.afterArmor(Explosions.rawDamage(center, c.self.position(), power), c.self.inventory().armor());
 	}
 }

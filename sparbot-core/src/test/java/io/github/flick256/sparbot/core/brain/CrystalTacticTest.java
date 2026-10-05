@@ -124,4 +124,34 @@ class CrystalTacticTest {
 		assertTrue(hit, "hit back with the sword");
 		assertEquals("engage", h.brain.lastTrace().tactic());
 	}
+
+	@Test
+	void armorTakesBlastDamageDownAsVanillaDoes() {
+		// 56 raw through 20 armor and 12 toughness: 56 x (1 - (20 - 56 / 5) / 25), then Protection IV x 4 (16 EPF): x 0.36.
+		assertEquals(56 * (1 - 8.8 / 25) * 0.36, Explosions.afterArmor(56, BrainHarness.netherite()), 1e-9);
+		assertEquals(56, Explosions.afterArmor(56, new ItemInfo[] {ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY, ItemInfo.EMPTY}), 1e-9);
+	}
+
+	@Test
+	void neverSetsOffACrystalThatWouldKillIt() {
+		// About 11 damage through maxed netherite from 3.6 blocks: fine at full health, deadly at 6.
+		BrainHarness h = harness(new Vec3(0, 0, 3.0), new Surroundings(List.of(new Vec3(0, 0, 3.6)), List.of(), List.of()));
+		h.health = 6;
+		for (int i = 0; i < 40; i++) {
+			assertFalse(h.tick().attack() && "crystal".equals(h.brain.lastTrace().tactic()), "hit a crystal that would kill it");
+		}
+	}
+
+	@Test
+	void stepsOutOfTheOpponentsCrystal() {
+		// Their crystal right by the bot, the opponent well away: the bot won't set it off, they will.
+		BrainHarness h = harness(new Vec3(0, 0, 6.0), new Surroundings(List.of(new Vec3(1.5, 0, 0.5)), List.of(), List.of()));
+		boolean dodged = false;
+		for (int i = 0; i < 30 && !dodged; i++) {
+			Inputs in = h.tick();
+			dodged = "dodge".equals(h.brain.lastTrace().tactic()) && (in.forward() != 0 || in.strafe() != 0);
+			assertFalse(in.attack() && "crystal".equals(h.brain.lastTrace().tactic()), "set off a crystal that hurts the bot most");
+		}
+		assertTrue(dodged, "moved out of the blast");
+	}
 }

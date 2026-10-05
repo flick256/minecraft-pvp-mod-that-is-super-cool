@@ -118,4 +118,16 @@ public final class Movement {
 		Inputs detour = in.withMovement(bestForward, bestStrafe);
 		return bestForward > 0 ? detour : detour.withSprint(false);
 	}
+
+	/** Sprints away from {@code danger} (only its horizontal position counts) while looking at {@code facing}. */
+	static Inputs awayFrom(BrainContext c, Vec3 danger, Vec3 facing) {
+		SelfState self = c.self;
+		Vec3 eye = self.eyePosition();
+		float[] look = c.lookAt(Angles.yawTowards(eye, facing), Angles.pitchTowards(eye, facing));
+		float away = Angles.yawTowards(new Vec3(danger.x(), self.position().y(), danger.z()), self.position());
+		float rel = Angles.wrapDegrees(away - (self.yaw() + look[0]));
+		int forward = Math.abs(rel) < 67.5F ? 1 : Math.abs(rel) > 112.5F ? -1 : 0;
+		int strafe = rel < -22.5F && rel > -157.5F ? 1 : rel > 22.5F && rel < 157.5F ? -1 : 0;
+		return guardEdges(c, new Inputs(look[0], look[1], forward, strafe, false, false, forward > 0, false, false, -1));
+	}
 }

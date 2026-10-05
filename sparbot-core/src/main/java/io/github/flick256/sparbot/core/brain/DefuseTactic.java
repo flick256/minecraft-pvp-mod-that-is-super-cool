@@ -77,13 +77,7 @@ public final class DefuseTactic implements Tactic {
 		}
 		// Out of reach of it: get clear of the blast, facing the opponent.
 		TargetState t = c.seen();
-		Vec3 facing = t != null ? t.chest() : middle;
-		float[] look = c.lookAt(Angles.yawTowards(eye, facing), Angles.pitchTowards(eye, facing));
-		float away = Angles.yawTowards(new Vec3(cart.x(), self.position().y(), cart.z()), self.position());
-		float rel = Angles.wrapDegrees(away - (self.yaw() + look[0]));
-		int forward = Math.abs(rel) < 67.5F ? 1 : Math.abs(rel) > 112.5F ? -1 : 0;
-		int strafe = rel < -22.5F && rel > -157.5F ? 1 : rel > 22.5F && rel < 157.5F ? -1 : 0;
-		return Movement.guardEdges(c, new Inputs(look[0], look[1], forward, strafe, false, false, forward > 0, false, false, -1));
+		return Movement.awayFrom(c, cart, t != null ? t.chest() : middle);
 	}
 
 	/** The bot's own cart (put down in the last few seconds where it is now). */
