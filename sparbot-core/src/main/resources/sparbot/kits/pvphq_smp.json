@@ -10,23 +10,48 @@
     "confidence": "medium",
     "verified": false,
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
-    "notes": "PvPHQ's SMP kit. The netherite axe's enchantments are from its tooltip. Uncertain (please confirm): armor and sword enchantments are not visible and are left out; potions are read by colour: yellow = Strength II, orange = Fire Resistance, light blue = Swiftness II, red = Healing II, dark grey = Weakness (could be Slowness); potion levels (II or long) are guesses; the cobweb count is assumed to be 64; the wood is read as oak logs.",
+    "notes": "PvPHQ's SMP kit. The netherite axe's enchantments are from its tooltip. Uncertain (please confirm): armor and sword enchantments are not visible and are left out; potions are read by colour: yellow = Strength II, orange = Fire Resistance, light blue = Swiftness II, red = Healing II, dark grey = Weakness (could be Slowness); potion levels (II or long) are guesses; the cobweb count is assumed to be 64; the wood is read as oak logs. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on swords; the exact set (Fire Aspect on the sword above all) is SparBot's reading of 'maxed', please confirm.",
     "deviations": [
       "none: transcribed from a 26.2 server"
     ]
   },
   "armor": {
     "head": {
-      "id": "minecraft:diamond_helmet"
+      "id": "minecraft:diamond_helmet",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:respiration": 3,
+        "minecraft:aqua_affinity": 1
+      }
     },
     "chest": {
-      "id": "minecraft:diamond_chestplate"
+      "id": "minecraft:diamond_chestplate",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "legs": {
-      "id": "minecraft:diamond_leggings"
+      "id": "minecraft:diamond_leggings",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:swift_sneak": 3
+      }
     },
     "feet": {
-      "id": "minecraft:diamond_boots"
+      "id": "minecraft:diamond_boots",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:feather_falling": 4,
+        "minecraft:depth_strider": 3
+      }
     }
   },
   "offhand": {
@@ -34,7 +59,15 @@
   },
   "slots": {
     "0": {
-      "id": "minecraft:netherite_sword"
+      "id": "minecraft:netherite_sword",
+      "enchantments": {
+        "minecraft:sharpness": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:fire_aspect": 2,
+        "minecraft:looting": 3,
+        "minecraft:sweeping_edge": 3
+      }
     },
     "1": {
       "id": "minecraft:golden_apple",

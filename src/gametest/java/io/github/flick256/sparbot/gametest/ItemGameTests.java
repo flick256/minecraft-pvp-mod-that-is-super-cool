@@ -50,6 +50,31 @@ public class ItemGameTests {
 	}
 
 	@GameTest(maxTicks = 200)
+	public void lowHealthBotEatsAGoldenHeadFromTheUhcKit(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.spawnBot(helper, "HeadEater", 3.5, 1, 3.5, 0, "pro", "pvphq_uhc");
+		BotPlayer body = TestSupport.body(bot);
+		ItemStack head = body.getInventory().getItem(3);
+		helper.assertTrue(io.github.flick256.sparbot.bot.ItemClassifier.isGoldenHead(head), "hotbar slot 4 holds golden heads, was " + head);
+		helper.assertValueEqual(head.getHoverName().getString(), "Golden Head", "its name");
+		helper.assertValueEqual(head.get(net.minecraft.core.component.DataComponents.CONSUMABLE).consumeSeconds(), 0.8F, "eaten in 0.8 s");
+		for (int slot = 0; slot < 36; slot++) {
+			if (slot != 3 && body.getInventory().getItem(slot).is(Items.GOLDEN_APPLE)) {
+				body.getInventory().setItem(slot, ItemStack.EMPTY); // only the heads to eat
+			}
+		}
+		body.setHealth(4);
+		helper.succeedWhen(() -> {
+			helper.assertValueEqual(body.getInventory().getItem(3).getCount(), 1, "golden heads left");
+			helper.assertTrue(body.hasEffect(MobEffects.REGENERATION) && body.getEffect(MobEffects.REGENERATION).getAmplifier() == 1,
+				"Regeneration II applied");
+			helper.assertTrue(body.getEffect(MobEffects.REGENERATION).getDuration() > 100, "for 10 s (a golden apple's lasts 5)");
+			helper.assertTrue(body.hasEffect(MobEffects.ABSORPTION), "and Absorption");
+			TestSupport.remove(bot);
+		});
+	}
+
+	@GameTest(maxTicks = 200)
 	public void hungryBotEatsFood(GameTestHelper helper) {
 		TestSupport.arena(helper);
 		Bot bot = TestSupport.spawnBot(helper, "Hungry", 3.5, 1, 3.5, 0, "intermediate", "basic_sword");

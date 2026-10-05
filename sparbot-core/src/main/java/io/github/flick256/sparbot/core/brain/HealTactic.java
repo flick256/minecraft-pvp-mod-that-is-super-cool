@@ -62,7 +62,7 @@ public final class HealTactic implements Tactic {
 		InventoryState inv = c.self.inventory();
 		boolean walled = c.observation.tick() - c.memory.walledAt < BEHIND_WALL_TICKS;
 		boolean wantsGapple = c.self.healthFraction() < c.profile.items().gappleHealthFraction() + (walled ? 0.25 : 0);
-		slot = wantsGapple ? gappleSlot(inv) : -1;
+		slot = wantsGapple ? healSlot(c, inv) : -1;
 		if (slot < 0) {
 			slot = foodSlot(inv);
 		}
@@ -114,9 +114,27 @@ public final class HealTactic implements Tactic {
 		return Movement.guardEdges(c, inputs);
 	}
 
+	/** Any healing apple in the hotbar: enchanted, golden, or a golden head. */
 	static int gappleSlot(InventoryState inv) {
 		int slot = inv.hotbarSlot(ItemKind.ENCHANTED_GOLDEN_APPLE);
-		return slot >= 0 ? slot : inv.hotbarSlot(ItemKind.GOLDEN_APPLE);
+		if (slot < 0) {
+			slot = inv.hotbarSlot(ItemKind.GOLDEN_APPLE);
+		}
+		return slot >= 0 ? slot : inv.hotbarSlot(ItemKind.GOLDEN_HEAD);
+	}
+
+	/**
+	 * Which apple to eat: a golden head (twice the healing, eaten twice as fast, and there are only a
+	 * couple) when properly low or in a hurry, a golden apple otherwise.
+	 */
+	static int healSlot(BrainContext c, InventoryState inv) {
+		int head = inv.hotbarSlot(ItemKind.GOLDEN_HEAD);
+		boolean veryLow = c.self.healthFraction() < c.profile.items().gappleHealthFraction() * 0.7;
+		boolean pressed = c.seen() != null && c.targetDistance() < 6;
+		if (head >= 0 && (veryLow || pressed)) {
+			return head;
+		}
+		return gappleSlot(inv);
 	}
 
 	static int foodSlot(InventoryState inv) {

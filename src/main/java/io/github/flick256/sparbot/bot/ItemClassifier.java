@@ -76,7 +76,7 @@ public final class ItemClassifier {
 			return ItemKind.ENCHANTED_GOLDEN_APPLE;
 		}
 		if (stack.is(Items.GOLDEN_APPLE)) {
-			return ItemKind.GOLDEN_APPLE;
+			return isGoldenHead(stack) ? ItemKind.GOLDEN_HEAD : ItemKind.GOLDEN_APPLE;
 		}
 		if (stack.has(DataComponents.DEATH_PROTECTION)) {
 			return ItemKind.TOTEM;
@@ -168,5 +168,16 @@ public final class ItemClassifier {
 			using ? player.getTicksUsingItem() : 0,
 			using ? classify(player.getUseItem()) : ItemKind.EMPTY,
 			player.isBlocking());
+	}
+
+	/** The SparBot golden head: a golden apple tagged {@code custom_data={sparbot:"golden_head"}} (see the UHC kits). */
+	public static boolean isGoldenHead(ItemStack stack) {
+		net.minecraft.world.item.component.CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+		if (data == null) {
+			return false;
+		}
+		net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+		tag.putString("sparbot", "golden_head");
+		return data.matchedBy(tag);
 	}
 }

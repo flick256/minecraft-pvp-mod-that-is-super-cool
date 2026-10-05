@@ -135,7 +135,7 @@ public final class LearnedTactics {
 		f[i++] = clamp(Math.hypot(c.memory.selfMotion.x(), c.memory.selfMotion.z()) * 4);
 		f[i++] = Math.min(1, c.memory.ticksSinceOwnClick / 20.0);
 		// The kit.
-		f[i++] = Math.min(1, inv.count(ItemKind.GOLDEN_APPLE) / 6.0);
+		f[i++] = Math.min(1, (inv.count(ItemKind.GOLDEN_APPLE) + inv.count(ItemKind.GOLDEN_HEAD)) / 6.0);
 		f[i++] = Math.min(1, inv.count(ItemKind.LAVA_BUCKET) / 2.0);
 		f[i++] = Math.min(1, inv.count(ItemKind.WATER_BUCKET) / 2.0);
 		f[i++] = Math.min(1, inv.count(ItemKind.BUCKET) / 2.0);

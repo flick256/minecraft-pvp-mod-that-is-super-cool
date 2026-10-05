@@ -17,6 +17,8 @@ public enum ItemKind {
 	ENDER_PEARL,
 	GOLDEN_APPLE,
 	ENCHANTED_GOLDEN_APPLE,
+	/** UHC's golden head (a SparBot kit item: a golden apple that looks like a head, eaten in 0.8 s, Regeneration II for 10 s). */
+	GOLDEN_HEAD,
 	FOOD,
 	TOTEM,
 	SPLASH_POTION,
@@ -37,6 +39,6 @@ public enum ItemKind {
 	}
 
 	public boolean isFood() {
-		return this == GOLDEN_APPLE || this == ENCHANTED_GOLDEN_APPLE || this == FOOD;
+		return this == GOLDEN_APPLE || this == ENCHANTED_GOLDEN_APPLE || this == GOLDEN_HEAD || this == FOOD;
 	}
 }

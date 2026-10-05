@@ -281,8 +281,8 @@ class DuelSimTest {
 		w.set(0, 0, 0, SimWorld.LAVA);
 		step(f, other, Inputs.IDLE);
 		assertTrue(f.inLava && f.onFire());
-		// 4 lava damage through Protection II diamond armor: armor 20 - 4 / 4 = 19, then 32% off.
-		assertEquals(4 * (1 - 19.0 / 25) * (1 - 8 / 25.0), 20 - f.health, 1e-4);
+		// 4 lava damage through the UHC kit's diamond armor: armor 20 - 4 / 4 = 19, then 40% off (Protection III, II, II, III).
+		assertEquals(4 * (1 - 19.0 / 25) * (1 - 10 / 25.0), 20 - f.health, 1e-4);
 		w.set(0, 0, 0, SimWorld.WATER);
 		step(f, other, Inputs.IDLE);
 		assertFalse(f.onFire(), "water puts it out");

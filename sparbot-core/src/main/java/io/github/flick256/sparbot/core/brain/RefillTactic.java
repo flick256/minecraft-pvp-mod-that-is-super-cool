@@ -112,7 +112,7 @@ public final class RefillTactic implements Tactic {
 		}
 		List<Integer> used = new ArrayList<>();
 		addIfMissing(inv, clicks, freeHotbar, used, i -> i.is(ItemKind.ENDER_PEARL), 1);
-		addIfMissing(inv, clicks, freeHotbar, used, i -> i.is(ItemKind.GOLDEN_APPLE) || i.is(ItemKind.ENCHANTED_GOLDEN_APPLE), 1);
+		addIfMissing(inv, clicks, freeHotbar, used, i -> i.is(ItemKind.GOLDEN_APPLE) || i.is(ItemKind.ENCHANTED_GOLDEN_APPLE) || i.is(ItemKind.GOLDEN_HEAD), 1);
 		// TNT minecarts don't stack, so the hotbar runs out of them one by one.
 		addIfMissing(inv, clicks, freeHotbar, used, i -> i.is(ItemKind.TNT_MINECART), 1);
 		int potsInHotbar = 0;

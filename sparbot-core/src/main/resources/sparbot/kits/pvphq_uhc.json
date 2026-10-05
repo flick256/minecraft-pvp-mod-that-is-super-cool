@@ -10,23 +10,35 @@
     "confidence": "medium",
     "verified": false,
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
-    "notes": "PvPHQ's UHC kit. Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out; hotbar slot 4 (two yellow cubes) is read as golden heads, a server-made item; golden apples stand in for them; the wood is read as oak planks; inventory slot 14 may be an empty bucket rather than a third water bucket.",
+    "notes": "PvPHQ's UHC kit. Uncertain (please confirm): hotbar slot 4 holds golden heads (confirmed by the user), a server-made item: here a golden apple that looks like a head, eaten in 0.8 s, Regeneration II for 10 s (4 hearts) and Absorption I (servers differ); the wood is read as oak planks; inventory slot 14 may be an empty bucket rather than a third water bucket. Enchantments as the user reported them for non-maxed kits (2026-10-05): Protection III helmet and boots, Protection II chestplate and leggings, Sharpness III sword.",
     "deviations": [
       "none: transcribed from a 26.2 server"
     ]
   },
   "armor": {
     "head": {
-      "id": "minecraft:diamond_helmet"
+      "id": "minecraft:diamond_helmet",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
     },
     "chest": {
-      "id": "minecraft:diamond_chestplate"
+      "id": "minecraft:diamond_chestplate",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
     },
     "legs": {
-      "id": "minecraft:diamond_leggings"
+      "id": "minecraft:diamond_leggings",
+      "enchantments": {
+        "minecraft:protection": 2
+      }
     },
     "feet": {
-      "id": "minecraft:diamond_boots"
+      "id": "minecraft:diamond_boots",
+      "enchantments": {
+        "minecraft:protection": 3
+      }
     }
   },
   "offhand": {
@@ -34,7 +46,10 @@
   },
   "slots": {
     "0": {
-      "id": "minecraft:diamond_sword"
+      "id": "minecraft:diamond_sword",
+      "enchantments": {
+        "minecraft:sharpness": 3
+      }
     },
     "1": {
       "id": "minecraft:diamond_axe"
@@ -45,7 +60,8 @@
     },
     "3": {
       "id": "minecraft:golden_apple",
-      "count": 2
+      "count": 2,
+      "components": "minecraft:item_model=\"minecraft:player_head\",minecraft:custom_name={text:\"Golden Head\",color:\"gold\",italic:false},minecraft:enchantment_glint_override=true,minecraft:consumable={consume_seconds:0.8f,on_consume_effects:[{type:\"minecraft:apply_effects\",effects:[{id:\"minecraft:regeneration\",amplifier:1b,duration:200},{id:\"minecraft:absorption\",amplifier:0b,duration:2400}]}]},minecraft:custom_data={sparbot:\"golden_head\"}"
     },
     "4": {
       "id": "minecraft:water_bucket"

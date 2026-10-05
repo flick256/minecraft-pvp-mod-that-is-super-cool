@@ -84,6 +84,9 @@ public final class SimFighter {
 	private static final int SHIELD_DISABLE_TICKS = 100;
 	private static final double USE_SLOWDOWN = 0.2;
 	private static final int REGEN_TICKS = 100;
+	/** The SparBot golden head: eaten in 0.8 s, Regeneration II for 10 s (4 hearts). */
+	private static final int HEAD_EAT_TICKS = 16;
+	private static final int HEAD_REGEN_TICKS = 200;
 	private static final int REGEN_INTERVAL = 25;
 	private static final float GAPPLE_ABSORPTION = 4.0F;
 	/** Minecraft#startUseItem: holding right click retries every 4 ticks. */
@@ -593,7 +596,7 @@ public final class SimFighter {
 			if (place(main, other)) {
 				return;
 			}
-		} else if (kind == ItemKind.GOLDEN_APPLE || kind == ItemKind.ENCHANTED_GOLDEN_APPLE) {
+		} else if (kind == ItemKind.GOLDEN_APPLE || kind == ItemKind.ENCHANTED_GOLDEN_APPLE || kind == ItemKind.GOLDEN_HEAD) {
 			using = Use.EAT;
 			useTicks = 0;
 			return;
@@ -1222,15 +1225,17 @@ public final class SimFighter {
 		ticksSinceSwing++;
 		if (using != Use.NONE) {
 			useTicks++;
-			if (using == Use.EAT && useTicks >= EAT_TICKS) {
-				// A golden apple: Absorption I and Regeneration II.
+			SimStack eating = held();
+			boolean head = eating != null && eating.kind() == ItemKind.GOLDEN_HEAD;
+			if (using == Use.EAT && useTicks >= (head ? HEAD_EAT_TICKS : EAT_TICKS)) {
+				// A golden apple: Absorption I and Regeneration II (a golden head: for twice as long).
 				using = Use.NONE;
 				SimStack s = held();
 				if (s != null) {
 					slots[selected] = s.withCount(s.count() - 1);
 				}
 				absorption = Math.max(absorption, GAPPLE_ABSORPTION);
-				regenTicks = REGEN_TICKS;
+				regenTicks = head ? HEAD_REGEN_TICKS : REGEN_TICKS;
 				gapplesEaten++;
 			}
 		}

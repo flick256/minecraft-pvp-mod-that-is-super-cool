@@ -10,33 +10,45 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own cart kit: rails, TNT minecarts and a Flame bow to set them off, a sword, golden apples and spare totems, in netherite with Blast Protection leggings. TNT minecarts don't stack, so most wait in the inventory.",
+    "notes": "SparBot's own cart kit: rails, TNT minecarts and a Flame bow to set them off, a sword, golden apples and spare totems, in netherite with Blast Protection leggings. TNT minecarts don't stack, so most wait in the inventory. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on swords; the exact set (Fire Aspect on the sword above all) is SparBot's reading of 'maxed', please confirm.",
     "deviations": []
   },
   "armor": {
     "head": {
       "id": "minecraft:netherite_helmet",
       "enchantments": {
-        "minecraft:protection": 4
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:respiration": 3,
+        "minecraft:aqua_affinity": 1
       }
     },
     "chest": {
       "id": "minecraft:netherite_chestplate",
       "enchantments": {
-        "minecraft:protection": 4
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
       }
     },
     "legs": {
       "id": "minecraft:netherite_leggings",
       "enchantments": {
-        "minecraft:blast_protection": 4
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:swift_sneak": 3
       }
     },
     "feet": {
       "id": "minecraft:netherite_boots",
       "enchantments": {
         "minecraft:protection": 4,
-        "minecraft:feather_falling": 4
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:feather_falling": 4,
+        "minecraft:depth_strider": 3
       }
     }
   },
@@ -47,14 +59,22 @@
     "0": {
       "id": "minecraft:netherite_sword",
       "enchantments": {
-        "minecraft:sharpness": 5
+        "minecraft:sharpness": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:fire_aspect": 2,
+        "minecraft:looting": 3,
+        "minecraft:sweeping_edge": 3
       }
     },
     "1": {
       "id": "minecraft:bow",
       "enchantments": {
+        "minecraft:power": 5,
+        "minecraft:punch": 2,
         "minecraft:flame": 1,
-        "minecraft:power": 3
+        "minecraft:unbreaking": 3,
+        "minecraft:infinity": 1
       }
     },
     "2": {

@@ -10,14 +10,14 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own UHC duel kit: diamond gear, a bow, two lava and two water buckets, cobwebs, golden apples and blocks. Meant for a mode without natural regeneration (uhc_duel), so golden apples are the only healing. Not a copy of any server's BuildUHC layout.",
+    "notes": "SparBot's own UHC duel kit: diamond gear, a bow, two lava and two water buckets, cobwebs, golden apples and blocks. Meant for a mode without natural regeneration (uhc_duel), so golden apples are the only healing. Not a copy of any server's BuildUHC layout. Golden heads (UHC's head apples: eaten in 0.8 s, Regeneration II for 10 s and Absorption I). Enchantments as the user reported them for non-maxed kits (2026-10-05): Protection III helmet and boots, Protection II chestplate and leggings, Sharpness III sword.",
     "deviations": []
   },
   "armor": {
     "head": {
       "id": "minecraft:diamond_helmet",
       "enchantments": {
-        "minecraft:protection": 2
+        "minecraft:protection": 3
       }
     },
     "chest": {
@@ -35,7 +35,7 @@
     "feet": {
       "id": "minecraft:diamond_boots",
       "enchantments": {
-        "minecraft:protection": 2
+        "minecraft:protection": 3
       }
     }
   },
@@ -89,6 +89,11 @@
     "12": {
       "id": "minecraft:cooked_beef",
       "count": 32
+    },
+    "3": {
+      "id": "minecraft:golden_apple",
+      "count": 2,
+      "components": "minecraft:item_model=\"minecraft:player_head\",minecraft:custom_name={text:\"Golden Head\",color:\"gold\",italic:false},minecraft:enchantment_glint_override=true,minecraft:consumable={consume_seconds:0.8f,on_consume_effects:[{type:\"minecraft:apply_effects\",effects:[{id:\"minecraft:regeneration\",amplifier:1b,duration:200},{id:\"minecraft:absorption\",amplifier:0b,duration:2400}]}]},minecraft:custom_data={sparbot:\"golden_head\"}"
     }
   },
   "effects": []

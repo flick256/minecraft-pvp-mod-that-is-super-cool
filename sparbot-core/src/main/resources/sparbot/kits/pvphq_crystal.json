@@ -10,23 +10,48 @@
     "confidence": "medium",
     "verified": false,
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
-    "notes": "PvPHQ's crystal kit with respawn anchors and glowstone. SparBot bots use its anchors and glowstone too. Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out; hotbar slot 4 is read as respawn anchors and slot 8 as obsidian (they look alike); inventory slot 9 (grey) is read as an elytra, which fits the fireworks next to it; inventory slots 17 and 26 are read as netherite pickaxes (one may be an axe); inventory slot 20 (a long purple weapon, maybe a netherite spear), slot 24 (a grey-white splash potion) and slot 35 (a purple item) are not identified and are left out; inventory slot 15 is read as a Fire Resistance splash potion and slot 16 as a Swiftness potion; inventory slot 34 may be spectral arrows.",
+    "notes": "PvPHQ's crystal kit with respawn anchors and glowstone. SparBot bots use its anchors and glowstone too. Uncertain (please confirm): hotbar slot 4 is read as respawn anchors and slot 8 as obsidian (they look alike); inventory slot 9 (grey) is read as an elytra, which fits the fireworks next to it; inventory slots 17 and 26 are read as netherite pickaxes (one may be an axe); inventory slot 20 (a long purple weapon, maybe a netherite spear), slot 24 (a grey-white splash potion) and slot 35 (a purple item) are not identified and are left out; inventory slot 15 is read as a Fire Resistance splash potion and slot 16 as a Swiftness potion; inventory slot 34 may be spectral arrows. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on swords; the exact set (Fire Aspect on the sword above all) is SparBot's reading of 'maxed', please confirm.",
     "deviations": [
       "none: transcribed from a 26.2 server"
     ]
   },
   "armor": {
     "head": {
-      "id": "minecraft:netherite_helmet"
+      "id": "minecraft:netherite_helmet",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:respiration": 3,
+        "minecraft:aqua_affinity": 1
+      }
     },
     "chest": {
-      "id": "minecraft:netherite_chestplate"
+      "id": "minecraft:netherite_chestplate",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "legs": {
-      "id": "minecraft:netherite_leggings"
+      "id": "minecraft:netherite_leggings",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:swift_sneak": 3
+      }
     },
     "feet": {
-      "id": "minecraft:netherite_boots"
+      "id": "minecraft:netherite_boots",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:feather_falling": 4,
+        "minecraft:depth_strider": 3
+      }
     }
   },
   "offhand": {
@@ -34,7 +59,15 @@
   },
   "slots": {
     "0": {
-      "id": "minecraft:netherite_sword"
+      "id": "minecraft:netherite_sword",
+      "enchantments": {
+        "minecraft:sharpness": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:fire_aspect": 2,
+        "minecraft:looting": 3,
+        "minecraft:sweeping_edge": 3
+      }
     },
     "1": {
       "id": "minecraft:ender_pearl",
@@ -60,7 +93,13 @@
       "id": "minecraft:totem_of_undying"
     },
     "7": {
-      "id": "minecraft:crossbow"
+      "id": "minecraft:crossbow",
+      "enchantments": {
+        "minecraft:quick_charge": 3,
+        "minecraft:piercing": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "8": {
       "id": "minecraft:obsidian",
@@ -74,7 +113,12 @@
       "count": 24
     },
     "11": {
-      "id": "minecraft:mace"
+      "id": "minecraft:mace",
+      "enchantments": {
+        "minecraft:density": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "12": {
       "id": "minecraft:totem_of_undying"
@@ -94,7 +138,12 @@
       "potion": "minecraft:strong_swiftness"
     },
     "17": {
-      "id": "minecraft:netherite_pickaxe"
+      "id": "minecraft:netherite_pickaxe",
+      "enchantments": {
+        "minecraft:efficiency": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "18": {
       "id": "minecraft:ender_pearl",
@@ -118,7 +167,12 @@
       "count": 64
     },
     "26": {
-      "id": "minecraft:netherite_pickaxe"
+      "id": "minecraft:netherite_pickaxe",
+      "enchantments": {
+        "minecraft:efficiency": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
     },
     "27": {
       "id": "minecraft:ender_pearl",

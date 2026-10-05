@@ -52,7 +52,7 @@ record SimStack(ItemKind kind, String id, int count, double attackDamage, double
 			case "lava_bucket" -> ItemKind.LAVA_BUCKET;
 			case "bucket" -> ItemKind.BUCKET;
 			case "cobweb" -> ItemKind.COBWEB;
-			case "golden_apple" -> ItemKind.GOLDEN_APPLE;
+			case "golden_apple" -> item.components() != null && item.components().contains("golden_head") ? ItemKind.GOLDEN_HEAD : ItemKind.GOLDEN_APPLE;
 			case "enchanted_golden_apple" -> ItemKind.ENCHANTED_GOLDEN_APPLE;
 			case "shield" -> ItemKind.SHIELD;
 			case "ender_pearl" -> ItemKind.ENDER_PEARL;
