@@ -91,6 +91,10 @@ which tactic is running. It can't make a tactic possible that isn't, and the tac
 the aiming, timing and hands under the profile's limits. With all-zero outputs it plays exactly like the
 scripted brain, which is where training starts.
 
+Training can be done at any skill tier (`UhcBrainTraining ... [profile]`): the brain is held to that tier's
+limits and the league is that tier's scripted brain plus the scripted pro. The bundled 0.6.0 brain is
+trained at Demon limits and plays well at pro limits too (0.90 vs the scripted pro).
+
 UHC is a utility mode, so the shifts are lopsided (`LearnedTactics#limit`): lava, web, ranged, wall and
 boost can be brought forward by up to 0.3 but held back by only 0.04, plain melee can't be lifted at all,
 and the shield and running only a little. A held-back utility play still beats melee already under way,
@@ -129,6 +133,7 @@ cover them. The whole loop needs no GPU.
 |---|---|---|---|
 | `sword` (0.3.0) | imitation + 400 generations, about 4 min | 0.98, strafing 7% of the time | 8 of 8 fights won |
 | `sword` (0.2.0) | imitation + 300 generations | 0.97, strafing 45% of the time | 6 of 8 |
+| `uhc` (0.6.0, whole brain, Demon tier) | the 0.5.0 melee + a fresh 14-tactic chooser (with the back-line), 150 generations at Demon limits, about 45 min | 0.88 vs scripted Demon, 0.94 vs scripted pro, 0.74 vs the 0.5.0 brain | 12 of 12 vs the scripted pro (UHC rules) |
 | `uhc` (0.5.0, whole brain, utility-first) | the 0.4.0 melee + a fresh tactic chooser, 100 generations, about 20 min | 0.79 in full-kit UHC | 9 of 12 fights won (UHC rules) |
 | `uhc` (0.4.0, whole brain) | the 0.3.0 melee + 160 generations in full-kit fights, about 30 min | 0.93-0.96 in full-kit UHC | 12 of 12 fights won (UHC rules) |
 | `uhc` (0.3.0, melee only) | imitation + 300 generations, about 8 min | 0.99 in flat melee | about even in full-kit UHC |

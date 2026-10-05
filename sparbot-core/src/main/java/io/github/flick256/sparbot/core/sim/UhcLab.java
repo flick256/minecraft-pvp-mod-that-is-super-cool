@@ -206,7 +206,13 @@ public final class UhcLab {
 	 */
 	static Tournament.Entrant entrant(String name, Map<String, SkillProfile> presets) {
 		if (name.startsWith("melee:")) {
+			// melee:<model>[@<profile>]: the model at that tier's limits (pro by default).
 			String model = name.substring("melee:".length());
+			String tier = "pro";
+			if (model.contains("@")) {
+				tier = model.substring(model.indexOf('@') + 1);
+				model = model.substring(0, model.indexOf('@'));
+			}
 			io.github.flick256.sparbot.core.ml.Mlp net;
 			if (model.endsWith(".json")) {
 				try {
@@ -217,7 +223,7 @@ public final class UhcLab {
 			} else {
 				net = io.github.flick256.sparbot.core.ml.Models.loadBundled().get(model);
 			}
-			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get("pro"), net);
+			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get(tier), net);
 		}
 		if (name.contains("-no:")) {
 			// <profile>-no:<tactic>,<tactic>: the scripted brain never choosing those tactics.

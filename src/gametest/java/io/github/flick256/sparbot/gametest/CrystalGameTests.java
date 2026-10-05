@@ -59,22 +59,49 @@ public class CrystalGameTests {
 		for (int slot : new int[] {1, 2, 12}) {
 			body.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY); // anchors only: no crystals or obsidian
 		}
-		// In netherite with totems, so the sword alone doesn't finish it before an anchor goes down.
+		// In netherite with totems and knockback-proof, so the sword neither finishes it nor knocks it off the anchor spot.
 		Bot target = TestSupport.dummy(helper, "Victim", 5.0, 1, 3.5, 90, "sparbot_crystal");
 		BotPlayer victim = TestSupport.body(target);
+		victim.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
 		bot.setAssignedTarget(victim.getUUID());
 		int anchorsBefore = body.getInventory().countItem(Items.RESPAWN_ANCHOR);
 		int glowstoneBefore = body.getInventory().countItem(Items.GLOWSTONE);
-		boolean[] heldTotem = {false};
-		helper.onEachTick(() -> heldTotem[0] |= body.getMainHandItem().has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION));
+		// A charged anchor that vanishes was set off: note what the bot held at that moment.
+		java.util.Set<net.minecraft.core.BlockPos> charged = new java.util.HashSet<>();
+		boolean[] detonated = {false};
+		boolean[] withTotem = {false};
+		FightDiagnostics watch = new FightDiagnostics(bot, target);
+		helper.onEachTick(() -> {
+			watch.tick(helper);
+			for (net.minecraft.core.BlockPos pos : java.util.List.copyOf(charged)) {
+				if (!helper.getLevel().getBlockState(pos).is(net.minecraft.world.level.block.Blocks.RESPAWN_ANCHOR)) {
+					charged.remove(pos);
+					detonated[0] = true;
+					withTotem[0] |= body.getMainHandItem().has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION);
+				}
+			}
+			for (int x = 1; x < 7; x++) {
+				for (int z = 1; z < 7; z++) {
+					for (int y = 1; y < 3; y++) {
+						net.minecraft.core.BlockPos pos = helper.absolutePos(new net.minecraft.core.BlockPos(x, y, z));
+						net.minecraft.world.level.block.state.BlockState state = helper.getLevel().getBlockState(pos);
+						if (state.is(net.minecraft.world.level.block.Blocks.RESPAWN_ANCHOR)
+							&& state.getValue(net.minecraft.world.level.block.RespawnAnchorBlock.CHARGE) > 0) {
+							charged.add(pos);
+						}
+					}
+				}
+			}
+		});
 		helper.succeedWhen(() -> {
 			helper.assertTrue(body.getInventory().countItem(Items.RESPAWN_ANCHOR) < anchorsBefore, "an anchor was placed, now " + bot.trace().tactic() + " "
-				+ bot.trace().note() + "; victim alive " + victim.isAlive() + " at " + victim.position() + ", bot at " + body.position());
+				+ bot.trace().note());
 			helper.assertTrue(body.getInventory().countItem(Items.GLOWSTONE) < glowstoneBefore, "and charged with glowstone");
-			helper.assertTrue(!victim.isAlive() || victim.getHealth() < victim.getMaxHealth() || victim.getInventory().countItem(Items.TOTEM_OF_UNDYING) < 5,
-				"then set off, hurting the opponent");
+			helper.assertTrue(detonated[0], "then set off; charged anchors " + charged + ", now " + bot.trace().tactic() + " " + bot.trace().note()
+				+ " holding " + body.getMainHandItem() + " at " + body.position() + " looking " + body.getYRot() + "/" + body.getXRot() + ", victim at "
+				+ victim.position() + "\n" + watch.report());
+			helper.assertTrue(withTotem[0], "with the hotbar totem in hand");
 			helper.assertTrue(body.isAlive(), "the bot survived its own anchor");
-			helper.assertTrue(heldTotem[0], "set off with the hotbar totem in hand");
 			SparBot.LOGGER.info("Anchor test: victim health {}, bot health {}", victim.getHealth(), body.getHealth());
 			TestSupport.remove(bot, target);
 		});

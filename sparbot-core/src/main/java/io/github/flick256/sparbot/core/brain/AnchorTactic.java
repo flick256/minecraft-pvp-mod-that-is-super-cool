@@ -56,7 +56,7 @@ public final class AnchorTactic implements Tactic {
 			return 0;
 		}
 		Choice choice = choose(c);
-		if (choice.step().equals("detonate") || choice.step().equals("charge")) {
+		if (choice.step().equals("detonate") || choice.step().equals("charge") || choice.step().equals("back off")) {
 			// An anchor is down by them: see it through (a half-done anchor is just a block in the way).
 			return Scores.SPECIALIST + 0.05;
 		}
@@ -65,6 +65,13 @@ public final class AnchorTactic implements Tactic {
 		}
 		// Slightly behind crystals: the anchor is the burst for when a crystal spot isn't there.
 		return willAnchor.get(c.rng, c.profile.items().crystalSkill(), 40) ? Scores.SPECIALIST - 0.01 : 0;
+	}
+
+	@Override
+	public void onEnter(BrainContext c) {
+		// A fresh go: each step gets its full time again.
+		stepTicks = 0;
+		lastStep = "";
 	}
 
 	@Override
@@ -97,6 +104,13 @@ public final class AnchorTactic implements Tactic {
 			if (glowstoneSlot(inv) >= 0) {
 				return new Choice("charge", a.spot());
 			}
+		}
+		// A charged anchor by them, but the bot too close to it to take the blast well: step back first.
+		Optional<Surroundings.Anchor> tooClose = c.world.anchors().stream()
+			.filter(a -> a.charge() > 0 && a.spot().horizontalDistanceTo(t.position()) <= NEAR && a.spot().y() < eye.y())
+			.findFirst();
+		if (tooClose.isPresent()) {
+			return new Choice("back off", tooClose.get().spot());
 		}
 		if (anchorSlot(inv) >= 0) {
 			Optional<BlockSpot> spot = c.world.groundSpots().stream()
@@ -137,10 +151,18 @@ public final class AnchorTactic implements Tactic {
 				int totem = inv.hotbarSlot(ItemKind.TOTEM);
 				int sword = Hands.preferredMeleeSlot(inv);
 				int slot = totem >= 0 ? totem : sword >= 0 && !isGlowstone(inv, sword) ? sword : nonGlowstoneSlot(inv);
-				return BlockPlay.clickTop(c, choice.block(), 1.0, slot);
+				return BlockPlay.clickClear(c, choice.block(), slot);
+			}
+			case "back off" -> {
+				// Away from the anchor, still facing it (it has to stay within block reach to click).
+				Vec3 eye = c.self.eyePosition();
+				Vec3 mid = center(choice.block());
+				float[] look = c.lookAt(io.github.flick256.sparbot.core.math.Angles.yawTowards(eye, mid),
+					io.github.flick256.sparbot.core.math.Angles.pitchTowards(eye, mid));
+				return Movement.guardEdges(c, new Inputs(look[0], look[1], -1, 0, false, false, false, false, false, -1));
 			}
 			case "charge" -> {
-				return BlockPlay.clickTop(c, choice.block(), 1.0, glowstoneSlot(inv));
+				return BlockPlay.clickClear(c, choice.block(), glowstoneSlot(inv));
 			}
 			case "place anchor" -> {
 				return BlockPlay.clickTop(c, choice.block(), 1.0, anchorSlot(inv));

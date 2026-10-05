@@ -206,23 +206,30 @@ public final class ClientEmulator {
 	}
 
 	/**
-	 * Minecraft#startUseItem: try the main hand, then the offhand. With the crosshair on a block, an
-	 * item that can be used on blocks (blocks, end crystals, potions) is first used on it
-	 * (ServerboundUseItemOnPacket); if that did nothing, as when a splash potion is thrown at the
-	 * ground, the item is then used in the air, the same two packets a client sends. The client decides
-	 * by running the item's use logic locally; the bot predicts the same outcome from the item's class
-	 * and components, and from whether the block use changed the stack.
+	 * Minecraft#startUseItem: try the main hand, then the offhand. With the crosshair on a block, every
+	 * item is first used on it (ServerboundUseItemOnPacket): the block's own use comes first (a respawn
+	 * anchor set off by whatever isn't glowstone, a door, a lever), then the item's (placing a block or an
+	 * end crystal). If that did nothing, as when a splash potion is thrown at the ground, the item is then
+	 * used in the air, the same two packets a client sends. The client decides by running the use logic
+	 * locally; the bot sees the same outcome from whether the block, the space in front of it or the stack
+	 * changed, and predicts the air use from the item's class and components.
 	 */
 	private void startUseItem(BotPlayer player, ServerGamePacketListenerImpl listener) {
 		rightClickDelay = RIGHT_CLICK_DELAY_TICKS;
 		HitResult hit = raycast(player);
 		for (InteractionHand hand : InteractionHand.values()) {
 			ItemStack stack = player.getItemInHand(hand);
-			if (hit.getType() == HitResult.Type.BLOCK && usedOnBlocks(stack)) {
+			if (hit.getType() == HitResult.Type.BLOCK && !(stack.isEmpty() && hand == InteractionHand.OFF_HAND)) {
+				BlockHitResult blockHit = (BlockHitResult) hit;
+				net.minecraft.world.level.block.state.BlockState clickedBefore = player.level().getBlockState(blockHit.getBlockPos());
+				net.minecraft.world.level.block.state.BlockState frontBefore = player.level().getBlockState(blockHit.getBlockPos().relative(blockHit.getDirection()));
 				int countBefore = stack.getCount();
-				listener.handleUseItemOn(new ServerboundUseItemOnPacket(hand, (BlockHitResult) hit, ++useSequence));
-				// A successful placement swings the arm on the client, which tells the server.
-				if (player.getItemInHand(hand) != stack || stack.getCount() < countBefore) {
+				listener.handleUseItemOn(new ServerboundUseItemOnPacket(hand, blockHit, ++useSequence));
+				boolean changed = player.getItemInHand(hand) != stack || stack.getCount() < countBefore
+					|| player.level().getBlockState(blockHit.getBlockPos()) != clickedBefore
+					|| player.level().getBlockState(blockHit.getBlockPos().relative(blockHit.getDirection())) != frontBefore;
+				// A successful use swings the arm on the client, which tells the server.
+				if (changed) {
 					listener.handleAnimate(new ServerboundSwingPacket(hand));
 					return;
 				}

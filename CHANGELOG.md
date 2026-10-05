@@ -7,7 +7,9 @@ The version is in the jar's name, the menu's title and the server log ("SparBot 
 - Demon: a skill tier above pro, a top player who lives on utility, held to human limits (reactions
   155 ms on average, never under 130; 15 CPS; reach judged tightly but held back, hits from 2.3 blocks on
   average). Scripted Demon beats scripted pro in about 66% of simulated UHC fights. The bundled `uhc`
-  brain is retrained at Demon level.
+  brain is retrained at Demon level: 0.88 against the scripted Demon and 0.94 against the scripted pro in
+  simulated fights, 0.74 against the 0.5.0 brain, 12 of 12 in game; about 14 arrow hits, 2.4 lava pours,
+  4 webs and 20 blocks a fight, hits from 2.3 blocks on average.
 - UHC blocks: fast clicking (a fresh right-click per tick or two, at the profile's click rate, instead of
   holding's one per 4 ticks), and the block line going back: under pressure with an apple to eat, the
   bot back-pedals and clicks a line of blocks (two high when quick) between itself and the chaser, then
@@ -19,7 +21,10 @@ The version is in the jar's name, the menu's title and the server log ("SparBot 
 - Carts: inst-carts whenever the opponent is in cart range on the ground; short-draw shots released as
   soon as they're on the cart; enemy carts next to the bot are knocked out with one hit (or it gets
   clear).
-- Anchors: set off with the hotbar totem, as players do.
+- Anchors: set off with the hotbar totem, as players do. Fixed: a bot's right-click on a block only
+  reached the block for items that place something, so nothing but glowstone could set off an anchor (a
+  real client tries the block first with any item); charged anchors now really go off, and the bot steps
+  back from its own anchor before setting it off.
 - Menu: a You tab (Full heal, natural regeneration on/off) and Save layout / Reset per kit: your own
   hotbar arrangement comes back every time you equip a kit. `/sparbot layout save|reset <kit>`,
   `/sparbot heal`, and the `naturalRegeneration` setting.

@@ -47,6 +47,64 @@ final class BlockPlay {
 		return spacing(c, look, press).withUse(click).withTapUse(click);
 	}
 
+	/**
+	 * Holds {@code slot} and right-clicks any face of {@code block} (for blocks used in place, like a respawn
+	 * anchor) at a point the opponent's body doesn't cover: as in vanilla, a click whose ray meets a player
+	 * first lands on the player, not the block. Picks, of the top face and the faces towards the bot, the
+	 * clear point in block reach nearest to where it already looks.
+	 */
+	static Inputs clickClear(BrainContext c, BlockSpot block, int slot) {
+		SelfState self = c.self;
+		Vec3 eye = self.eyePosition();
+		Vec3 min = new Vec3(block.x(), block.y(), block.z());
+		Vec3 max = new Vec3(block.x() + 1, block.y() + 1, block.z() + 1);
+		java.util.List<Vec3> candidates = new java.util.ArrayList<>();
+		double[] offsets = {0.2, 0.5, 0.8};
+		for (double a : offsets) {
+			for (double b : offsets) {
+				candidates.add(new Vec3(block.x() + a, block.y() + 1, block.z() + b));
+				candidates.add(new Vec3(eye.x() < block.x() ? block.x() : block.x() + 1, block.y() + a, block.z() + b));
+				candidates.add(new Vec3(block.x() + a, block.y() + b, eye.z() < block.z() ? block.z() : block.z() + 1));
+			}
+		}
+		Vec3 best = null;
+		float bestTurn = Float.MAX_VALUE;
+		for (Vec3 p : candidates) {
+			if (p.distanceTo(eye) > BLOCK_REACH - 0.1 || coveredByTarget(c, eye, p)) {
+				continue;
+			}
+			float turn = c.aimError(Angles.yawTowards(eye, p), Angles.pitchTowards(eye, p));
+			if (turn < bestTurn) {
+				bestTurn = turn;
+				best = p;
+			}
+		}
+		int press = c.memory.hands.request(c, slot);
+		if (best == null) {
+			// Every point is behind them: step round.
+			return position(c);
+		}
+		float[] look = c.lookAt(Angles.yawTowards(eye, best), Angles.pitchTowards(eye, best));
+		Vec3 dir = Angles.lookVector(self.yaw(), self.pitch());
+		double entry = BrainContext.rayEntry(eye, dir, min, max, BLOCK_REACH);
+		boolean onBlock = entry >= 0 && self.crosshairBlockDistance() >= entry - 0.05 && !coveredByTarget(c, eye, eye.add(dir.scale(entry)));
+		boolean click = onBlock && self.inventory().selectedSlot() == slot && !self.inventory().usingItem();
+		return spacing(c, look, press).withUse(click).withTapUse(click);
+	}
+
+	/** Whether the opponent's hitbox is on the line from {@code eye} to {@code point}. */
+	private static boolean coveredByTarget(BrainContext c, Vec3 eye, Vec3 point) {
+		io.github.flick256.sparbot.core.sense.TargetState t = c.seen();
+		if (t == null) {
+			return false;
+		}
+		Vec3 to = point.subtract(eye);
+		double length = to.length();
+		Vec3 min = new Vec3(t.position().x() - t.halfWidth(), t.position().y(), t.position().z() - t.halfWidth());
+		Vec3 max = new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth());
+		return BrainContext.rayHitsBox(eye, to.scale(1.0 / length), min, max, length - 0.02);
+	}
+
 	/** The block someone standing at {@code feet} stands on. */
 	static BlockSpot groundUnder(Vec3 feet) {
 		return new BlockSpot((int) Math.floor(feet.x()), (int) Math.floor(feet.y() - 1.0E-3), (int) Math.floor(feet.z()));
