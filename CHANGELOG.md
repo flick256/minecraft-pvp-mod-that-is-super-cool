@@ -2,6 +2,30 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.6.0
+
+- Demon: a skill tier above pro, a top player who lives on utility, held to human limits (reactions
+  155 ms on average, never under 130; 15 CPS; reach judged tightly but held back, hits from 2.3 blocks on
+  average). Scripted Demon beats scripted pro in about 66% of simulated UHC fights. The bundled `uhc`
+  brain is retrained at Demon level.
+- UHC blocks: fast clicking (a fresh right-click per tick or two, at the profile's click rate, instead of
+  holding's one per 4 ticks), and the block line going back: under pressure with an apple to eat, the
+  bot back-pedals and clicks a line of blocks (two high when quick) between itself and the chaser, then
+  eats behind it. Walls only while the opponent is still out of reach.
+- Golden heads in the UHC kits (PvPHQ's hotbar slot 4, and two in SparBot's): eaten in 0.8 s,
+  Regeneration II for 10 s and Absorption. A golden apple that looks like a head, so it can't be placed.
+- Kit enchantments: UHC and sword kits Protection III helmet and boots, Protection II chestplate and
+  leggings, Sharpness III; cart, crystal and SMP kits fully maxed.
+- Carts: inst-carts whenever the opponent is in cart range on the ground; short-draw shots released as
+  soon as they're on the cart; enemy carts next to the bot are knocked out with one hit (or it gets
+  clear).
+- Anchors: set off with the hotbar totem, as players do.
+- Menu: a You tab (Full heal, natural regeneration on/off) and Save layout / Reset per kit: your own
+  hotbar arrangement comes back every time you equip a kit. `/sparbot layout save|reset <kit>`,
+  `/sparbot heal`, and the `naturalRegeneration` setting.
+- Models trained on 0.5.0 keep their melee; their tactic chooser (made for the old set of tactics) is
+  dropped with a warning until retrained.
+
 ## 0.5.0
 
 - Human-like reach: every bot judges its reach the way people do, holding back a little with a

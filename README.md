@@ -33,12 +33,15 @@ servers, and players don't need to install anything.
 | Spear | Keeps about 3 blocks away and jabs on a full charge (26.2: a jab hits only from 2 to 4.5 blocks); from a gap, sprints in holding a charge (damage 1 + closing speed x the spear's multiplier), but not at an opponent running straight away; falls back to the sword when the opponent gets inside 2 blocks |
 | End crystals | Puts obsidian down next to the opponent, a crystal on it, and hits the crystal (26.2: power-6 blast, damage falls off over 12 blocks); only uses spots it can reach to hit (blocks reach 4.5, crystals only 3) and, when skilled, only crystals closer to the opponent than to itself |
 | Respawn anchors | Puts an anchor down next to the opponent, charges it with glowstone and sets it off with the sword in hand (26.2: outside the Nether a charged anchor blows up with power 5 and fire); only when the opponent takes more of the blast than the bot |
-| TNT minecarts | Starts a cart only when the opponent is predictable (webbed, standing still or running straight in), puts the rail where they will be by the time the arrow arrives, then finishes the combo: cart on the rail and a quick Flame-bow shot (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
+| TNT minecarts | Inst-carts whenever the opponent is on the ground 2.5-6 blocks away (or webbed, still, running in; not when they sprint sideways): rail where they will be by the time the arrow arrives, cart on it, and a short-draw Flame shot released as soon as it's on the cart (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
 | Lava, water and cobwebs (UHC) | Webbed itself, it pours water onto the web it's in (flowing water destroys a web in 26.2), or cuts it with the sword if it has no water, and does it again if you drain it, then scoops the water back up; webs you where you stand, or where you'll land after a knock-up; spams lava: pours it onto a webbed opponent's web (it lands on their head) or under their feet, scoops it back a few ticks later and pours again, never leaving it down; puts itself out with water when burning; walks around lava and fire instead of into them |
 | Shield stun | Axe hit on a raised shield (disables it for 5 s), then a pre-planned instant switch back to the sword or mace and a hit before the opponent can react; skill decides how often the follow-up is ready |
 | Leftover fluids | Sees water and lava source blocks around it: scoops up any it can reach with an empty bucket (its own or yours) when it's safe, blocks up lava next to it, swims out of water pockets |
 | Block boost (UHC/SMP) | A few blocks out: puts a block ahead, sprint-jumps onto it and launches off it into the fight |
-| Blocks (UHC) | Getting low with a golden apple to eat and the opponent coming in: stops, builds a wall between them (two blocks for a beginner, three wide and two high for a pro), then eats behind it straight away |
+| Blocks (UHC) | Getting low with a golden apple to eat: with the opponent still well out of reach, builds a wall between them (two blocks for a beginner, three wide and two high for a pro); with them coming in, back-pedals and fast-clicks a line of blocks onto the ground in front (two high when quick) that they have to jump through; then eats behind it. Blocks go down at the profile's click rate (butterfly-fast for a Demon) |
+| Enemy carts | A TNT minecart dropped next to it (not moving) breaks with one hit (26.2), so it knocks it out with the sword before the arrow comes, or gets clear of the blast |
+| Respawn anchors | Anchor next to the opponent, glowstone, then set off with the hotbar totem in hand (power 5 with fire outside the Nether), only when the opponent takes more of the blast |
+| Golden heads (UHC) | Eaten in 0.8 s for Regeneration II for 10 s (4 hearts) and Absorption; saved for when properly low or pressed, golden apples otherwise |
 | Mace and wind charges | Looks straight down and throws a wind charge at its feet to launch, swaps to the mace, then smashes on the way down (26.2: +4 damage per block fallen up to 3, +2 up to 8, +1 after; the wind charge's own launch causes no fall damage) |
 
 How often each tool is used depends on the profile's item skills, so a Beginner rarely re-totems or
@@ -90,7 +93,9 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot model <bot> <model\|off>` / `models` | Has a bot fight in melee with a learned model (bundled: `sword`, `uhc`), or the scripted melee again |
 | `/sparbot train [sword\|uhc\|uhcmelee] <name> [generations] [from]` / `train status` / `train stop` | Trains a model in the background (self-play in the simulator; `uhc` trains the whole UHC brain in full-kit fights) and saves every new best to `config/sparbot/models/<name>.json` |
 | `/sparbot kit info <kit>` | Shows a kit's provenance (source, version, confidence, deviations) |
-| `/sparbot layout capture <id> <kit>` | Saves where **you** keep that kit's items as a personal layout |
+| `/sparbot layout save <kit>` / `layout reset <kit>` | Saves how **you** arranged a kit as your own layout: every `kit give` (and the menu's Equip) puts it back that way |
+| `/sparbot heal [players]` | Full heal (health, hunger, fire, harmful effects), outside matches |
+| `/sparbot layout capture <id> <kit>` | Saves where **you** keep that kit's items as a named layout (for bots) |
 | `/sparbot layout set <bot> <layout>` / `clear <bot>` | Makes a bot copy a layout, or go back to the kit's default |
 | `/sparbot style set <bot> <style or mix>` | Changes how the bot fights, e.g. `kiter` or `aggressive_rusher:0.7,kiter:0.3` |
 | `/sparbot debug <bot>` / `debug off` | Shows the bot's tactic, top scores, distance, health and charge on **your** action bar, and a spark where its crosshair points |
@@ -124,7 +129,8 @@ typed it. Without SparBot on the client, everything still works through commands
 
 ## Skill profiles
 
-The bundled presets are `beginner`, `casual`, `intermediate`, `advanced` and `pro`. A profile is a JSON file
+The bundled presets are `beginner`, `casual`, `intermediate`, `advanced`, `pro` and `demon` (above pro: reactions at the
+fast end of human, 15 CPS, every utility skill maxed, reach judged tightly but still held back). A profile is a JSON file
 that sets:
 - reaction time and simulated ping
 - aim: turn speed, smoothing, jitter, overshoot and tracking lead
