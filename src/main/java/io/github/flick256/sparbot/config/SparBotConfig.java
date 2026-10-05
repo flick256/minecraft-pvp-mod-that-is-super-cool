@@ -55,6 +55,13 @@ public final class SparBotConfig {
 	 * rules for practice: only golden apples and heads heal. Matches set their own rule.
 	 */
 	public boolean naturalRegeneration = true;
+	/**
+	 * Shield stuns: a hit a shield blocks completely doesn't start the blocker's invulnerability, so the
+	 * second click of a stun (axe on the shield, then straight away again) lands as a full hit with its
+	 * knockback, as on PvP servers. Off: vanilla 26.2, where that second hit falls inside the
+	 * invulnerability and does next to nothing.
+	 */
+	public boolean shieldStuns = true;
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */

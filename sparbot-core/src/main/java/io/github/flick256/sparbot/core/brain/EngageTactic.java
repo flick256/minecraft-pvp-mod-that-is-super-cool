@@ -202,7 +202,10 @@ public final class EngageTactic implements Tactic {
 			m.axeConfirmTicks = AXE_CONFIRM_TICKS;
 		} else if (stun) {
 			m.stunTicks--;
-			if (armed && !inv.usingItem() && distance <= judgedReach && c.crosshairOnTarget(judgedReach + 0.5)) {
+			// The second click of a stun: straight away with the axe still in hand (its knockback is the point,
+			// and the switch would only cost time), or with the next weapon once it is in hand.
+			boolean axeInHand = axeSlot >= 0 && inv.selectedSlot() == axeSlot && m.stunPlanned;
+			if ((armed || axeInHand) && !inv.usingItem() && distance <= judgedReach && c.crosshairOnTarget(judgedReach + 0.5)) {
 				attack = true;
 				m.stunTicks = 0;
 			}

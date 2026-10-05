@@ -143,6 +143,11 @@ public final class SimFighter {
 	int attackTicker = 100;
 	float health = MAX_HEALTH;
 	int invulnerableTime;
+	/**
+	 * Shield stuns (SparBot's shieldStuns setting, on by default): a fully blocked hit leaves the blocker's
+	 * invulnerability alone, so a stun's second click lands as a hit of its own. Off: vanilla 26.2.
+	 */
+	public static volatile boolean shieldStuns = true;
 	int hurtTime;
 	float lastHurt;
 	int noJumpDelay;
@@ -810,9 +815,11 @@ public final class SimFighter {
 			if (invulnerableTime > 10) {
 				return MISSED;
 			}
-			lastHurt = 0;
-			invulnerableTime = 20;
-			hurtTime = 10;
+			if (!shieldStuns) {
+				lastHurt = 0;
+				invulnerableTime = 20;
+				hurtTime = 10;
+			}
 			return BLOCKED;
 		}
 		boolean full;

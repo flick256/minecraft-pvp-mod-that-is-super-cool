@@ -48,6 +48,8 @@ public final class TrainingJob {
 		}
 		TrainingJob job = new TrainingJob(name);
 		running = job;
+		// Train under the same shield rule the game plays by.
+		io.github.flick256.sparbot.core.sim.SimFighter.shieldStuns = SparBot.config().shieldStuns;
 		int cores = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
 		Thread thread = new Thread(() -> {
 			ForkJoinPool pool = new ForkJoinPool(cores);
