@@ -103,7 +103,9 @@ public final class CartTactic implements Tactic {
 		double len = Math.sqrt(toUs.x() * toUs.x() + toUs.z() * toUs.z());
 		double closing = len < 1e-6 ? 0 : (t.velocity().x() * toUs.x() + t.velocity().z() * toUs.z()) / len;
 		boolean predictable = t.inWeb() || t.onGround() && speed < STILL || closing > speed * 0.8 && closing > 0.1;
-		boolean inRange = t.onGround() && len >= CART_RANGE_MIN && len <= CART_RANGE_MAX;
+		// (Not someone sprinting sideways: they cover more ground than the lead can follow before the arrow lands.)
+		double lateral = len < 1e-6 ? speed : Math.abs(t.velocity().x() * toUs.z() - t.velocity().z() * toUs.x()) / len;
+		boolean inRange = t.onGround() && len >= CART_RANGE_MIN && len <= CART_RANGE_MAX && lateral < 0.2;
 		return predictable || inRange && c.profile.items().cartSkill() >= 0.5;
 	}
 
