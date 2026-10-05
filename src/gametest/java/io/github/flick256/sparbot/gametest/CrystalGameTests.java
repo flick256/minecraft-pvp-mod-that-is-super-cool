@@ -65,6 +65,8 @@ public class CrystalGameTests {
 		bot.setAssignedTarget(victim.getUUID());
 		int anchorsBefore = body.getInventory().countItem(Items.RESPAWN_ANCHOR);
 		int glowstoneBefore = body.getInventory().countItem(Items.GLOWSTONE);
+		boolean[] heldTotem = {false};
+		helper.onEachTick(() -> heldTotem[0] |= body.getMainHandItem().has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION));
 		helper.succeedWhen(() -> {
 			helper.assertTrue(body.getInventory().countItem(Items.RESPAWN_ANCHOR) < anchorsBefore, "an anchor was placed, now " + bot.trace().tactic() + " "
 				+ bot.trace().note() + "; victim alive " + victim.isAlive() + " at " + victim.position() + ", bot at " + body.position());
@@ -72,6 +74,7 @@ public class CrystalGameTests {
 			helper.assertTrue(!victim.isAlive() || victim.getHealth() < victim.getMaxHealth() || victim.getInventory().countItem(Items.TOTEM_OF_UNDYING) < 5,
 				"then set off, hurting the opponent");
 			helper.assertTrue(body.isAlive(), "the bot survived its own anchor");
+			helper.assertTrue(heldTotem[0], "set off with the hotbar totem in hand");
 			SparBot.LOGGER.info("Anchor test: victim health {}, bot health {}", victim.getHealth(), body.getHealth());
 			TestSupport.remove(bot, target);
 		});

@@ -17,7 +17,7 @@ import java.util.Optional;
  * charge (up to 4); using it with anything else while it holds a charge, anywhere but the Nether,
  * blows it up: a power-5 blast with fire, centred on the block (only water next to it softens it).
  * So the bot puts an anchor down next to the opponent, charges it once with glowstone, and sets it off
- * with its sword in hand, one real click each, with the profile's aim and hotbar time. It only goes for
+ * with its hotbar totem in hand (as players do; the sword without one), one real click each, with the profile's aim and hotbar time. It only goes for
  * the blast when the opponent takes more of it than it does (as with crystals), and finishes an anchor
  * it has started.
  */
@@ -132,9 +132,11 @@ public final class AnchorTactic implements Tactic {
 		}
 		switch (step) {
 			case "detonate" -> {
-				// Anything but glowstone sets it off: the sword, so the bot is ready to fight straight after.
+				// Anything but glowstone sets it off. Players use the hotbar totem: it has no use of its own, and
+				// it is in hand ready to swap if the blast pops theirs. No totem: the sword.
+				int totem = inv.hotbarSlot(ItemKind.TOTEM);
 				int sword = Hands.preferredMeleeSlot(inv);
-				int slot = sword >= 0 && !isGlowstone(inv, sword) ? sword : nonGlowstoneSlot(inv);
+				int slot = totem >= 0 ? totem : sword >= 0 && !isGlowstone(inv, sword) ? sword : nonGlowstoneSlot(inv);
 				return BlockPlay.clickTop(c, choice.block(), 1.0, slot);
 			}
 			case "charge" -> {
