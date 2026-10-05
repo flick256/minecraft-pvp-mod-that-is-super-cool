@@ -225,6 +225,20 @@ public final class UhcLab {
 			}
 			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get(tier), net);
 		}
+		if (name.contains("-off:")) {
+			// <profile>-off:<technique>,<technique>: the scripted brain with those techniques switched off (blockhit, shieldstun...).
+			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-off:")));
+			java.util.Set<io.github.flick256.sparbot.core.brain.Technique> off = java.util.EnumSet.noneOf(io.github.flick256.sparbot.core.brain.Technique.class);
+			for (String id : name.substring(name.indexOf("-off:") + 5).split(",")) {
+				off.add(java.util.Arrays.stream(io.github.flick256.sparbot.core.brain.Technique.values()).filter(t -> t.id().equals(id)).findFirst()
+					.orElseThrow(() -> new IllegalArgumentException("unknown technique " + id)));
+			}
+			return new Tournament.Entrant(name, profile, seed -> {
+				io.github.flick256.sparbot.core.brain.DuelBrain brain = new io.github.flick256.sparbot.core.brain.DuelBrain(profile, seed);
+				brain.setDisabledTechniques(off);
+				return brain;
+			});
+		}
 		if (name.contains("-no:")) {
 			// <profile>-no:<tactic>,<tactic>: the scripted brain never choosing those tactics.
 			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-no:")));

@@ -96,6 +96,19 @@ class CombatTacticsTest {
 	}
 
 	@Test
+	void walksInBehindTheShieldOnAChargedSwordsman() {
+		// A charged opponent with a sword a step out of reach: shield up and walk in, no swing into it.
+		InventoryState inv = TestFixtures.inventory(InventoryState.OFFHAND_BUTTON, TestFixtures.SHIELD);
+		BrainHarness h = new BrainHarness(TestFixtures.flawless("pro"), inv, TestFixtures.target(new Vec3(0, 0, 3.8), 0));
+		boolean countered = false;
+		for (int i = 0; i < 80 && !countered; i++) {
+			Inputs in = h.tick();
+			countered = in.use() && in.forward() > 0 && !in.attack();
+		}
+		assertTrue(countered, "walked in with the shield up");
+	}
+
+	@Test
 	void guardsWithTheShieldAgainstAnArcher() {
 		InventoryState inv = TestFixtures.inventory(InventoryState.OFFHAND_BUTTON, TestFixtures.SHIELD);
 		TargetState archer = TestFixtures.target(new Vec3(0, 0, 14), 0, ItemKind.BOW, ItemKind.EMPTY, ItemKind.BOW, false);

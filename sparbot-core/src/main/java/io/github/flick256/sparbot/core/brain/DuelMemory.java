@@ -9,6 +9,10 @@ public final class DuelMemory {
 	final Decision blockHitDecision = new Decision();
 	/** Whether the bot holds its swings while in front of a raised shield (decided per window). */
 	final Decision respectShieldDecision = new Decision();
+	/** Shield counter: walking in behind the shield for the opponent to swing into (see EngageTactic). */
+	final Decision shieldCounterDecision = new Decision();
+	int shieldCounterTicks;
+	long shieldCounterEndedAt = Long.MIN_VALUE / 2;
 	/** Whether the bot stops strafing to take its shots (decided per window from bow skill). */
 	final Decision plantsFeet = new Decision();
 	// Sword plan (see SwordPlan).

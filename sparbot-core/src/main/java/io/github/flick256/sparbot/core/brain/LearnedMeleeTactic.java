@@ -103,6 +103,19 @@ public final class LearnedMeleeTactic implements Tactic {
 		boolean inJudgedReach = c.targetDistance() <= self.attackReach() + m.reachError;
 		boolean attack = d.attack() && !block && armed && self.holdingMeleeWeapon() && !inv.usingItem() && inJudgedReach
 			&& !c.crosshairBlockedBeforeTarget(self.attackReach() + 0.5);
+		int forward = d.forward();
+		boolean sprint = d.sprint() && !block;
+		// The scripted shield counter on top (the network never learned to walk in behind the shield).
+		TargetState seen = c.seen();
+		boolean axeThreat = seen != null && seen.mainHand() == io.github.flick256.sparbot.core.item.ItemKind.AXE
+			&& c.rng.chance(c.profile.items().shieldSkill());
+		int counter = EngageTactic.shieldCounter(c, armed && shieldReady, axeThreat || d.axe(), c.targetDistance(), self.attackReach() + m.reachError);
+		if (counter != EngageTactic.NO_COUNTER) {
+			attack = false;
+			block = true;
+			sprint = false;
+			forward = counter;
+		}
 		if (attack) {
 			m.ticksSinceOwnClick = 0;
 			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
@@ -113,7 +126,7 @@ public final class LearnedMeleeTactic implements Tactic {
 		}
 		// Switched-off techniques stay off for a learned bot too.
 		int strafe = c.allows(Technique.STRAFE) ? d.strafe() : 0;
-		Inputs inputs = new Inputs(look[0], look[1], d.forward(), strafe, d.jump(), false, d.sprint() && !block, attack, block, press);
+		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, d.jump(), false, sprint, attack, block, press);
 		return aimAt.visible() ? Movement.guardEdges(c, inputs) : Movement.navigate(c, inputs);
 	}
 }
