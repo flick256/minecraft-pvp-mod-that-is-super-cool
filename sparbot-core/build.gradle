@@ -53,6 +53,23 @@ test {
 	}
 }
 
+// The whole UHC brain at a chosen skill tier, against that tier's scripted bot and the scripted pro:
+// ./gradlew :sparbot-core:trainUhcBrain -Pgenerations=100 -Pprofile=demon -Pout=uhc_demon.json [-Pstart=uhc.json] [-Pfresh=true]
+tasks.register('trainUhcBrain', JavaExec) {
+	group = 'sparbot'
+	description = 'Trains the whole UHC brain (melee and tactic chooser) at one skill tier in the simulator.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'io.github.flick256.sparbot.core.ml.UhcBrainTraining'
+	args = [
+		project.findProperty('generations') ?: '100',
+		project.findProperty('out') ?: layout.buildDirectory.file('models/uhc_brain.json').get().asFile.path,
+		project.findProperty('start') ?: '',
+		project.findProperty('fresh') == 'true' ? 'fresh' : 'keep',
+		project.findProperty('profile') ?: 'pro'
+	]
+	jvmArgs = ['-Xmx3g']
+}
+
 // The scripted tiers against each other in the simulator: ./gradlew :sparbot-core:tournament -Pfights=400
 tasks.register('tournament', JavaExec) {
 	group = 'sparbot'
