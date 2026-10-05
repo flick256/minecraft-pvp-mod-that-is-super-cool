@@ -98,4 +98,19 @@ public final class MenuCommands {
 		}
 		return id;
 	}
+
+	/** To the practice world's hub. */
+	public static String practiceHub() {
+		return "sparbot practice";
+	}
+
+	/** Back from the practice world. */
+	public static String practiceLeave() {
+		return "sparbot practice leave";
+	}
+
+	/** A practice match against a bot of {@code profile} in the arena for {@code mode}. */
+	public static String practiceFight(String mode, String profile) {
+		return "sparbot practice fight " + id(mode) + " " + id(profile);
+	}
 }

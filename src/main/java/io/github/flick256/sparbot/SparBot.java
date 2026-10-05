@@ -41,6 +41,7 @@ public final class SparBot implements ModInitializer {
 	private static final MatchManager MATCHES = new MatchManager();
 	private static final Recorder RECORDER = new Recorder();
 	private static final ReplayManager REPLAYS = new ReplayManager();
+	private static final io.github.flick256.sparbot.practice.PracticeWorld PRACTICE = new io.github.flick256.sparbot.practice.PracticeWorld();
 	private static final io.github.flick256.sparbot.kit.PlayerLayouts PLAYER_LAYOUTS = new io.github.flick256.sparbot.kit.PlayerLayouts(
 		FabricLoader.getInstance().getConfigDir().resolve("sparbot").resolve("my_layouts"));
 
@@ -53,12 +54,14 @@ public final class SparBot implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			reloadKits(server);
 			MATCHES.reload(server, configDir().resolve("sparbot"));
+			PRACTICE.onServerStarted(server);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(BOTS::tick);
 		ServerTickEvents.END_SERVER_TICK.register(DEBUG::tick);
 		ServerTickEvents.END_SERVER_TICK.register(MATCHES::tick);
 		ServerTickEvents.END_SERVER_TICK.register(RECORDER::tick);
 		ServerTickEvents.END_SERVER_TICK.register(REPLAYS::tick);
+		ServerTickEvents.END_SERVER_TICK.register(PRACTICE::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> MATCHES.onJoin(handler.player));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			MATCHES.stopAll(server);
@@ -134,6 +137,10 @@ public final class SparBot implements ModInitializer {
 
 	public static ReplayManager replays() {
 		return REPLAYS;
+	}
+
+	public static io.github.flick256.sparbot.practice.PracticeWorld practice() {
+		return PRACTICE;
 	}
 
 	public static MatchManager matches() {

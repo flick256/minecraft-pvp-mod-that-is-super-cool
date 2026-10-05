@@ -21,7 +21,8 @@
 			"io.github.flick256.sparbot.gametest.FightGameTests",
 			"io.github.flick256.sparbot.gametest.LearnedGameTests",
 			"io.github.flick256.sparbot.gametest.RecordGameTests",
-			"io.github.flick256.sparbot.gametest.UhcParityGameTests"
+			"io.github.flick256.sparbot.gametest.UhcParityGameTests",
+			"io.github.flick256.sparbot.gametest.PracticeGameTests"
 		],
 		"fabric-client-gametest": [
 			"io.github.flick256.sparbot.gametest.MenuClientGameTest"

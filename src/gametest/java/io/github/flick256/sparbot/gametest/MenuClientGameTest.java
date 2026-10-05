@@ -85,7 +85,61 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				throw new AssertionError("the config command didn't apply");
 			}
 			world.getServer().runCommand("sparbot config set autoTarget true");
+
+			// The practice world: the Practice tab takes you to the hub, which is built on the way.
+			context.clickScreenButton("Practice");
+			context.waitTicks(2);
+			context.takeScreenshot("sparbot-menu-practice");
+			context.clickScreenButton("Go to the hub");
+			world.getServer().waitFor(server -> human(server) != null && human(server).level().dimension().equals(
+				io.github.flick256.sparbot.practice.PracticeWorld.DIMENSION), 600);
 			context.clickScreenButton("Done");
+			String pond = world.getServer().computeOnServer(server -> human(server).level().getBlockState(new net.minecraft.core.BlockPos(15, 63, 156)).toString());
+			if (!pond.contains("water")) {
+				throw new AssertionError("the meadow's pond has no water: " + pond);
+			}
+			world.getServer().runCommand("time set noon");
+			view(context, world, "sparbot-practice-hub", 0.5, 70, -16, 0, 25);
+			view(context, world, "sparbot-practice-uhc", 0.5, 82, 118, 0, 28);
+			view(context, world, "sparbot-practice-sword", 160.5, 74, -26, 0, 25);
+			view(context, world, "sparbot-practice-crystal", -159.5, 80, -40, 0, 28);
+			view(context, world, "sparbot-practice-cart", 0.5, 76, -190, 0, 25);
+			view(context, world, "sparbot-practice-mace", 160.5, 76, 130, 0, 25);
+			// A fight in the meadow against a pro, started like the Fight button does.
+			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight uhc_duel pro"));
+			world.getServer().waitFor(server -> SparBot.matches().match("practice_uhc").isPresent(), 600);
+			context.waitTicks(80);
+			world.getConnection().waitForChunksRender();
+			context.getInput().pressKey(GLFW.GLFW_KEY_F1);
+			context.waitTick();
+			context.takeScreenshot("sparbot-practice-uhc-fight");
+			context.getInput().pressKey(GLFW.GLFW_KEY_F1);
+			world.getServer().runOnServer(server -> {
+				SparBot.matches().stop(server, "practice_uhc");
+				SparBot.bots().get("SparUhc").ifPresent(b -> SparBot.bots().remove(b, "test over"));
+			});
+			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice leave"));
+			world.getServer().waitFor(server -> human(server) != null && human(server).level() == server.overworld(), 200);
 		}
+	}
+
+	private static net.minecraft.server.level.ServerPlayer human(net.minecraft.server.MinecraftServer server) {
+		return server.getPlayerList().getPlayers().stream().filter(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer)).findFirst().orElse(null);
+	}
+
+	/** Puts the player (in spectator, so nothing is in the way) at a viewpoint and takes a screenshot once the chunks show. */
+	private static void view(ClientGameTestContext context, TestSingleplayerContext world, String name, double x, double y, double z, float yaw, float pitch) {
+		world.getServer().runOnServer(server -> {
+			var player = human(server);
+			player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+			player.teleportTo((net.minecraft.server.level.ServerLevel) player.level(), x, y, z, java.util.Set.of(), yaw, pitch, true);
+		});
+		context.waitTicks(40);
+		world.getConnection().waitForChunksRender();
+		context.getInput().pressKey(GLFW.GLFW_KEY_F1);
+		context.waitTicks(10);
+		context.takeScreenshot(name);
+		context.getInput().pressKey(GLFW.GLFW_KEY_F1);
+		world.getServer().runOnServer(server -> human(server).setGameMode(net.minecraft.world.level.GameType.SURVIVAL));
 	}
 }

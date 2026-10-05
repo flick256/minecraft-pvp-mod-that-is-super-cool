@@ -122,10 +122,34 @@ With SparBot installed on your client too, press **B** (rebindable in Controls) 
   **Tech** opens the bot's page: its melee (scripted or a learned model) and an on/off switch per technique
 - **Spawn:** name, profile, kit and playstyle, then *Spawn bot*
 - **Kits:** every kit with an *Equip* button that gives it to you (replacing your inventory)
+- **You:** a full heal, natural regeneration, and your saved kit layouts
+- **Practice:** go to the practice hub (or leave it), pick the tier to fight, and a *Fight* button per mode that
+  starts a match in that mode's practice arena
 - **Settings:** every setting from `config/sparbot.json` except `commandPermission`
 
 Every button just sends a `/sparbot` command, so the server checks permissions and values as if you had
 typed it. Without SparBot on the client, everything still works through commands.
+
+## The practice world
+
+SparBot has its own world for practice: a flat desert (sand and sandstone over stone and deepslate,
+down to bedrock) with a hub and an arena for each kind of fight.
+- **The hub** (spawn): a sandstone plaza with a coloured pad per arena. Stand on one to go there; the pad
+  by each arena brings you back.
+- **UHC meadow:** rolling grass inside an old stone-brick wall, with flowers, oaks, a pond and boulders,
+  and dirt and stone underneath for buckets and digging.
+- **Sword court:** quartz tiles with a blackstone border (sword, combat, benchmark, nodebuff and spear).
+- **Crystal desert:** open desert with nothing in the way, diggable and blastable all the way down to
+  bedrock; only lantern markers stand well outside it.
+- **Cart field:** fenced grass for rails (all three cart modes).
+- **Mace and bow court:** tuff and copper under open sky (mace and ranged).
+
+Use it in any world: `/sparbot practice` (or the menu's Practice tab) takes you there, and the first visit
+builds it (a few seconds). To make a world that *is* the practice world, pick the **SparBot Practice**
+world type when you create it; you spawn in the hub. `/sparbot practice fight <mode> [profile]` (or a
+*Fight* button) starts a match against a new bot of that tier in the mode's arena, with the mode's kit
+for both of you; the arena resets every round and the bot leaves when the match ends.
+`/sparbot practice leave` takes you back to where you were.
 
 ## Skill profiles
 

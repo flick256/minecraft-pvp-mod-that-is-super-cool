@@ -1,0 +1,34 @@
+{
+  "type": "sparbot:practice",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "minecraft:desert",
+      "features": false,
+      "lakes": false,
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "minecraft:deepslate",
+          "height": 60
+        },
+        {
+          "block": "minecraft:stone",
+          "height": 56
+        },
+        {
+          "block": "minecraft:sandstone",
+          "height": 6
+        },
+        {
+          "block": "minecraft:sand",
+          "height": 5
+        }
+      ],
+      "structure_overrides": []
+    }
+  }
+}

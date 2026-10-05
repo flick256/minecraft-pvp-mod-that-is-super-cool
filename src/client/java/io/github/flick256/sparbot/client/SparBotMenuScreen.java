@@ -35,13 +35,15 @@ public final class SparBotMenuScreen extends Screen {
 		KITS,
 		/** Your own things: a full heal, regeneration, your kit layouts. */
 		YOU,
+		/** The practice world: the hub, and a fight in any mode's arena. */
+		PRACTICE,
 		SETTINGS,
 		/** One bot's techniques (opened from its row in the Bots tab). */
 		TECHNIQUES
 	}
 
 	/** The tabs along the top, in order. */
-	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.SETTINGS};
+	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.PRACTICE, Tab.SETTINGS};
 
 	private MenuState state;
 	private Tab tab = Tab.BOTS;
@@ -50,6 +52,8 @@ public final class SparBotMenuScreen extends Screen {
 	private String spawnProfile;
 	private String spawnKit;
 	private String spawnStyle;
+	/** The tier the Practice tab's fights are against. */
+	private String practiceProfile;
 	/** The bot whose techniques the TECHNIQUES page shows. */
 	private String techniquesBot;
 	private final List<Label> labels = new ArrayList<>();
@@ -80,16 +84,17 @@ public final class SparBotMenuScreen extends Screen {
 	protected void init() {
 		labels.clear();
 		int center = width / 2;
-		String[] names = {"Bots", "Spawn", "Kits", "You", "Settings"};
+		String[] names = {"Bots", "Spawn", "Kits", "You", "Practice", "Settings"};
 		for (int i = 0; i < TAB_BAR.length; i++) {
 			Tab each = TAB_BAR[i];
-			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 168 + i * 68, 28, 64, 20).build()).active = tab != each;
+			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 201 + i * 68, 28, 64, 20).build()).active = tab != each;
 		}
 		switch (tab) {
 			case BOTS -> initBots(center);
 			case SPAWN -> initSpawn(center);
 			case KITS -> initKits(center);
 			case YOU -> initYou(center);
+			case PRACTICE -> initPractice(center);
 			case SETTINGS -> initSettings(center);
 			case TECHNIQUES -> initTechniques(center);
 		}
@@ -198,6 +203,33 @@ public final class SparBotMenuScreen extends Screen {
 		List<String> mine = state.myLayouts() == null ? List.of() : state.myLayouts();
 		labels.add(new Label(mine.isEmpty() ? "No layouts of your own yet" : "Your layouts: " + font.plainSubstrByWidth(String.join(", ", mine), 300),
 			center - 190, TOP + 5 * ROW_HEIGHT, GREY));
+	}
+
+	/** The practice world: go to the hub or back, and a Fight button per mode (in that mode's arena) against the chosen tier. */
+	private void initPractice(int center) {
+		practiceProfile = pick(practiceProfile, state.profiles(), setting("defaultProfile"));
+		addRenderableWidget(Button.builder(Component.literal("Go to the hub"), b -> run(MenuCommands.practiceHub())).bounds(center - 190, TOP, 120, 20).build());
+		addRenderableWidget(Button.builder(Component.literal("Leave"), b -> run(MenuCommands.practiceLeave())).bounds(center - 66, TOP, 60, 20).build());
+		addRenderableWidget(cycle("Against", state.profiles(), practiceProfile, v -> practiceProfile = v, center + 2, TOP, 188));
+		List<String> modes = state.modes();
+		int perPage = Math.max(1, rows() - 1);
+		int pages = Math.max(1, (modes.size() + perPage - 1) / perPage);
+		page = Math.max(0, Math.min(page, pages - 1));
+		int first = page * perPage;
+		for (int i = first; i < Math.min(first + perPage, modes.size()); i++) {
+			String mode = modes.get(i);
+			int y = TOP + (i - first + 1) * ROW_HEIGHT;
+			labels.add(new Label(mode, center - 190, y + 6, WHITE));
+			labels.add(new Label(io.github.flick256.sparbot.core.practice.PracticeLayout.siteFor(mode).displayName(), center - 60, y + 6, GREY));
+			addRenderableWidget(Button.builder(Component.literal("Fight"), b -> run(MenuCommands.practiceFight(mode, practiceProfile)))
+				.bounds(center + 110, y, 80, 20).build());
+		}
+		if (pages > 1) {
+			int y = TOP + rows() * ROW_HEIGHT + 4;
+			addRenderableWidget(Button.builder(Component.literal("<"), b -> turn(-1)).bounds(center - 60, y, 20, 20).build()).active = page > 0;
+			labels.add(new Label((page + 1) + " / " + pages, center - 14, y + 6, GREY));
+			addRenderableWidget(Button.builder(Component.literal(">"), b -> turn(1)).bounds(center + 40, y, 20, 20).build()).active = page < pages - 1;
+		}
 	}
 
 	/** The melee (scripted or a learned model) and on/off switches for each of one bot's techniques. */

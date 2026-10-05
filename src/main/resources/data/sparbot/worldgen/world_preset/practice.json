@@ -1,0 +1,59 @@
+{
+  "dimensions": {
+    "minecraft:overworld": {
+      "type": "sparbot:practice",
+      "generator": {
+        "type": "minecraft:flat",
+        "settings": {
+          "biome": "minecraft:desert",
+          "features": false,
+          "lakes": false,
+          "layers": [
+            {
+              "block": "minecraft:bedrock",
+              "height": 1
+            },
+            {
+              "block": "minecraft:deepslate",
+              "height": 60
+            },
+            {
+              "block": "minecraft:stone",
+              "height": 56
+            },
+            {
+              "block": "minecraft:sandstone",
+              "height": 6
+            },
+            {
+              "block": "minecraft:sand",
+              "height": 5
+            }
+          ],
+          "structure_overrides": []
+        }
+      }
+    },
+    "minecraft:the_end": {
+      "type": "minecraft:the_end",
+      "generator": {
+        "type": "minecraft:noise",
+        "biome_source": {
+          "type": "minecraft:the_end"
+        },
+        "settings": "minecraft:end"
+      }
+    },
+    "minecraft:the_nether": {
+      "type": "minecraft:the_nether",
+      "generator": {
+        "type": "minecraft:noise",
+        "biome_source": {
+          "type": "minecraft:multi_noise",
+          "preset": "minecraft:nether"
+        },
+        "settings": "minecraft:nether"
+      }
+    }
+  }
+}
