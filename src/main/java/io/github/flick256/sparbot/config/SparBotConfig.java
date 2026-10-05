@@ -62,6 +62,12 @@ public final class SparBotConfig {
 	 * invulnerability and does next to nothing.
 	 */
 	public boolean shieldStuns = true;
+	/**
+	 * A bot sent to fight a player (/sparbot fight, the menu's Fight) wears the kit that player last
+	 * equipped, and a bot already fighting a player follows when they equip another: same armor, same
+	 * weapons, a fair fight.
+	 */
+	public boolean matchPlayerKit = true;
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */

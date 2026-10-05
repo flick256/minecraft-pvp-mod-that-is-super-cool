@@ -96,6 +96,13 @@ public final class SparBot implements ModInitializer {
 		return FabricLoader.getInstance().getConfigDir();
 	}
 
+	/** The kit each player last equipped (for bots to fight them in the same kit). */
+	private static final java.util.Map<java.util.UUID, String> PLAYER_KITS = new java.util.concurrent.ConcurrentHashMap<>();
+
+	public static java.util.Map<java.util.UUID, String> playerKits() {
+		return PLAYER_KITS;
+	}
+
 	/** Players' own hotbar layouts per kit. */
 	public static io.github.flick256.sparbot.kit.PlayerLayouts playerLayouts() {
 		return PLAYER_LAYOUTS;

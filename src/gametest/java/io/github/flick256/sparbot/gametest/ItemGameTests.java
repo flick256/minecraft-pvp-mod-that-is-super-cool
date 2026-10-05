@@ -174,6 +174,28 @@ public class ItemGameTests {
 	}
 
 	@GameTest(maxTicks = 40)
+	public void aBotSentToFightYouWearsYourKit(GameTestHelper helper) {
+		ServerPlayer human = TestSupport.spawnRealPlayer(helper, 2, 1, 2);
+		try {
+			Bot bot = TestSupport.spawnBot(helper, "Mirror", 5, 1, 5, 0, "pro", "basic_sword");
+			net.minecraft.commands.CommandSourceStack source = helper.getLevel().getServer().createCommandSourceStack();
+			helper.getLevel().getServer().getCommands().performPrefixedCommand(source, "sparbot kit give pvphq_uhc " + human.getPlainTextName());
+			helper.getLevel().getServer().getCommands().performPrefixedCommand(source, "sparbot fight " + bot.name() + " " + human.getPlainTextName());
+			helper.assertValueEqual(bot.kit().id(), "pvphq_uhc", "the bot's kit");
+			BotPlayer body = TestSupport.body(bot);
+			helper.assertTrue(body.getItemBySlot(EquipmentSlot.HEAD).getEnchantments().toString().contains("protection")
+				&& ItemStack.isSameItemSameComponents(body.getItemBySlot(EquipmentSlot.HEAD), human.getItemBySlot(EquipmentSlot.HEAD)), "same helmet as yours");
+			// Equip another kit: the bot fighting you follows.
+			helper.getLevel().getServer().getCommands().performPrefixedCommand(source, "sparbot kit give pvphq_sword " + human.getPlainTextName());
+			helper.assertValueEqual(bot.kit().id(), "pvphq_sword", "the bot's kit after you changed yours");
+			TestSupport.remove(bot);
+		} finally {
+			TestSupport.removeRealPlayer(human);
+		}
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 40)
 	public void layoutRearrangesTheBotsKit(GameTestHelper helper) {
 		Kit kit = kit(Map.of(
 			"0", new Kit.KitItem("minecraft:diamond_sword", null, null, null),

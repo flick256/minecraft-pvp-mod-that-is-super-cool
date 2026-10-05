@@ -94,7 +94,8 @@ public final class SparBotCommand {
 					throw new SimpleCommandExceptionType(Component.literal("Target must be another living entity")).create();
 				}
 				bot.setAssignedTarget(target.getUUID());
-				return ok(ctx, bot.name() + " now fights " + target.getPlainTextName());
+				String kitNote = target instanceof ServerPlayer player && !(target instanceof BotPlayer) ? mirrorKit(bot, player) : "";
+				return ok(ctx, bot.name() + " now fights " + target.getPlainTextName() + kitNote);
 			}))));
 
 		root.then(Commands.literal("stop").then(botArgument().executes(ctx -> {
@@ -342,6 +343,26 @@ public final class SparBotCommand {
 			.collect(Collectors.joining(", ")));
 	}
 
+	/**
+	 * Gives the bot the kit the player last equipped (the matchPlayerKit setting), so they fight with the same
+	 * armor and weapons. Returns a note for the reply, "" when nothing changed.
+	 */
+	private static String mirrorKit(Bot bot, ServerPlayer player) {
+		String kitId = SparBot.playerKits().get(player.getUUID());
+		if (!SparBot.config().matchPlayerKit || kitId == null || SparBot.matches().inMatch(bot.uuid()) || kitId.equals(bot.kit().id())) {
+			return "";
+		}
+		Kit kit = SparBot.kits().get(kitId).orElse(null);
+		BotPlayer body = bot.body();
+		if (kit == null || body == null || !body.isAlive()) {
+			return "";
+		}
+		bot.setKit(kit);
+		KitApplier.apply(body, bot.effectiveKit());
+		bot.onKitReset();
+		return " in your kit (" + kit.displayName() + ")";
+	}
+
 	private static int heal(CommandContext<CommandSourceStack> ctx, java.util.Collection<ServerPlayer> players) throws CommandSyntaxException {
 		int healed = 0;
 		for (ServerPlayer player : players) {
@@ -375,6 +396,12 @@ public final class SparBotCommand {
 			}
 			KitApplier.applyForPlayer(player, kit);
 			given++;
+			// Bots fighting this player follow them into the new kit.
+			for (Bot bot : SparBot.bots().all()) {
+				if (player.getUUID().equals(bot.assignedTarget())) {
+					mirrorKit(bot, player);
+				}
+			}
 		}
 		if (given == 0) {
 			throw new SimpleCommandExceptionType(Component.literal("No players to equip")).create();
