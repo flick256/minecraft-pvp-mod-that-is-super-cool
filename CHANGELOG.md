@@ -2,6 +2,32 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.7.0
+
+- Practice world: SparBot's own flat desert (sand and sandstone over stone and deepslate, down to
+  bedrock) with a hub and an arena per kind of fight: a walled UHC meadow (rolling grass, flowers, oaks,
+  a pond, boulders), a quartz sword court, the open crystal desert (nothing in the way, diggable and
+  blastable down to bedrock), a fenced cart field and a tuff mace and bow court. Pads in the hub take
+  you to each arena. It is a dimension in every world (`/sparbot practice`, built on the first visit), or
+  a whole world with the new **SparBot Practice** world type. The menu's new Practice tab (and
+  `/sparbot practice fight <mode> [profile]`) starts a match against a bot in that mode's arena.
+- Shield stuns work again: a fully blocked hit no longer starts the blocker's invulnerability, so the
+  second click of a stun lands (setting `shieldStuns`, on). The bot does stuns and can be stunned.
+- Shield counter: against a charged swordsman about to come into reach, UHC bots walk in behind a raised
+  shield, let the swing land on it, then drop it and hit while they recharge. In simulated UHC fights a pro
+  with it beats a pro without block-hitting 71% of the time (54% with block-hitting alone).
+- UHC bots use the learned UHC brain by default (setting `autoModels`, on), held to their own tier's
+  limits: in the simulator it beats the scripted bot of the same tier about 9 times in 10 with as much
+  lava, web and water play. The learned brain now does the shield stun and the shield counter too.
+- Fair kits: a bot sent to fight you wears the kit you last equipped (setting `matchPlayerKit`, on).
+- PvPHQ cart kits, low tier (Flame bow) and high tier (crossbows and flint and steel), with match modes
+  `cart_low` and `cart_high`. Unverified: the uncertain items are listed in each kit's notes. High tier
+  bots set carts off the PvPHQ way: rail, cart, fire lit next to it, then a crossbow loaded in advance
+  shot through the fire (a burning arrow sets a TNT minecart off at once).
+- Crystal bots judge blasts through their armor: a practised bot never sets off a crystal or anchor that
+  would pop or kill it, and steps out of the opponent's crystals and anchors.
+- Golden heads are unchanged.
+
 ## 0.6.0
 
 - Demon: a skill tier above pro, a top player who lives on utility, held to human limits (reactions
