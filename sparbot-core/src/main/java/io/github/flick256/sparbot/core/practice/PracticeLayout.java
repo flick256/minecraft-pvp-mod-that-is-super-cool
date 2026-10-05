@@ -9,7 +9,7 @@ import java.util.List;
  */
 public final class PracticeLayout {
 	/** Bump when the hub or an arena changes: worlds built with an older version are rebuilt. */
-	public static final int VERSION = 1;
+	public static final int VERSION = 2;
 	/** The top block of the flat desert (sand). */
 	public static final int SURFACE = 63;
 	/** Where players stand on it. */
@@ -29,8 +29,14 @@ public final class PracticeLayout {
 	 * @param height blocks above the floor it reaches
 	 * @param spawnOffset each side spawns this far from the centre, facing the other
 	 * @param modes the game modes fought here
+	 * @param standStart the grandstands' first row is this far from the centre (outside the arena, and for
+	 *     blast modes out of a blast's reach)
+	 * @param standBase the first row's seats are this many blocks above the floor
+	 * @param standRows rows of seats, each one block further out and one higher
+	 * @param round round (colosseum) stands rather than straight ones along the sides
 	 */
-	public record Site(String id, String displayName, int centerX, int centerZ, int radius, int depth, int height, int spawnOffset, List<String> modes) {
+	public record Site(String id, String displayName, int centerX, int centerZ, int radius, int depth, int height, int spawnOffset, List<String> modes,
+		int standStart, int standBase, int standRows, boolean round) {
 		public String arenaId() {
 			return "practice_" + id;
 		}
@@ -63,19 +69,37 @@ public final class PracticeLayout {
 			return (long) (maxX() - minX() + 1) * (maxY() - minY() + 1) * (maxZ() - minZ() + 1);
 		}
 
-		/** Where a player arriving from the hub lands: just outside the arena's south edge, looking in. */
+		/** Where a player arriving from the hub lands: the viewing box at the top of the south stand, looking in. */
 		public int lobbyZ() {
-			return centerZ + radius + 4;
+			return centerZ + standStart + standRows - 2;
+		}
+
+		/** The viewing box's floor (where players stand). */
+		public int lobbyY() {
+			return FLOOR + standBase + standRows;
+		}
+
+		/** The outer edge of the stands (their back wall). */
+		public int standEnd() {
+			return standStart + standRows;
 		}
 	}
 
 	public static final Site SWORD = new Site("sword", "Sword court", 160, 0, 16, 4, 10, 5,
-		List.of("sword_duel", "combat_duel", "benchmark", "nodebuff", "spear_duel"));
-	public static final Site UHC = new Site("uhc", "UHC meadow", 0, 160, 30, 12, 16, 12, List.of("uhc_duel"));
-	/** The open desert, diggable and blastable all the way down to bedrock. */
-	public static final Site CRYSTAL = new Site("crystal", "Crystal desert", -160, 0, 24, SURFACE - BEDROCK, 24, 7, List.of("crystal_duel"));
-	public static final Site CART = new Site("cart", "Cart field", 0, -160, 20, 6, 12, 6, List.of("cart_duel", "cart_low", "cart_high"));
-	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "ranged_duel"));
+		List.of("sword_duel", "combat_duel", "benchmark", "nodebuff", "spear_duel"), 19, 1, 8, false);
+	/** Colosseum stands rising from the top of the meadow's wall. */
+	public static final Site UHC = new Site("uhc", "UHC meadow", 0, 160, 30, 12, 16, 12, List.of("uhc_duel"), 33, 7, 9, true);
+	/**
+	 * The open desert, diggable and blastable all the way down to bedrock. Its amphitheatre starts 12
+	 * blocks out, beyond any crystal or anchor blast set off inside (a power-6 blast breaks blocks about 10
+	 * blocks away at most).
+	 */
+	public static final Site CRYSTAL = new Site("crystal", "Crystal desert", -160, 0, 24, SURFACE - BEDROCK, 24, 7, List.of("crystal_duel"), 36, 1, 9,
+		true);
+	/** Its stands start 14 blocks out, in deepslate: a crossbow cart's blast (up to power 8.7) dies before them. */
+	public static final Site CART = new Site("cart", "Cart field", 0, -160, 20, 6, 12, 6, List.of("cart_duel", "cart_low", "cart_high"), 34, 1, 8,
+		false);
+	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "ranged_duel"), 23, 1, 8, false);
 	public static final List<Site> SITES = List.of(SWORD, UHC, CRYSTAL, CART, MACE);
 
 	private PracticeLayout() {

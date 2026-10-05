@@ -99,12 +99,12 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				throw new AssertionError("the meadow's pond has no water: " + pond);
 			}
 			world.getServer().runCommand("time set noon");
-			view(context, world, "sparbot-practice-hub", 0.5, 70, -16, 0, 25);
-			view(context, world, "sparbot-practice-uhc", 0.5, 82, 118, 0, 28);
-			view(context, world, "sparbot-practice-sword", 160.5, 74, -26, 0, 25);
-			view(context, world, "sparbot-practice-crystal", -159.5, 80, -40, 0, 28);
-			view(context, world, "sparbot-practice-cart", 0.5, 76, -190, 0, 25);
-			view(context, world, "sparbot-practice-mace", 160.5, 76, 130, 0, 25);
+			view(context, world, "sparbot-practice-hub", 0.5, 72, -24, 0, 18);
+			for (io.github.flick256.sparbot.core.practice.PracticeLayout.Site site : io.github.flick256.sparbot.core.practice.PracticeLayout.SITES) {
+				view(context, world, "sparbot-practice-" + site.id(), site.centerX() + 0.5, 64 + site.standBase() + site.standRows() + 26,
+					site.centerZ() + site.standEnd() + 22, 180, 32);
+				view(context, world, "sparbot-practice-" + site.id() + "-box", site.centerX() + 0.5, site.lobbyY() + 0.2, site.lobbyZ() + 0.5, 180, 12);
+			}
 			// A fight in the meadow against a pro, started like the Fight button does.
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight uhc_duel pro"));
 			world.getServer().waitFor(server -> SparBot.matches().match("practice_uhc").isPresent(), 600);

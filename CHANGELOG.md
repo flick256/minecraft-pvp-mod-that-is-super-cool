@@ -2,6 +2,20 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.7.2
+
+- The practice world rebuilt (worlds built by 0.7.0 or 0.7.1 are rebuilt on the next visit):
+  - Grandstands round every arena, outside it so fights and round resets never touch them: a stone
+    colosseum rising behind the UHC meadow's wall, a blackstone and quartz grandstand with canopies round
+    the sword court, a sandstone amphitheatre round the crystal desert (12 blocks out, beyond any crystal or
+    anchor blast), deepslate stands round the cart field (14 blocks out, beyond a crossbow cart's blast,
+    with grass in between) and tuff stands round the mace court. Aisles, battlements, pillars with lanterns
+    and banners, and arcades on the outside walls.
+  - Each pad now takes you to a viewing box at the top of the arena's south stand (carpet, rail, canopy),
+    with the pad back to the hub behind you.
+  - Floating names over every pad in the hub, over each arena and over the pads back to the hub.
+  - A grander hub: a fountain, banner pillars either side of each pad, obelisks and palms.
+
 ## 0.7.1
 
 - A UHC brain built on the Demon: `uhc_demon`, trained against the scripted Demon at Demon limits. Demon

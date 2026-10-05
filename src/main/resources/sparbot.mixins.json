@@ -6,7 +6,9 @@
 		"FoodDataMixin",
 		"LivingEntityStunMixin",
 		"PlayerListMixin",
-		"ServerGamePacketListenerImplMixin"
+		"ServerGamePacketListenerImplMixin",
+		"DisplayAccessor",
+		"TextDisplayAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

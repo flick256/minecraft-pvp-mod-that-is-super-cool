@@ -136,7 +136,7 @@ public final class PracticeWorld {
 
 	/** A player's lobby spot by an arena. */
 	private static void toLobby(ServerPlayer player, ServerLevel level, Site site) {
-		player.teleportTo(level, site.centerX() + 0.5, PracticeLayout.FLOOR, site.lobbyZ() + 0.5, Set.of(), 180, 10, true);
+		player.teleportTo(level, site.centerX() + 0.5, site.lobbyY(), site.lobbyZ() + 0.5, Set.of(), 180, 15, true);
 		player.sendSystemMessage(Component.literal(site.displayName() + " (" + String.join(", ", site.modes())
 			+ "). Fight here from the menu's Practice tab or /sparbot practice fight <mode>. The pad behind you goes back to the hub."));
 	}
@@ -191,13 +191,13 @@ public final class PracticeWorld {
 			Site target = null;
 			boolean home = false;
 			BlockPos feet = player.blockPosition();
-			if (feet.getY() == PracticeLayout.FLOOR && level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE)) {
+			if (level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE)) {
 				for (Site site : PracticeLayout.SITES) {
 					int[] p = PracticeLayout.pad(site);
-					if (feet.getX() == p[0] && feet.getZ() == p[1]) {
+					if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == p[0] && feet.getZ() == p[1]) {
 						target = site;
 					}
-					if (feet.getX() == site.centerX() && feet.getZ() == site.lobbyZ() + 2) {
+					if (feet.getY() == site.lobbyY() && feet.getX() == site.centerX() && feet.getZ() == site.lobbyZ() + 1) {
 						home = true;
 					}
 				}

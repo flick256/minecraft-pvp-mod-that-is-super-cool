@@ -8,9 +8,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.block.StandingSignBlock;
-import net.minecraft.world.level.block.entity.SignBlockEntity;
-import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -29,6 +28,9 @@ final class PracticeBuilder {
 	}
 
 	void buildAll() {
+		for (Site site : PracticeLayout.SITES) {
+			clearVersionOneLobby(site);
+		}
 		hub();
 		sword(PracticeLayout.SWORD);
 		uhc(PracticeLayout.UHC);
@@ -39,7 +41,13 @@ final class PracticeBuilder {
 		biome(PracticeLayout.UHC, net.minecraft.world.level.biome.Biomes.PLAINS);
 		biome(PracticeLayout.CART, net.minecraft.world.level.biome.Biomes.PLAINS);
 		for (Site site : PracticeLayout.SITES) {
-			lobby(site);
+			stands(site, palette(site));
+			if (site == PracticeLayout.CART) {
+				cartInfield(site);
+				biomeOver(site, site.standEnd() + 2, net.minecraft.world.level.biome.Biomes.PLAINS);
+			}
+			viewingBox(site, palette(site));
+			labels(site);
 		}
 		// The version marker under the hub: an older or missing one means the world gets built again.
 		set(0, S - 2, PracticeLayout.VERSION, Blocks.LODESTONE.defaultBlockState());
@@ -72,6 +80,18 @@ final class PracticeBuilder {
 		}
 	}
 
+	/** Sets the biome over a square of half-side {@code half} round the site's centre, near the ground. */
+	private void biomeOver(Site site, int half, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> key) {
+		var holder = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(key);
+		for (int x = site.centerX() - half; x <= site.centerX() + half; x += 16) {
+			for (int z = site.centerZ() - half; z <= site.centerZ() + half; z += 16) {
+				BlockPos from = new BlockPos(x, S - 4, z);
+				BlockPos to = new BlockPos(Math.min(x + 15, site.centerX() + half), F + 30, Math.min(z + 15, site.centerZ() + half));
+				net.minecraft.server.commands.FillBiomeCommand.fill(level, from, to, holder);
+			}
+		}
+	}
+
 	/** Sets the biome over a site, a chunk-sized column at a time (the same as /fillbiome, within its size limit). */
 	private void biome(Site site, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> key) {
 		var holder = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(key);
@@ -91,98 +111,128 @@ final class PracticeBuilder {
 		fill(site.minX() - 4, F, site.minZ() - 4, site.maxX() + 4, site.maxY(), site.maxZ() + 6, Blocks.AIR.defaultBlockState());
 	}
 
-	private void sign(int x, int y, int z, int rotation, String... lines) {
-		BlockPos pos = new BlockPos(x, y, z);
-		level.setBlock(pos, Blocks.DARK_OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, rotation), Block.UPDATE_CLIENTS);
-		if (level.getBlockEntity(pos) instanceof SignBlockEntity sign) {
-			SignText text = new SignText();
-			for (int i = 0; i < lines.length && i < 4; i++) {
-				text = text.setMessage(i, Component.literal(lines[i]));
-			}
-			sign.setText(text, true);
-			sign.setWaxed(true);
-			sign.setChanged();
-			level.sendBlockUpdated(pos, sign.getBlockState(), sign.getBlockState(), Block.UPDATE_CLIENTS);
-		}
-	}
-
-	/** Sign rotation (0-15, 0 = facing south) for a sign at dx, dz from a point that should face it. */
-	private static int facing(int dx, int dz) {
-		double yaw = Math.toDegrees(Math.atan2(dx, -dz));
-		return Math.floorMod((int) Math.round(yaw / 22.5), 16);
-	}
 
 	private static final BlockState[] PAD_COLORS = {Blocks.CONCRETE.lightBlue().defaultBlockState(), Blocks.CONCRETE.lime().defaultBlockState(),
 		Blocks.CONCRETE.magenta().defaultBlockState(), Blocks.CONCRETE.orange().defaultBlockState(), Blocks.CONCRETE.yellow().defaultBlockState()};
+	private static final Block[] PAD_BANNERS = {Blocks.WALL_BANNER.lightBlue(), Blocks.WALL_BANNER.lime(), Blocks.WALL_BANNER.magenta(),
+		Blocks.WALL_BANNER.orange(), Blocks.WALL_BANNER.yellow()};
+	private static final int[] PAD_TEXT = {0x55FFFF, 0x55FF55, 0xFF55FF, 0xFFAA00, 0xFFFF55};
 
-	/** A round sandstone plaza with a lantern tower in the middle and a coloured pad (with its sign) per arena. */
+	/**
+	 * The hub: a round sandstone plaza with a fountain in the middle, a ring of palms and obelisks, and a
+	 * coloured pad per arena between two banner pillars, its name floating over it.
+	 */
 	private void hub() {
 		int r = PracticeLayout.HUB_RADIUS;
-		load(-r - 4, -r - 4, r + 4, r + 4);
-		fill(-r - 2, F, -r - 2, r + 2, F + 12, r + 2, Blocks.AIR.defaultBlockState());
-		for (int x = -r; x <= r; x++) {
-			for (int z = -r; z <= r; z++) {
+		load(-r - 12, -r - 12, r + 12, r + 12);
+		fill(-r - 8, F, -r - 8, r + 8, F + 14, r + 8, Blocks.AIR.defaultBlockState());
+		PracticeLabels.clear(level, new net.minecraft.world.phys.AABB(-r - 8, F - 2, -r - 8, r + 8, F + 20, r + 8));
+		for (int x = -r - 1; x <= r + 1; x++) {
+			for (int z = -r - 1; z <= r + 1; z++) {
 				double d = Math.sqrt(x * x + z * z);
-				if (d > r + 0.5) {
+				if (d > r + 1.5) {
 					continue;
 				}
-				BlockState floor = Math.abs(d - 6) < 0.6 || Math.abs(d - 12) < 0.6 ? Blocks.CUT_SANDSTONE.defaultBlockState()
-					: d < 2.5 ? Blocks.CHISELED_SANDSTONE.defaultBlockState() : Blocks.SMOOTH_SANDSTONE.defaultBlockState();
+				double angle = Math.toDegrees(Math.atan2(z, x));
+				boolean ray = d > 4 && d < 12 && Math.floorMod((int) Math.round(angle), 45) <= 2;
+				BlockState floor = d > r + 0.5 ? Blocks.SMOOTH_SANDSTONE.defaultBlockState()
+					: Math.abs(d - 12) < 0.6 ? Blocks.CUT_SANDSTONE.defaultBlockState()
+					: Math.abs(d - 6) < 0.6 ? Blocks.GLAZED_TERRACOTTA.orange().defaultBlockState()
+					: ray ? Blocks.CUT_SANDSTONE.defaultBlockState()
+					: Blocks.SMOOTH_SANDSTONE.defaultBlockState();
 				set(x, S, z, floor);
-				if (d > r - 0.5) {
+				if (d > r + 0.5) {
+					// A low balustrade round the edge, broken by the pads' banner pillars.
 					set(x, F, z, Blocks.SANDSTONE_WALL.defaultBlockState());
 				}
 			}
 		}
-		// The tower: a sandstone pillar with lanterns, to find the hub from the arenas.
-		fill(0, F, 0, 0, F + 5, 0, Blocks.CHISELED_SANDSTONE.defaultBlockState());
-		set(0, F + 6, 0, Blocks.SEA_LANTERN.defaultBlockState());
-		int[][] around = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-		for (int[] a : around) {
-			set(a[0], F, a[1], Blocks.LANTERN.defaultBlockState());
-		}
-		sign(0, F, 3, 0, "SparBot", "Practice", "Step on a pad", "to visit an arena");
+		fountain();
+		// Obelisks on the diagonals and palms beyond the plaza.
 		for (int sx = -1; sx <= 1; sx += 2) {
 			for (int sz = -1; sz <= 1; sz += 2) {
-				int ox = sx * 10;
-				int oz = sz * 10;
-				fill(ox, F, oz, ox, F + 4, oz, Blocks.CUT_SANDSTONE.defaultBlockState());
-				set(ox, F + 5, oz, Blocks.CHISELED_SANDSTONE.defaultBlockState());
-				set(ox, F + 6, oz, Blocks.LANTERN.defaultBlockState());
-				palm(sx * 19, F, sz * 17);
+				int ox = sx * 11;
+				int oz = sz * 11;
+				set(ox, F, oz, Blocks.CHISELED_SANDSTONE.defaultBlockState());
+				fill(ox, F + 1, oz, ox, F + 5, oz, Blocks.CUT_SANDSTONE.defaultBlockState());
+				set(ox, F + 6, oz, Blocks.CHISELED_SANDSTONE.defaultBlockState());
+				set(ox, F + 7, oz, Blocks.LANTERN.defaultBlockState());
+				palm(sx * 20, F, sz * 18);
+				palm(sx * 26, F, sz * 8);
 			}
 		}
-		for (int i = 0; i < 40; i++) {
-			int x = PracticeLayout.scatter(i, 7, 5) % 61 - 30;
-			int z = PracticeLayout.scatter(i, 11, 6) % 61 - 30;
-			if (x * x + z * z > (r + 3) * (r + 3)) {
-				set(x, F, z, Blocks.DEAD_BUSH.defaultBlockState());
+		for (int i = 0; i < 60; i++) {
+			int x = PracticeLayout.scatter(i, 7, 5) % 81 - 40;
+			int z = PracticeLayout.scatter(i, 11, 6) % 81 - 40;
+			if (x * x + z * z > (r + 4) * (r + 4)) {
+				set(x, F, z, i % 3 == 0 ? Blocks.CACTUS.defaultBlockState() : Blocks.DEAD_BUSH.defaultBlockState());
 			}
 		}
 		for (int i = 0; i < PracticeLayout.SITES.size(); i++) {
 			Site site = PracticeLayout.SITES.get(i);
 			int[] p = PracticeLayout.pad(site);
+			// The pad: a coloured block under a pressure plate, ringed in cut sandstone.
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dz = -1; dz <= 1; dz++) {
+					set(p[0] + dx, S, p[1] + dz, Blocks.CHISELED_SANDSTONE.defaultBlockState());
+				}
+			}
 			set(p[0], S, p[1], PAD_COLORS[i % PAD_COLORS.length]);
 			set(p[0], F, p[1], Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState());
-			// The sign just outside the pad, readable from the middle of the plaza.
-			int sx = (int) Math.round(p[0] * 1.25);
-			int sz = (int) Math.round(p[1] * 1.25);
-			sign(sx, F, sz, facing(-sx, -sz), site.displayName(), String.join(", ", site.modes().stream().limit(2).toList()),
-				site.modes().size() > 2 ? "and more" : "", "");
+			// Two banner pillars either side of it, across the line from the centre.
+			double len = Math.hypot(p[0], p[1]);
+			double tx = -p[1] / len;
+			double tz = p[0] / len;
+			for (int side = -1; side <= 1; side += 2) {
+				int bx = (int) Math.round(p[0] + side * 2.2 * tx);
+				int bz = (int) Math.round(p[1] + side * 2.2 * tz);
+				fill(bx, F, bz, bx, F + 3, bz, Blocks.CUT_SANDSTONE.defaultBlockState());
+				set(bx, F + 4, bz, Blocks.CHISELED_SANDSTONE.defaultBlockState());
+				set(bx, F + 5, bz, Blocks.LANTERN.defaultBlockState());
+				// The banner hangs on the pillar's side facing the plaza's centre.
+				net.minecraft.core.Direction toCentre = horizontal(-bx, -bz);
+				BlockPos banner = new BlockPos(bx, F + 3, bz).relative(toCentre);
+				if (level.getBlockState(banner).isAir()) {
+					level.setBlock(banner, PAD_BANNERS[i % PAD_BANNERS.length].defaultBlockState()
+						.setValue(net.minecraft.world.level.block.WallBannerBlock.FACING, toCentre), Block.UPDATE_CLIENTS);
+				}
+			}
+			int color = PAD_TEXT[i % PAD_TEXT.length];
+			PracticeLabels.put(level, p[0] + 0.5, F + 2.2, p[1] + 0.5, Component.literal(site.displayName())
+				.withStyle(st -> st.withColor(color).withBold(true))
+				.append(Component.literal("\n" + String.join(", ", site.modes())).withStyle(st -> st.withColor(0xBBBBBB).withBold(false))), 1.1F,
+				0x60000000);
 		}
+		PracticeLabels.put(level, 0.5, F + 9.5, 0.5, Component.literal("SparBot Practice").withStyle(st -> st.withColor(0xFFD966).withBold(true))
+			.append(Component.literal("\nstand on a pad to visit an arena").withStyle(st -> st.withColor(0xDDDDDD).withBold(false))), 2.2F, 0);
 	}
 
-	/** Where the hub pad lands you: a little platform south of the arena, looking in, with a pad back to the hub. */
-	private void lobby(Site site) {
-		int x = site.centerX();
-		int z = site.lobbyZ();
-		load(x - 3, z - 3, x + 3, z + 3);
-		fill(x - 2, S, z - 1, x + 2, S, z + 2, Blocks.POLISHED_ANDESITE.defaultBlockState());
-		set(x + 2, F, z + 2, Blocks.LANTERN.defaultBlockState());
-		set(x - 2, F, z + 2, Blocks.LANTERN.defaultBlockState());
-		set(x, S, z + 2, Blocks.CONCRETE.lightBlue().defaultBlockState());
-		set(x, F, z + 2, Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState());
-		sign(x + 1, F, z + 2, 8, "Back to", "the hub", "", "");
+	/** A sandstone fountain: a round basin, and water falling from a lit column into it. */
+	private void fountain() {
+		for (int x = -4; x <= 4; x++) {
+			for (int z = -4; z <= 4; z++) {
+				double d = Math.sqrt(x * x + z * z);
+				if (d <= 2.6) {
+					set(x, S - 2, z, Blocks.PRISMARINE_BRICKS.defaultBlockState());
+					set(x, S - 1, z, Blocks.WATER.defaultBlockState());
+					set(x, S, z, Blocks.WATER.defaultBlockState());
+				} else if (d <= 3.6) {
+					set(x, S, z, Blocks.CUT_SANDSTONE.defaultBlockState());
+					set(x, F, z, Blocks.SMOOTH_SANDSTONE_SLAB.defaultBlockState());
+				}
+			}
+		}
+		fill(0, S - 1, 0, 0, F + 3, 0, Blocks.CHISELED_SANDSTONE.defaultBlockState());
+		set(0, F + 4, 0, Blocks.SEA_LANTERN.defaultBlockState());
+		set(0, F + 5, 0, Blocks.WATER.defaultBlockState());
+	}
+
+	/** The horizontal direction closest to (dx, dz). */
+	private static net.minecraft.core.Direction horizontal(double dx, double dz) {
+		if (Math.abs(dx) >= Math.abs(dz)) {
+			return dx >= 0 ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.WEST;
+		}
+		return dz >= 0 ? net.minecraft.core.Direction.SOUTH : net.minecraft.core.Direction.NORTH;
 	}
 
 	/** A quartz court with a blackstone border, a low wall and lantern posts at the corners. */
@@ -303,6 +353,220 @@ final class PracticeBuilder {
 		}
 	}
 
+	/**
+	 * How a site's stands look.
+	 *
+	 * @param aisle the stairs of the aisles that break up the rows
+	 * @param back the back wall
+	 * @param crest the back wall's battlements
+	 * @param banner the wall banner hung on the pillars
+	 */
+	private record Palette(BlockState fill, Block seat, Block aisle, BlockState back, BlockState crest, BlockState pillar, BlockState light, Block banner,
+		BlockState boxFloor, BlockState rail, BlockState roof, Block carpet, int textColor) {
+	}
+
+	private static Palette palette(Site site) {
+		return switch (site.id()) {
+			case "uhc" -> new Palette(Blocks.STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_STAIRS, Blocks.MOSSY_STONE_BRICK_STAIRS,
+				Blocks.STONE_BRICKS.defaultBlockState(), Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.CHISELED_STONE_BRICKS.defaultBlockState(),
+				Blocks.LANTERN.defaultBlockState(), Blocks.WALL_BANNER.red(), Blocks.POLISHED_ANDESITE.defaultBlockState(),
+				Blocks.STONE_BRICK_WALL.defaultBlockState(), Blocks.STONE_BRICK_SLAB.defaultBlockState(), Blocks.CARPET.red(), 0x7CFC5A);
+			case "crystal" -> new Palette(Blocks.SMOOTH_SANDSTONE.defaultBlockState(), Blocks.SMOOTH_SANDSTONE_STAIRS, Blocks.SANDSTONE_STAIRS,
+				Blocks.CUT_SANDSTONE.defaultBlockState(), Blocks.SANDSTONE_WALL.defaultBlockState(), Blocks.CHISELED_SANDSTONE.defaultBlockState(),
+				Blocks.SOUL_LANTERN.defaultBlockState(), Blocks.WALL_BANNER.blue(), Blocks.CUT_SANDSTONE.defaultBlockState(),
+				Blocks.SANDSTONE_WALL.defaultBlockState(), Blocks.SMOOTH_SANDSTONE_SLAB.defaultBlockState(), Blocks.CARPET.blue(), 0x66E0FF);
+			case "cart" -> new Palette(Blocks.DEEPSLATE_BRICKS.defaultBlockState(), Blocks.DEEPSLATE_BRICK_STAIRS, Blocks.POLISHED_DEEPSLATE_STAIRS,
+				Blocks.DEEPSLATE_TILES.defaultBlockState(), Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState(), Blocks.CHISELED_DEEPSLATE.defaultBlockState(),
+				Blocks.LANTERN.defaultBlockState(), Blocks.WALL_BANNER.red(), Blocks.POLISHED_DEEPSLATE.defaultBlockState(),
+				Blocks.DEEPSLATE_TILE_WALL.defaultBlockState(), Blocks.DARK_OAK_SLAB.defaultBlockState(), Blocks.CARPET.red(), 0xFF6B5A);
+			case "mace" -> new Palette(Blocks.TUFF_BRICKS.defaultBlockState(), Blocks.TUFF_BRICK_STAIRS, Blocks.POLISHED_TUFF_STAIRS,
+				Blocks.TUFF_BRICKS.defaultBlockState(), Blocks.TUFF_BRICK_WALL.defaultBlockState(), Blocks.CHISELED_TUFF_BRICKS.defaultBlockState(),
+				Blocks.COPPER_LANTERN.waxed().pick(net.minecraft.world.level.block.WeatheringCopper.WeatherState.UNAFFECTED).defaultBlockState(),
+				Blocks.WALL_BANNER.orange(), Blocks.POLISHED_TUFF.defaultBlockState(), Blocks.TUFF_BRICK_WALL.defaultBlockState(),
+				Blocks.TUFF_BRICK_SLAB.defaultBlockState(), Blocks.CARPET.orange(), 0xFFB347);
+			default -> new Palette(Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, Blocks.QUARTZ_STAIRS,
+				Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState(), Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(),
+				Blocks.QUARTZ_PILLAR.defaultBlockState(), Blocks.LANTERN.defaultBlockState(), Blocks.WALL_BANNER.white(),
+				Blocks.SMOOTH_QUARTZ.defaultBlockState(), Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState(),
+				Blocks.POLISHED_BLACKSTONE_SLAB.defaultBlockState(), Blocks.CARPET.black(), 0xF5F5F5);
+		};
+	}
+
+	/**
+	 * The grandstands: rows of seats rising one block per row away from the arena, facing it, with aisles
+	 * every few blocks, a back wall with battlements, and pillars carrying lanterns and banners (inside and
+	 * out). Straight stands also get a canopy over their top rows. They start outside the arena (and out of
+	 * blast reach for blast modes), so fights and round resets never touch them.
+	 */
+	private void stands(Site site, Palette p) {
+		int cx = site.centerX();
+		int cz = site.centerZ();
+		int start = site.standStart();
+		int rows = site.standRows();
+		int end = site.standEnd();
+		int top = F + site.standBase() + rows;
+		int wallTop = top + 2;
+		load(cx - end - 4, cz - end - 4, cx + end + 4, cz + end + 4);
+		for (int dx = -end - 1; dx <= end + 1; dx++) {
+			for (int dz = -end - 1; dz <= end + 1; dz++) {
+				double d = site.round() ? Math.sqrt(dx * dx + dz * dz) : Math.max(Math.abs(dx), Math.abs(dz));
+				int k = (int) Math.floor(d) - start;
+				if (k < -1 || k > rows) {
+					continue;
+				}
+				int x = cx + dx;
+				int z = cz + dz;
+				// Where along the stand this column is: arc length round a ring, the side's other coordinate on a straight one.
+				double along = site.round() ? Math.atan2(dz, dx) * d : Math.abs(dx) > Math.abs(dz) ? dz : dx;
+				Direction out = site.round() ? horizontal(dx, dz) : Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? Direction.EAST : Direction.WEST)
+					: Math.abs(dz) > Math.abs(dx) ? (dz > 0 ? Direction.SOUTH : Direction.NORTH) : null;
+				if (k == -1) {
+					// A walkway between the arena's edge and the first row.
+					if (!site.round()) {
+						set(x, S, z, p.fill());
+					}
+					continue;
+				}
+				if (site == PracticeLayout.CART && k < 0) {
+					continue;
+				}
+				fill(x, F + site.standBase() + k, z, x, wallTop + 12, z, Blocks.AIR.defaultBlockState());
+				if (k == rows) {
+					fill(x, S - 2, z, x, wallTop, z, p.back());
+					arcade(site, x, z, out, along, p);
+					boolean pillar = Math.floorMod(Math.round(along), site.round() ? 10 : 8) == 4;
+					if (pillar) {
+						int height = site.round() ? 5 : 3;
+						fill(x, wallTop + 1, z, x, wallTop + height, z, p.pillar());
+						if (site.round()) {
+							set(x, wallTop + height + 1, z, p.light());
+						}
+						if (out != null) {
+							banner(x, wallTop + height - 1, z, out.getOpposite(), p.banner());
+							banner(x, F + 3, z, out, p.banner());
+						}
+					} else if (Math.floorMod(Math.round(along), 2) == 0) {
+						set(x, wallTop + 1, z, p.crest());
+					}
+					if (!site.round()) {
+						set(x, wallTop + 4, z, p.roof());
+					}
+					continue;
+				}
+				int seatY = F + site.standBase() + k;
+				fill(x, S - 2, z, x, seatY - 1, z, p.fill());
+				boolean aisle = Math.floorMod(Math.round(along), 12) == 0;
+				set(x, seatY, z, out == null ? p.fill() : (aisle ? p.aisle() : p.seat()).defaultBlockState().setValue(StairBlock.FACING, out));
+				if (!site.round() && k >= rows - 3) {
+					// The canopy over the top rows, with lanterns hanging from it.
+					set(x, wallTop + 4, z, p.roof());
+					if (k == rows - 2 && Math.floorMod(Math.round(along), 8) == 0) {
+						set(x, wallTop + 3, z, Blocks.LANTERN.defaultBlockState().setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true));
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * The back wall's outer face: two tiers of arched openings between the pillars, dark behind as if the
+	 * stand were hollow, each under a lintel.
+	 */
+	private void arcade(Site site, int x, int z, Direction out, double along, Palette p) {
+		if (out == null) {
+			return;
+		}
+		int period = site.round() ? 10 : 8;
+		int phase = Math.floorMod(Math.round(along) - (site.round() ? 9 : 0) + 1, period);
+		if (phase > 2) {
+			return;
+		}
+		BlockPos behind = new BlockPos(x, 0, z).relative(out.getOpposite());
+		BlockState shadow = site == PracticeLayout.SWORD ? Blocks.CONCRETE.black().defaultBlockState() : Blocks.POLISHED_BLACKSTONE.defaultBlockState();
+		// One tall arch per bay, five blocks high from the ground, under a lintel with a keystone in the middle.
+		for (int y = F; y <= F + 4; y++) {
+			set(x, y, z, Blocks.AIR.defaultBlockState());
+			set(behind.getX(), y, behind.getZ(), shadow);
+		}
+		set(x, S, z, p.boxFloor());
+		set(x, F + 5, z, phase == 1 ? p.pillar() : p.back());
+		if (phase != 1) {
+			// The arch's shoulders: upside-down stairs in the top corners.
+			set(x, F + 4, z, p.seat().defaultBlockState().setValue(StairBlock.FACING, phase == 0 ? clockwise(out) : clockwise(out).getOpposite())
+				.setValue(StairBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP));
+		}
+	}
+
+	private static Direction clockwise(Direction d) {
+		return d.getClockWise();
+	}
+
+	private void banner(int x, int y, int z, Direction facing, Block banner) {
+		BlockPos at = new BlockPos(x, y, z).relative(facing);
+		if (level.getBlockState(at).isAir()) {
+			level.setBlock(at, banner.defaultBlockState().setValue(net.minecraft.world.level.block.WallBannerBlock.FACING, facing), Block.UPDATE_CLIENTS);
+		}
+	}
+
+	/**
+	 * The viewing box at the top of the south stand, where the hub pad brings you: a carpeted platform with a
+	 * rail in front, a canopy on corner pillars, and the pad back to the hub behind.
+	 */
+	private void viewingBox(Site site, Palette p) {
+		int cx = site.centerX();
+		int front = site.lobbyZ() - 1;
+		int back = site.lobbyZ() + 1;
+		int floor = site.lobbyY() - 1;
+		for (int dx = -4; dx <= 4; dx++) {
+			for (int z = front; z <= back; z++) {
+				int x = cx + dx;
+				fill(x, S - 2, z, x, floor - 1, z, p.fill());
+				set(x, floor, z, Math.abs(dx) == 4 ? p.back() : p.boxFloor());
+				fill(x, floor + 1, z, x, floor + 5, z, Blocks.AIR.defaultBlockState());
+				if (Math.abs(dx) == 4) {
+					set(x, floor + 1, z, p.rail());
+				} else if (z == front) {
+					set(x, floor + 1, z, p.rail());
+				} else if (!(dx == 0 && z == back)) {
+					set(x, floor + 1, z, p.carpet().defaultBlockState());
+				}
+			}
+		}
+		for (int dx = -4; dx <= 4; dx += 8) {
+			for (int z = front; z <= back; z += back - front) {
+				fill(cx + dx, floor + 1, z, cx + dx, floor + 4, z, p.pillar());
+			}
+		}
+		fill(cx - 4, floor + 5, front, cx + 4, floor + 5, back, p.roof());
+		set(cx, floor + 4, site.lobbyZ(), Blocks.LANTERN.defaultBlockState().setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true));
+		set(cx, floor, back, Blocks.CONCRETE.lightBlue().defaultBlockState());
+		set(cx, floor + 1, back, Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState());
+	}
+
+	/** The arena's name over its far stand, and a label over the pad back to the hub. */
+	private void labels(Site site) {
+		int cx = site.centerX();
+		int cz = site.centerZ();
+		int end = site.standEnd();
+		PracticeLabels.clear(level, new net.minecraft.world.phys.AABB(cx - end - 6, F - 4, cz - end - 6, cx + end + 6, F + 80, cz + end + 6));
+		Palette p = palette(site);
+		PracticeLabels.put(level, cx + 0.5, F + site.standBase() + site.standRows() + 10, cz - end + 0.5,
+			Component.literal(site.displayName()).withStyle(st -> st.withColor(p.textColor()).withBold(true)), 8.0F, 0);
+		PracticeLabels.put(level, cx + 0.5, site.lobbyY() + 1.4, site.lobbyZ() + 1.5, Component.literal("Back to the hub")
+			.withStyle(st -> st.withColor(0x55FFFF).withBold(true))
+			.append(Component.literal("\nfight here: the menu's Practice tab").withStyle(st -> st.withColor(0xCCCCCC).withBold(false))), 0.8F, 0x60000000);
+	}
+
+	/** Version 1 put a little platform where the stands now are (or, by the crystal desert, out on the sand): take it away. */
+	private void clearVersionOneLobby(Site site) {
+		int x = site.centerX();
+		int z = site.centerZ() + site.radius() + 4;
+		load(x - 4, z - 3, x + 4, z + 4);
+		fill(x - 3, F, z - 2, x + 3, F + 4, z + 3, Blocks.AIR.defaultBlockState());
+		fill(x - 3, S, z - 2, x + 3, S, z + 3, Blocks.SAND.defaultBlockState());
+		PracticeLabels.clear(level, new net.minecraft.world.phys.AABB(x - 4, F - 1, z - 3, x + 4, F + 6, z + 4));
+	}
+
 	/** A desert palm: a leaning jungle-wood trunk with a fan of leaves. */
 	private void palm(int x, int y, int z) {
 		int tx = x;
@@ -355,6 +619,26 @@ final class PracticeBuilder {
 			int z = cz + (int) Math.round(Math.sin(a) * ring);
 			fill(x, F, z, x, F + 1, z, Blocks.CUT_SANDSTONE.defaultBlockState());
 			set(x, F + 2, z, Blocks.SOUL_LANTERN.defaultBlockState());
+		}
+	}
+
+	/** Grass between the cart field's fence and its stands (they stand back out of blast reach). */
+	private void cartInfield(Site site) {
+		int r = site.radius() + 2;
+		int start = site.standStart();
+		for (int dx = -start; dx <= start; dx++) {
+			for (int dz = -start; dz <= start; dz++) {
+				int d = Math.max(Math.abs(dx), Math.abs(dz));
+				if (d >= r && d < start) {
+					int x = site.centerX() + dx;
+					int z = site.centerZ() + dz;
+					set(x, S, z, d == start - 2 ? Blocks.DIRT_PATH.defaultBlockState() : Blocks.GRASS_BLOCK.defaultBlockState());
+					int roll = PracticeLayout.scatter(x, z, 9);
+					if (d < start - 3 && roll < 60) {
+						set(x, F, z, Blocks.SHORT_GRASS.defaultBlockState());
+					}
+				}
+			}
 		}
 	}
 

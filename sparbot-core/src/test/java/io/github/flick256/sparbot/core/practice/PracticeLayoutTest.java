@@ -69,4 +69,34 @@ class PracticeLayoutTest {
 			assertFalse(!seen.add(p[0] + "," + p[1]), "two pads on one block");
 		}
 	}
+
+	@Test
+	void theStandsStayOutOfTheFightAndOutOfBlastReach() {
+		for (PracticeLayout.Site s : PracticeLayout.SITES) {
+			// Outside the arena box (so round resets never touch them), with room for the arena's own edge.
+			assertTrue(s.standStart() > s.radius() + 2, s.id() + " stands start inside the arena");
+			for (PracticeLayout.Site o : PracticeLayout.SITES) {
+				if (o != s) {
+					double centres = Math.hypot(s.centerX() - o.centerX(), s.centerZ() - o.centerZ());
+					assertTrue(centres > (s.standEnd() + o.standEnd()) * Math.sqrt(2) + 10, s.id() + " and " + o.id() + " stands overlap");
+				}
+			}
+			assertTrue(Math.min(Math.abs(s.centerX()), Math.abs(s.centerZ())) == 0
+				&& Math.max(Math.abs(s.centerX()), Math.abs(s.centerZ())) - s.standEnd() * Math.sqrt(2) > PracticeLayout.HUB_RADIUS + 10
+				|| Math.hypot(s.centerX(), s.centerZ()) - s.standEnd() * Math.sqrt(2) > PracticeLayout.HUB_RADIUS + 10, s.id() + " stands reach the hub");
+		}
+		// A power-6 crystal blast breaks blocks at most about 10.4 blocks out (7.8 strength, 0.225 lost per
+		// 0.3-block step); a crossbow cart (power 8.7) about 15.
+		assertTrue(PracticeLayout.CRYSTAL.standStart() - PracticeLayout.CRYSTAL.radius() > 10.4);
+		assertTrue(PracticeLayout.CART.standStart() - PracticeLayout.CART.radius() >= 14);
+	}
+
+	@Test
+	void theViewingBoxIsAtTheTopOfTheSouthStand() {
+		for (PracticeLayout.Site s : PracticeLayout.SITES) {
+			int out = s.lobbyZ() - s.centerZ();
+			assertTrue(out > s.standStart() && out < s.standEnd(), s.id());
+			assertEquals(PracticeLayout.FLOOR + s.standBase() + s.standRows(), s.lobbyY());
+		}
+	}
 }

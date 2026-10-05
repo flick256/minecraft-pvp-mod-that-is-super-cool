@@ -134,8 +134,11 @@ typed it. Without SparBot on the client, everything still works through commands
 
 SparBot has its own world for practice: a flat desert (sand and sandstone over stone and deepslate,
 down to bedrock) with a hub and an arena for each kind of fight.
-- **The hub** (spawn): a sandstone plaza with a coloured pad per arena. Stand on one to go there; the pad
-  by each arena brings you back.
+- **The hub** (spawn): a sandstone plaza with a fountain and a coloured pad per arena, its name floating
+  over it. Stand on one to go to that arena's viewing box at the top of its grandstand; the pad behind you
+  there brings you back.
+- **Grandstands** round every arena, outside it (and, for crystals and carts, out of blast reach), so they
+  never get in the way of a fight or a round reset.
 - **UHC meadow:** rolling grass inside an old stone-brick wall, with flowers, oaks, a pond and boulders,
   and dirt and stone underneath for buckets and digging.
 - **Sword court:** quartz tiles with a blackstone border (sword, combat, benchmark, nodebuff and spear).
