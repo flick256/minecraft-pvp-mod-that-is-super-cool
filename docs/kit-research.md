@@ -52,6 +52,13 @@ On 2026-10-04 the user sent screenshots of PvPHQ's kit editor for five kits. The
 - **Golden heads** in the UHC kit are a server-made item; golden apples stand in for them.
 - **Respawn anchors** in the crystal kit are kept, but the bot can't use anchors yet.
 
+On 2026-10-05 the user sent the two cart kits, bundled as `pvphq_cart_low` (rails, TNT minecarts, a Flame
+bow) and `pvphq_cart_high` (rails, TNT minecarts, flint and steel and crossbows: a crossbow bolt shot
+through fire sets a cart off, which a GameTest confirms). Same caveats: potions read by colour (only the
+Strength II splash potion's tooltip was open), shulker box contents not shown (given empty), oak logs vs
+planks, and in the high tier kit hotbar slot 8 (behind a tooltip), inventory slot 11 (a bow?) and slot 20
+(a netherite pickaxe?). Each kit's `provenance.notes` lists them.
+
 Each kit's `provenance.notes` lists its uncertain slots. Hover screenshots of the enchanted items (or
 `/sparbot kit capture` in singleplayer after rebuilding a kit) would make them verified.
 

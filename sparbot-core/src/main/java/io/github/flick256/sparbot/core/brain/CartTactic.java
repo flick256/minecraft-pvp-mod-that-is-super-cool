@@ -17,7 +17,9 @@ import java.util.OptionalDouble;
  * Cart PvP. 26.2 facts: a TNT minecart is placed by right-clicking a rail (MinecartItem#useOn), a rail
  * needs a solid block under it, and a burning arrow hitting the cart makes it explode at once
  * (MinecartTNT#hurtServer) with power 4 + 1.5 x the arrow's speed x a random fraction. A Flame bow
- * shoots burning arrows.
+ * shoots burning arrows; an arrow that flies through a fire block catches fire too, so high tier cart
+ * players light the ground next to the cart with flint and steel and fire a crossbow (loaded beforehand,
+ * no draw at all) through the flames. Without fire an arrow only breaks the cart into an item.
  *
  * <p>Cart players inst-cart all the time: whenever the opponent is a few blocks away on the ground (or
  * stuck, or running in), the bot puts the rail where they will be by the time the arrow arrives (their
@@ -52,6 +54,14 @@ public final class CartTactic implements Tactic {
 	private static final float SHOT_TOLERANCE = 4.0F;
 	/** ...or once drawn this long whatever: a full draw is slow and gets the cart dodged. */
 	private static final int LATEST_RELEASE = DRAW_TICKS + 5;
+	/** A crossbow bolt leaves at 3.15 blocks per tick: a far bigger blast (up to 4 + 1.5 x 3.15). */
+	private static final double CROSSBOW_POWER = 4.0 + 1.5 * 3.15;
+	/** Through the fire, the crossbow is aimed low on the cart. */
+	private static final double CART_LOW = 0.2;
+	/** The fire goes on a ground block next to the cart, at most this far (centre to centre). */
+	private static final double FIRE_NEAR_CART = 1.6;
+	/** Steadier than the bow's short draw: the bolt has to go through one block of fire. */
+	private static final float CROSSBOW_TOLERANCE = 2.5F;
 	private static final Ballistics.Projectile ARROW = new Ballistics.Projectile("arrow (short draw)", ARROW_SPEED, 0.05, 0.99,
 		Ballistics.Order.MOVE_DRAG_GRAVITY, Ballistics.LOOK_VECTOR);
 
@@ -59,6 +69,23 @@ public final class CartTactic implements Tactic {
 	private String step = "";
 	private long lastRail = Long.MIN_VALUE / 2;
 	private int railsBefore = -1;
+
+	/** What the bot sets its carts off with. */
+	enum Igniter {
+		/** A crossbow (loaded, or arrows to load it) shot through fire lit with flint and steel. */
+		CROSSBOW_FIRE,
+		/** A short-draw Flame bow shot. */
+		FLAME_BOW,
+		NONE
+	}
+
+	static Igniter igniter(InventoryState inv) {
+		boolean arrows = inv.count(ItemKind.ARROW) > 0;
+		if (flintSlot(inv) >= 0 && inv.hotbarSlot(i -> i.kind() == ItemKind.CROSSBOW && (i.charged() || arrows)) >= 0) {
+			return Igniter.CROSSBOW_FIRE;
+		}
+		return flameBow(inv) >= 0 && arrows ? Igniter.FLAME_BOW : Igniter.NONE;
+	}
 
 	@Override
 	public String name() {
@@ -74,10 +101,11 @@ public final class CartTactic implements Tactic {
 	public double score(BrainContext c) {
 		InventoryState inv = c.self.inventory();
 		TargetState t = c.seen();
-		if (c.target == null || t == null || !t.visible() || c.targetDistance() > ENGAGE_RANGE || flameBow(inv) < 0 || inv.count(ItemKind.ARROW) == 0) {
+		Igniter how = igniter(inv);
+		if (c.target == null || t == null || !t.visible() || c.targetDistance() > ENGAGE_RANGE || how == Igniter.NONE) {
 			return 0;
 		}
-		if (inv.usingItem() && inv.usingKind() == ItemKind.BOW && "shoot".equals(step)) {
+		if (inv.usingItem() && (inv.usingKind() == ItemKind.BOW && "shoot".equals(step) || inv.usingKind() == ItemKind.CROSSBOW && "load".equals(step))) {
 			return Scores.SPECIALIST + 0.1;
 		}
 		// A rail or cart already down next to them: finish the combo.
@@ -86,7 +114,14 @@ public final class CartTactic implements Tactic {
 		if (cartDown || railDown) {
 			return Scores.SPECIALIST + 0.08;
 		}
-		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0 || !opening(c, t)) {
+		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0) {
+			return 0;
+		}
+		if (how == Igniter.CROSSBOW_FIRE && loadedCrossbow(inv) < 0 && c.targetDistance() >= CART_RANGE_MIN && !inv.usingItem()) {
+			// Out of reach: load the crossbow now, so the next cart goes off the moment it is down.
+			return Scores.SPECIALIST - 0.05;
+		}
+		if (!opening(c, t)) {
 			return 0;
 		}
 		return willCart.get(c.rng, c.profile.items().cartSkill(), 20) ? Scores.SPECIALIST : 0;
@@ -143,6 +178,8 @@ public final class CartTactic implements Tactic {
 		}
 		Vec3 eye = self.eyePosition();
 		double skill = c.profile.items().cartSkill();
+		Igniter how = igniter(inv);
+		double power = how == Igniter.CROSSBOW_FIRE ? CROSSBOW_POWER : PLANNED_POWER;
 		Vec3 ahead = predicted(t, c.profile.aim().trackingLead());
 		int rails = inv.count(i -> i.kind() == ItemKind.BLOCK && "minecraft:rail".equals(i.id()));
 		if (railsBefore >= 0 && rails < railsBefore) {
@@ -152,17 +189,25 @@ public final class CartTactic implements Tactic {
 
 		Optional<Vec3> cart = c.world.tntCarts().stream()
 			.filter(p -> horizontal(p, t.position()) <= BlockPlay.NEAR_TARGET + 0.5 && p.distanceTo(eye) <= SHOOT_RANGE
-				&& !opponentInTheWay(c, p) && BlockPlay.worth(c, p, PLANNED_POWER, skill))
+				&& !opponentInTheWay(c, p) && BlockPlay.worth(c, p, power, skill))
 			.min(Comparator.comparingDouble(p -> horizontal(p, t.position())));
 		if (cart.isPresent()) {
+			if (how == Igniter.CROSSBOW_FIRE) {
+				return throughFire(c, cart.get());
+			}
 			step = "shoot";
 			return shoot(c, cart.get().add(new Vec3(0, CART_MID, 0)));
+		}
+		if (how == Igniter.CROSSBOW_FIRE && loadedCrossbow(inv) < 0) {
+			// Loaded before the rail goes down: rail, cart, fire, shot is then one quick run.
+			step = "load";
+			return load(c, null);
 		}
 
 		int cartSlot = inv.hotbarSlot(ItemKind.TNT_MINECART);
 		Optional<BlockSpot> rail = cartSlot < 0 ? Optional.empty() : c.world.rails().stream()
 			.filter(r -> r.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && r.y() + BlockPlay.RAIL_HEIGHT < eye.y()
-				&& BlockPlay.worth(c, center(r, 0), PLANNED_POWER, skill))
+				&& BlockPlay.worth(c, center(r, 0), power, skill))
 			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(ahead)));
 		if (rail.isPresent()) {
 			step = "place cart";
@@ -176,7 +221,7 @@ public final class CartTactic implements Tactic {
 			.filter(s -> {
 				// Where they are going, but not under them now (they would ride the cart away).
 				return s.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && s.horizontalDistanceTo(t.position()) >= 0.9 && s.y() + 1 < eye.y()
-					&& BlockPlay.worth(c, center(s, 1), PLANNED_POWER, skill);
+					&& BlockPlay.worth(c, center(s, 1), power, skill);
 			})
 			.min(Comparator.comparingDouble(s -> s.horizontalDistanceTo(ahead)));
 		if (spot.isPresent()) {
@@ -207,6 +252,79 @@ public final class CartTactic implements Tactic {
 		// Holding right click draws; letting go fires (a short draw: never on to a full one).
 		boolean use = armed && !(drawn && aimed) && !(drawing && inv.useTicks() >= LATEST_RELEASE);
 		return BlockPlay.spacing(c, look, press).withUse(use);
+	}
+
+	/**
+	 * The crossbow way with a cart down: fire on the ground between the bot and the cart (one flint and
+	 * steel click), then a loaded crossbow fired through the flames at the bottom of the cart.
+	 */
+	private Inputs throughFire(BrainContext c, Vec3 cart) {
+		SelfState self = c.self;
+		InventoryState inv = self.inventory();
+		Vec3 eye = self.eyePosition();
+		Vec3 point = cart.add(new Vec3(0, CART_LOW, 0));
+		boolean lit = c.world.fires().stream().anyMatch(f -> crosses(eye, point, f));
+		if (!lit) {
+			Optional<BlockSpot> ground = c.world.groundSpots().stream()
+				.filter(s -> horizontal(center(s, 1), cart) <= FIRE_NEAR_CART && Math.abs(s.y() + 1 - cart.y()) < 0.6
+					&& crosses(eye, point, new BlockSpot(s.x(), s.y() + 1, s.z())))
+				.min(Comparator.comparingDouble(s -> horizontal(center(s, 1), cart)));
+			if (ground.isEmpty()) {
+				// No ground in line with the cart: step round until there is.
+				step = "position";
+				return BlockPlay.position(c);
+			}
+			step = "light";
+			return BlockPlay.clickTop(c, ground.get(), 1.0, flintSlot(inv));
+		}
+		int loaded = loadedCrossbow(inv);
+		if (loaded < 0) {
+			step = "load";
+			return load(c, point);
+		}
+		step = "shoot";
+		double horizontal = horizontal(point, eye);
+		OptionalDouble pitch = Ballistics.solvePitch(Ballistics.ARROW_CROSSBOW, horizontal, point.y() - eye.y());
+		float goalYaw = Angles.yawTowards(eye, point);
+		float goalPitch = pitch.isPresent() ? (float) pitch.getAsDouble() : Angles.pitchTowards(eye, point);
+		float[] look = c.lookAt(goalYaw, goalPitch);
+		int press = c.memory.hands.request(c, loaded);
+		// One click, once the bolt's line runs through the fire and into the cart.
+		Vec3 dir = Angles.lookVector(self.yaw(), self.pitch());
+		Vec3 far = eye.add(dir.scale(point.distanceTo(eye)));
+		boolean onLine = c.aimError(goalYaw, goalPitch) < CROSSBOW_TOLERANCE && c.world.fires().stream().anyMatch(f -> crosses(eye, far, f));
+		boolean fire = inv.selectedSlot() == loaded && onLine && !inv.usingItem();
+		return BlockPlay.spacing(c, look, press).withUse(fire);
+	}
+
+	/** Holds right click on a crossbow until it is loaded, looking at {@code point} (or the opponent). */
+	private Inputs load(BrainContext c, Vec3 point) {
+		InventoryState inv = c.self.inventory();
+		boolean arrows = inv.count(ItemKind.ARROW) > 0;
+		int slot = inv.hotbarSlot(i -> i.kind() == ItemKind.CROSSBOW && !i.charged() && arrows);
+		if (slot < 0) {
+			return BlockPlay.position(c);
+		}
+		Vec3 eye = c.self.eyePosition();
+		Vec3 look = point != null ? point : c.seen().chest();
+		int press = c.memory.hands.request(c, slot);
+		return BlockPlay.spacing(c, c.lookAt(Angles.yawTowards(eye, look), Angles.pitchTowards(eye, look)), press)
+			.withUse(inv.selectedSlot() == slot);
+	}
+
+	/** Whether the straight line from {@code from} to {@code to} goes through the block {@code b}. */
+	static boolean crosses(Vec3 from, Vec3 to, BlockSpot b) {
+		Vec3 d = to.subtract(from);
+		double length = d.length();
+		return length > 1e-6 && BrainContext.rayHitsBox(from, d.scale(1.0 / length), new Vec3(b.x(), b.y(), b.z()), new Vec3(b.x() + 1, b.y() + 1, b.z() + 1), length);
+	}
+
+	static int flintSlot(InventoryState inv) {
+		return inv.hotbarSlot(i -> "minecraft:flint_and_steel".equals(i.id()));
+	}
+
+	static int loadedCrossbow(InventoryState inv) {
+		return inv.hotbarSlot(i -> i.kind() == ItemKind.CROSSBOW && i.charged());
 	}
 
 	/** Whether the opponent's hitbox is between the bot and {@code point}: the arrow would hit them instead. */

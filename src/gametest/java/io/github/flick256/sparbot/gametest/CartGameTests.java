@@ -70,4 +70,35 @@ public class CartGameTests {
 			TestSupport.remove(bot, target);
 		}));
 	}
+
+	/** PvPHQ's high tier way: rail, cart, fire lit next to it with flint and steel, a loaded crossbow shot through the fire. */
+	@GameTest(maxTicks = 500, padding = 24)
+	public void botSetsACartOffWithACrossbowThroughFire(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "XbowCarter", 1.5, 1, 3.5, -90, "pro", "pvphq_cart_high"));
+		BotPlayer body = TestSupport.body(bot);
+		Bot target = TestSupport.dummy(helper, "Victim", 5.5, 1, 3.5, 90, "pvphq_cart_high");
+		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		int cartsBefore = body.getInventory().countItem(Items.TNT_MINECART);
+		boolean[] seen = new boolean[3];
+		FightDiagnostics watch = new FightDiagnostics(bot, target);
+		helper.onEachTick(() -> {
+			watch.tick(helper);
+			seen[0] |= body.getInventory().countItem(Items.TNT_MINECART) < cartsBefore;
+			net.minecraft.core.BlockPos feet = body.blockPosition();
+			for (net.minecraft.core.BlockPos p : net.minecraft.core.BlockPos.betweenClosed(feet.offset(-6, -2, -6), feet.offset(6, 2, 6))) {
+				seen[1] |= helper.getLevel().getBlockState(p).is(net.minecraft.tags.BlockTags.FIRE);
+			}
+			seen[2] |= !helper.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.arrow.AbstractArrow.class, body.getBoundingBox().inflate(12),
+				a -> a.getOwner() == body).isEmpty();
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(seen[0], "a TNT minecart was placed\n" + watch.report());
+			helper.assertTrue(seen[1], "fire was lit\n" + watch.report());
+			helper.assertTrue(seen[2], "a crossbow bolt was shot\n" + watch.report());
+			helper.assertTrue(bot.stats().blastHits() > 0, "the cart's blast hurt the opponent\n" + watch.report());
+			SparBot.LOGGER.info("Crossbow cart test: {}", bot.stats().summary());
+			TestSupport.remove(bot, target);
+		});
+	}
 }

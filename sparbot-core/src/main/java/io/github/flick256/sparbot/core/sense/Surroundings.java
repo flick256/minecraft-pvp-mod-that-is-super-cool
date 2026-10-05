@@ -19,11 +19,18 @@ import java.util.List;
  * @param lavaSources lava source blocks within block reach (filled in when the bot carries a bucket)
  * @param webs cobwebs within block reach (filled in when the bot carries a bucket or blocks)
  * @param anchors respawn anchors within block reach, with their charge (0-4, shown by the block's glow)
+ * @param fires fire blocks within block reach (an arrow flying through one catches fire)
  */
 public record Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots, List<Vec3> tntCarts, List<BlockSpot> rails,
-	List<BlockSpot> waterSources, List<BlockSpot> lavaSources, List<BlockSpot> webs, List<Anchor> anchors) {
+	List<BlockSpot> waterSources, List<BlockSpot> lavaSources, List<BlockSpot> webs, List<Anchor> anchors, List<BlockSpot> fires) {
 	/** A respawn anchor and how many glowstone charges it holds. */
 	public record Anchor(BlockSpot spot, int charge) {
+	}
+
+	/** No fire known. */
+	public Surroundings(List<Vec3> crystals, List<BlockSpot> crystalBases, List<BlockSpot> groundSpots, List<Vec3> tntCarts, List<BlockSpot> rails,
+		List<BlockSpot> waterSources, List<BlockSpot> lavaSources, List<BlockSpot> webs, List<Anchor> anchors) {
+		this(crystals, crystalBases, groundSpots, tntCarts, rails, waterSources, lavaSources, webs, anchors, List.of());
 	}
 
 	/** No respawn anchors known. */

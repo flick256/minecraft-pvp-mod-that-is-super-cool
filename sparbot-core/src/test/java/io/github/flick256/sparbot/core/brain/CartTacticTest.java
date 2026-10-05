@@ -117,4 +117,61 @@ class CartTacticTest {
 		assertTrue(ahead.z() < 6.0 && ahead.z() > 3.5, "expected to be closer by the time the arrow arrives, z " + ahead.z());
 		assertTrue(CartTactic.predicted(coming, 0).z() == 6.0, "no tracking skill, no lead");
 	}
+
+	private static final ItemInfo FLINT = TestFixtures.item(ItemKind.OTHER, "minecraft:flint_and_steel", 1, 1);
+
+	private static ItemInfo crossbow(boolean loaded) {
+		return new ItemInfo(ItemKind.CROSSBOW, "minecraft:crossbow", 1, 1, 1, false, loaded, null);
+	}
+
+	/** The high tier cart kit's hotbar: crossbow, rails, flint and steel, a cart; a cart down by the opponent. */
+	private static BrainHarness crossbowHarness(boolean loaded, List<BlockSpot> fires) {
+		BrainHarness h = new BrainHarness(cartPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 2, crossbow(loaded), 3, RAILS, 4, FLINT, 5, CART, 29, ARROWS),
+			TestFixtures.target(new Vec3(-0.5, 0, 4.5), 0));
+		// The cart on a rail at (0, 0, 5); the ground block in front of it (towards the bot) can take fire.
+		h.world = new Surroundings(List.of(), List.of(), List.of(new BlockSpot(0, -1, 4)), List.of(new Vec3(0.5, 0.0625, 5.5)), List.of(), List.of(), List.of(),
+			List.of(), List.of(), fires);
+		return h;
+	}
+
+	@Test
+	void lightsFireInFrontOfTheCartWithFlintAndSteel() {
+		BrainHarness h = crossbowHarness(true, List.of());
+		boolean lit = false;
+		for (int i = 0; i < 40 && !lit; i++) {
+			Inputs in = h.tick();
+			lit = in.use() && "minecraft:flint_and_steel".equals(h.slots[h.selected].id());
+		}
+		assertTrue(lit, "clicked the ground in front of the cart with flint and steel, now " + h.brain.lastTrace().note());
+		assertTrue(h.brain.lastTrace().note().endsWith("step=light"), h.brain.lastTrace().note());
+	}
+
+	@Test
+	void firesTheLoadedCrossbowThroughTheFire() {
+		BrainHarness h = crossbowHarness(true, List.of(new BlockSpot(0, 0, 4)));
+		boolean fired = false;
+		for (int i = 0; i < 40 && !fired; i++) {
+			Inputs in = h.tick();
+			fired = in.use() && h.slots[h.selected].kind() == ItemKind.CROSSBOW && h.slots[h.selected].charged();
+		}
+		assertTrue(fired, "shot the crossbow, now " + h.brain.lastTrace().note());
+		// The bolt's line (straight from the eye along the look) runs through the fire block.
+		Vec3 eye = new Vec3(0, 1.62, 0);
+		Vec3 far = eye.add(io.github.flick256.sparbot.core.math.Angles.lookVector(h.yaw, h.pitch).scale(5.6));
+		assertTrue(CartTactic.crosses(eye, far, new BlockSpot(0, 0, 4)), "aimed through the fire");
+	}
+
+	@Test
+	void loadsTheCrossbowBeforeTheRail() {
+		BrainHarness h = new BrainHarness(cartPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 2, crossbow(false), 3, RAILS, 4, FLINT, 5, CART, 29, ARROWS),
+			TestFixtures.target(new Vec3(0, 0, 4.5), 0));
+		h.world = new Surroundings(List.of(), List.of(), List.of(new BlockSpot(1, -1, 5)), List.of(), List.of());
+		boolean loading = false;
+		for (int i = 0; i < 30 && !loading; i++) {
+			Inputs in = h.tick();
+			loading = in.use() && h.slots[h.selected].kind() == ItemKind.CROSSBOW;
+			assertFalse(in.use() && "minecraft:rail".equals(h.slots[h.selected].id()), "no rail before the crossbow is loaded");
+		}
+		assertTrue(loading, "held right click on the crossbow, now " + h.brain.lastTrace().tactic() + " " + h.brain.lastTrace().note());
+	}
 }

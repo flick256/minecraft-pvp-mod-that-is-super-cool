@@ -249,6 +249,7 @@ public final class Perception {
 		List<BlockSpot> groundSpots = new ArrayList<>();
 		List<BlockSpot> rails = new ArrayList<>();
 		List<Surroundings.Anchor> anchors = new ArrayList<>();
+		List<BlockSpot> fires = new ArrayList<>();
 		BlockPos feet = self.blockPosition();
 		for (int dx = -BLOCK_SCAN; dx <= BLOCK_SCAN; dx++) {
 			for (int dz = -BLOCK_SCAN; dz <= BLOCK_SCAN; dz++) {
@@ -262,6 +263,10 @@ public final class Perception {
 						// Its charge shows in the block's glow.
 						anchors.add(new Surroundings.Anchor(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()),
 							state.getValue(net.minecraft.world.level.block.RespawnAnchorBlock.CHARGE)));
+						continue;
+					}
+					if (state.is(BlockTags.FIRE)) {
+						fires.add(new BlockSpot(pos.getX(), pos.getY(), pos.getZ()));
 						continue;
 					}
 					if (state.is(BlockTags.RAILS)) {
@@ -287,7 +292,7 @@ public final class Perception {
 				}
 			}
 		}
-		return new Surroundings(crystals, bases, groundSpots, carts, rails, water, lava, webs, anchors);
+		return new Surroundings(crystals, bases, groundSpots, carts, rails, water, lava, webs, anchors, fires);
 	}
 
 	/** Water and lava source blocks and cobwebs within block reach (what a player sees lying around them). */

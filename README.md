@@ -205,7 +205,7 @@ plus every deviation made when translating it from an older version. Custom kits
 Bundled kits:
 - `basic_sword`: SparBot's own duel kit (unenchanted diamond gear).
 - `sparbot_*`: SparBot's own kits for each mode (combat, ranged, nodebuff, mace, spear, crystal, cart, uhc).
-- `pvphq_sword`, `pvphq_uhc`, `pvphq_smp`, `pvphq_mace`, `pvphq_crystal`: PvPHQ's kits, transcribed from
+- `pvphq_sword`, `pvphq_uhc`, `pvphq_smp`, `pvphq_mace`, `pvphq_crystal`, `pvphq_cart_low`, `pvphq_cart_high`: PvPHQ's kits, transcribed from
   kit-editor screenshots. Confidence is **medium**: enchantments aren't visible in the screenshots and some
   items were read by colour. Each kit's `provenance.notes` lists exactly what to confirm.
 - `mctiers_sword_recreation`: an **unverified** third-party recreation of the MCTiers-style Sword kit.

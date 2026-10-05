@@ -1,0 +1,206 @@
+{
+  "id": "pvphq_cart_low",
+  "displayName": "Cart, low tier (PvPHQ)",
+  "mode": "cart",
+  "provenance": {
+    "source": "user-supplied",
+    "server": "PvPHQ (play.pvphq.com)",
+    "mode": "cart",
+    "minecraftVersion": "26.2",
+    "confidence": "medium",
+    "verified": false,
+    "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-05",
+    "notes": "PvPHQ's low tier cart kit: rails, TNT minecarts set off by a Flame bow, cobwebs, pearls and golden apples. Uncertain (please confirm): the orange potions are read as Fire Resistance splash potions and the light blue ones as drinkable Swiftness II (the colours fit, the tooltips weren't shown); the yellow ones are Splash Potions of Strength II (a tooltip shows one); hotbar slot 7 is read as oak logs (could be planks); the shulker boxes are given empty, as their contents weren't shown; armor trims are left off. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on the sword; bows Power V, Punch II, Flame, Unbreaking III and Mending (the kit carries arrows, so no Infinity); crossbows Quick Charge III, Piercing IV, Unbreaking III and Mending; the exact sets are SparBot's reading of 'maxed', please confirm.",
+    "deviations": [
+      "none: transcribed from a 26.2 server"
+    ]
+  },
+  "armor": {
+    "head": {
+      "id": "minecraft:netherite_helmet",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:respiration": 3,
+        "minecraft:aqua_affinity": 1
+      }
+    },
+    "chest": {
+      "id": "minecraft:netherite_chestplate",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
+    },
+    "legs": {
+      "id": "minecraft:netherite_leggings",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:swift_sneak": 3
+      }
+    },
+    "feet": {
+      "id": "minecraft:netherite_boots",
+      "enchantments": {
+        "minecraft:protection": 4,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:feather_falling": 4,
+        "minecraft:depth_strider": 3
+      }
+    }
+  },
+  "offhand": {
+    "id": "minecraft:totem_of_undying"
+  },
+  "slots": {
+    "0": {
+      "id": "minecraft:netherite_sword",
+      "enchantments": {
+        "minecraft:sharpness": 5,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1,
+        "minecraft:fire_aspect": 2,
+        "minecraft:looting": 3,
+        "minecraft:sweeping_edge": 3
+      }
+    },
+    "1": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "2": {
+      "id": "minecraft:cobweb",
+      "count": 64
+    },
+    "3": {
+      "id": "minecraft:rail",
+      "count": 64
+    },
+    "4": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "5": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "6": {
+      "id": "minecraft:golden_apple",
+      "count": 64
+    },
+    "7": {
+      "id": "minecraft:oak_log",
+      "count": 64
+    },
+    "8": {
+      "id": "minecraft:bow",
+      "enchantments": {
+        "minecraft:power": 5,
+        "minecraft:punch": 2,
+        "minecraft:flame": 1,
+        "minecraft:unbreaking": 3,
+        "minecraft:mending": 1
+      }
+    },
+    "9": {
+      "id": "minecraft:experience_bottle",
+      "count": 64
+    },
+    "10": {
+      "id": "minecraft:shulker_box"
+    },
+    "11": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "12": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "13": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "14": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "15": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:fire_resistance"
+    },
+    "16": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "17": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "18": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "19": {
+      "id": "minecraft:shulker_box"
+    },
+    "20": {
+      "id": "minecraft:golden_apple",
+      "count": 64
+    },
+    "21": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "22": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "23": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "24": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:fire_resistance"
+    },
+    "25": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "26": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    },
+    "27": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "28": {
+      "id": "minecraft:ender_pearl",
+      "count": 16
+    },
+    "29": {
+      "id": "minecraft:arrow",
+      "count": 64
+    },
+    "30": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "31": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "32": {
+      "id": "minecraft:tnt_minecart"
+    },
+    "33": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:fire_resistance"
+    },
+    "34": {
+      "id": "minecraft:potion",
+      "potion": "minecraft:strong_swiftness"
+    },
+    "35": {
+      "id": "minecraft:splash_potion",
+      "potion": "minecraft:strong_strength"
+    }
+  },
+  "effects": []
+}
