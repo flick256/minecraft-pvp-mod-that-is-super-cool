@@ -43,7 +43,8 @@ final class BlockPlay {
 		// The highlighted block must be this one: a wall or another block in front would take the click.
 		boolean highlighted = self.crosshairBlockDistance() >= entry - 0.05;
 		boolean click = onTop && highlighted && self.inventory().selectedSlot() == slot && !self.inventory().usingItem();
-		return spacing(c, look, press).withUse(click);
+		// Fast clicking: a fresh click the moment the crosshair is on the spot (held to the profile's click rate).
+		return spacing(c, look, press).withUse(click).withTapUse(click);
 	}
 
 	/** The block someone standing at {@code feet} stands on. */

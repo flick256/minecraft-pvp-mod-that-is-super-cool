@@ -55,7 +55,7 @@ public final class DuelBrain implements Policy {
 		this.tactics = List.of(melee, new RetreatTactic(), new SearchTactic(), new HealTactic(),
 			new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
 			new PotTactic(), new RefillTactic(), new BuffTactic(), new MaceTactic(), new SpearTactic(), new CrystalTactic(), new AnchorTactic(), new CartTactic(), new DefuseTactic(),
-			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic(), new CleanupTactic(), new BoostTactic(), new BreakWebTactic());
+			new LavaTactic(), new WebTactic(), new WaterTactic(), new WallTactic(), new BacklineTactic(), new CleanupTactic(), new BoostTactic(), new BreakWebTactic());
 		this.profile = style.applyTo(profile);
 		this.style = style;
 		this.rng = new Rng(seed);
@@ -83,7 +83,8 @@ public final class DuelBrain implements Policy {
 	/** A brain for a learned model: its melee network, and its tactic chooser if it has one. */
 	public static DuelBrain learned(SkillProfile profile, Playstyle style, long seed, io.github.flick256.sparbot.core.ml.Mlp model) {
 		DuelBrain brain = new DuelBrain(profile, style, seed, new LearnedMeleeTactic(model));
-		if (model.tactics() != null) {
+		// (A tactic chooser made for a different set of tactics is left out: the scripted choices then.)
+		if (model.tactics() != null && LearnedTactics.fits(model.tactics())) {
 			brain.setLearnedTactics(new LearnedTactics(model.tactics()));
 		}
 		return brain;

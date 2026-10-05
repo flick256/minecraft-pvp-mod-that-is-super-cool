@@ -1,0 +1,77 @@
+{
+  "id": "demon",
+  "displayName": "Demon",
+  "description": "Above pro: a top-tier player who lives on utility. Reactions at the fast end of human (never inhuman), butterfly-quick blocks, near-perfect lava, web, bow and cart timing, every technique; reach judged tightly but still held back, not glued to 3 blocks.",
+  "reactionTimeMs": {
+    "mean": 155,
+    "stdDev": 22,
+    "min": 130,
+    "max": 240
+  },
+  "pingMs": {
+    "mean": 20,
+    "stdDev": 8,
+    "min": 5,
+    "max": 60
+  },
+  "aim": {
+    "maxTurnDegPerTick": 45,
+    "smoothing": 0.7,
+    "jitterDeg": 0.4,
+    "overshootChance": 0.06,
+    "overshootFactor": 0.1,
+    "trackingLead": 0.9
+  },
+  "clicking": {
+    "cps": {
+      "mean": 15,
+      "stdDev": 1.5,
+      "min": 12,
+      "max": 19
+    },
+    "cooldownDiscipline": 0.97
+  },
+  "reach": {
+    "rangeErrorBlocks": {"mean": -0.25, "stdDev": 0.12, "min": -0.6, "max": 0.12}
+  },
+  "technique": {
+    "critSkill": 0.95,
+    "wTapSkill": 0.9,
+    "sTapSkill": 0.65,
+    "strafeSkill": 0.5,
+    "jumpResetSkill": 0.85,
+    "spacingSkill": 0.95,
+    "readSkill": 0.95,
+    "feintSkill": 0.7,
+    "comboSkill": 0.95
+  },
+  "items": {
+    "hotbarSwitchMs": {
+      "mean": 70,
+      "stdDev": 15,
+      "min": 50,
+      "max": 120
+    },
+    "inventoryMs": {
+      "mean": 220,
+      "stdDev": 50,
+      "min": 150,
+      "max": 400
+    },
+    "retotemSkill": 0.99,
+    "gappleHealthFraction": 0.5,
+    "eatHungerBelow": 16,
+    "shieldSkill": 0.95,
+    "axeSkill": 0.95,
+    "bowSkill": 0.95,
+    "pearlSkill": 0.85,
+    "potHealthFraction": 0.65,
+    "maceSkill": 0.95,
+    "spearSkill": 0.95,
+    "crystalSkill": 0.95,
+    "cartSkill": 0.95,
+    "uhcSkill": 1.0
+  },
+  "mistakeRate": 0.01,
+  "panicHealthFraction": 0.2
+}

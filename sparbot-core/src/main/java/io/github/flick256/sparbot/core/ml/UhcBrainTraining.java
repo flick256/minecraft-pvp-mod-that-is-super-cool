@@ -174,17 +174,32 @@ public final class UhcBrainTraining {
 
 	/** @param freshTactics start the tactic chooser over from neutral (the scripted choices), keeping the melee */
 	public static double run(Mlp start, boolean freshTactics, int generations, Consumer<String> log, BooleanSupplier cancelled, Consumer<Mlp> onBest) {
+		return run(start, freshTactics, "pro", generations, log, cancelled, onBest);
+	}
+
+	/**
+	 * @param profileId the skill tier the brain is trained at (its human limits), and the scripted
+	 *     opponent's; "demon" trains against the scripted demon and the scripted pro
+	 */
+	public static double run(Mlp start, boolean freshTactics, String profileId, int generations, Consumer<String> log, BooleanSupplier cancelled,
+		Consumer<Mlp> onBest) {
 		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
-		SkillProfile pro = presets.get("pro");
+		SkillProfile pro = presets.get(profileId);
+		if (pro == null) {
+			throw new IllegalArgumentException("unknown skill profile " + profileId);
+		}
 		Mlp bundled = Models.loadBundled().get("uhc");
 		Mlp model = start != null ? start.copy() : bundled.copy();
-		if (model.tactics() == null || freshTactics) {
+		if (model.tactics() == null || freshTactics || !LearnedTactics.fits(model.tactics())) {
 			model = model.withTactics(LearnedTactics.neutral(new Random(7)));
 		}
 		Loadout loadout = Loadout.ofKit("sparbot_uhc");
 		Tournament.Entrant scriptedPro = Tournament.scripted(pro);
 		Tournament.Entrant meleePro = SelfPlay.entrant("learned melee", pro, bundled.withTactics(null));
 		List<Tournament.Entrant> league = new ArrayList<>(List.of(scriptedPro, meleePro));
+		if (!profileId.equals("pro")) {
+			league.add(Tournament.scripted(presets.get("pro")));
+		}
 		if (bundled.tactics() != null) {
 			league.add(SelfPlay.entrant("bundled brain", pro, bundled));
 		}
@@ -216,7 +231,10 @@ public final class UhcBrainTraining {
 		return (vsScripted + vsMelee) / 2;
 	}
 
-	/** {@code UhcBrainTraining [generations] [out.json] [start.json] [fresh]} ({@code fresh}: a neutral tactic chooser on the start's melee) */
+	/**
+	 * {@code UhcBrainTraining [generations] [out.json] [start.json] [fresh] [profile]} ({@code fresh}: a neutral
+	 * tactic chooser on the start's melee; {@code profile}: the skill tier to train at, pro by default)
+	 */
 	public static void main(String[] args) throws java.io.IOException {
 		int generations = args.length > 0 ? Integer.parseInt(args[0]) : 100;
 		java.nio.file.Path out = java.nio.file.Path.of(args.length > 1 ? args[1] : "build/models/uhc_brain.json");
@@ -225,7 +243,8 @@ public final class UhcBrainTraining {
 		Consumer<String> log = line -> System.out.printf(Locale.ROOT, "[%7.1f s] %s%n", (System.nanoTime() - t0) / 1e9, line);
 		log.accept("training the UHC brain on " + Runtime.getRuntime().availableProcessors() + " cores");
 		boolean fresh = args.length > 3 && args[3].equals("fresh");
-		double best = run(start, fresh, generations, log, () -> false, net -> {
+		String profile = args.length > 4 ? args[4] : "pro";
+		double best = run(start, fresh, profile, generations, log, () -> false, net -> {
 			try {
 				if (out.getParent() != null) {
 					java.nio.file.Files.createDirectories(out.getParent());

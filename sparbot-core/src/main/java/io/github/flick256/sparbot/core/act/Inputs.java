@@ -16,6 +16,9 @@ package io.github.flick256.sparbot.core.act;
  * @param holdAttack the attack button is held down: keeps breaking the block under the crosshair
  *     (Minecraft#continueAttack). A press that lands on a player is a click ({@code attack}); holding the
  *     button never repeats clicks
+ * @param tapUse a fresh right-click this tick even though the button is already down: fast (butterfly or
+ *     jitter) clicking, a new click every tick or two instead of holding's one per 4 ticks. Held to the
+ *     profile's click rate like attacks ({@link InputShaper})
  */
 public record Inputs(
 	float yawDelta,
@@ -31,8 +34,15 @@ public record Inputs(
 	boolean swapOffhand,
 	boolean inventoryOpen,
 	InventoryClick inventoryClick,
-	boolean holdAttack
+	boolean holdAttack,
+	boolean tapUse
 ) {
+	/** Inputs without fast right-clicking. */
+	public Inputs(float yawDelta, float pitchDelta, int forward, int strafe, boolean jump, boolean sneak, boolean sprint, boolean attack,
+		boolean use, int hotbarSlot, boolean swapOffhand, boolean inventoryOpen, InventoryClick inventoryClick, boolean holdAttack) {
+		this(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, false);
+	}
+
 	public static final Inputs IDLE = new Inputs(0, 0, 0, 0, false, false, false, false, false, -1);
 
 	/** Inputs without inventory interaction. */
@@ -53,38 +63,44 @@ public record Inputs(
 	}
 
 	public Inputs withHoldAttack(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, value);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, value, tapUse);
+	}
+
+	/** A fresh right-click this tick (and the button down), or not. */
+	public Inputs withTapUse(boolean value) {
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use || value, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick,
+			holdAttack, value);
 	}
 
 	public Inputs withRotation(float yaw, float pitch) {
-		return new Inputs(yaw, pitch, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yaw, pitch, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withAttack(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, value, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, value, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withUse(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, value, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, value, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withMovement(int newForward, int newStrafe) {
-		return new Inputs(yawDelta, pitchDelta, newForward, newStrafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, newForward, newStrafe, jump, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withJump(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, value, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, value, sneak, sprint, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withSprint(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, value, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, value, attack, use, hotbarSlot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withHotbarSlot(int slot) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, slot, swapOffhand, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, slot, swapOffhand, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 
 	public Inputs withSwapOffhand(boolean value) {
-		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, value, inventoryOpen, inventoryClick, holdAttack);
+		return new Inputs(yawDelta, pitchDelta, forward, strafe, jump, sneak, sprint, attack, use, hotbarSlot, value, inventoryOpen, inventoryClick, holdAttack, tapUse);
 	}
 }

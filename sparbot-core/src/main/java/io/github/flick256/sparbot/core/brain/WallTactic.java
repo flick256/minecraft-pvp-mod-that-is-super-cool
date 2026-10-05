@@ -208,11 +208,11 @@ public final class WallTactic implements Tactic {
 		return item.kind() == ItemKind.BLOCK && !NOT_WALL.contains(item.id());
 	}
 
-	private static int wallSlot(InventoryState inv) {
+	static int wallSlot(InventoryState inv) {
 		return inv.hotbarSlot(WallTactic::wallBlock);
 	}
 
-	private static int blocks(InventoryState inv) {
+	static int blocks(InventoryState inv) {
 		int n = 0;
 		for (int i = 0; i < InventoryState.SIZE; i++) {
 			if (wallBlock(inv.slot(i))) {

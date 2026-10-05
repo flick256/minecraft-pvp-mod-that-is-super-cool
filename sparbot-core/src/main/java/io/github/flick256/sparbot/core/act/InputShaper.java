@@ -36,6 +36,7 @@ public final class InputShaper {
 	private int targetLatencyTicks;
 	private int ticksUntilPingResample;
 	private double nextClickAllowedAt;
+	private double nextTapAllowedAt;
 	private long tick;
 	private Inputs lastEmitted = Inputs.IDLE;
 	private int inventoryOpenTicks;
@@ -65,6 +66,7 @@ public final class InputShaper {
 		latency.clear();
 		lastEmitted = Inputs.IDLE;
 		nextClickAllowedAt = 0;
+		nextTapAllowedAt = 0;
 		inventoryOpenTicks = 0;
 	}
 
@@ -135,6 +137,17 @@ public final class InputShaper {
 			}
 		}
 
+		// Fast right-clicks are clicks too: no faster than the profile's click rate.
+		boolean tap = in.tapUse();
+		if (tap) {
+			if (tick < nextTapAllowedAt) {
+				tap = false;
+			} else {
+				double cps = Math.min(maxCps, profile.clicking().cps().sample(rng));
+				nextTapAllowedAt = tick + 20.0 / cps;
+			}
+		}
+
 		boolean swap = in.swapOffhand() && tick - lastSwapTick >= MIN_TICKS_BETWEEN_INVENTORY_ACTIONS;
 		if (swap) {
 			lastSwapTick = tick;
@@ -142,7 +155,7 @@ public final class InputShaper {
 
 		// Holding the button down is not clicking: it isn't held to the click rate.
 		Inputs out = new Inputs(yaw, pitch, in.forward(), in.strafe(), in.jump(), in.sneak(), in.sprint(), attack, in.use(), in.hotbarSlot(),
-			swap, false, null, in.holdAttack());
+			swap, false, null, in.holdAttack(), tap);
 		lastEmitted = out;
 		return out;
 	}

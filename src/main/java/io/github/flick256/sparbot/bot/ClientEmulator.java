@@ -125,7 +125,8 @@ public final class ClientEmulator {
 			if (in.attack()) {
 				click(player, bot, listener);
 			}
-			if (in.use() && !useHeld) {
+			// A press, or a fresh click while the button is down (fast clicking).
+			if (in.use() && (!useHeld || in.tapUse())) {
 				startUseItem(player, listener);
 			}
 		}

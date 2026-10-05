@@ -41,7 +41,10 @@ public final class ModelRegistry {
 						throw new IllegalArgumentException("not a melee model (" + net + ")");
 					}
 					if (net.tactics() != null && !io.github.flick256.sparbot.core.brain.LearnedTactics.fits(net.tactics())) {
-						throw new IllegalArgumentException("its tactics network has the wrong shape (" + net + ")");
+						// Made for an older set of tactics: keep the melee, drop the chooser (retrain to get one back).
+						SparBot.LOGGER.warn("Model {}: its tactic chooser was made for an older SparBot; it fights with the scripted tactic choices"
+							+ " until retrained (/sparbot train uhc <name> <generations> {})", file.getFileName(), id);
+						net = net.withTactics(null);
 					}
 					models.put(id, net);
 					SparBot.LOGGER.info("Loaded model '{}' from {}: {}", id, file.getFileName(), net);

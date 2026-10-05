@@ -19,7 +19,7 @@ import java.util.List;
 public final class LearnedTactics {
 	/** The tactics the network has a say over, in output order. */
 	public static final List<String> TACTICS = List.of("engage", "retreat", "heal", "ranged", "guard", "refill", "lava", "web", "water", "wall", "cleanup",
-		"boost", "breakweb");
+		"boost", "breakweb", "backline");
 	/** Input vector length. */
 	public static final int INPUTS = 48 + 2 * TACTICS.size();
 	public static final int OUTPUTS = TACTICS.size();
@@ -31,7 +31,7 @@ public final class LearnedTactics {
 	 * learns when lava, a web, the bow, a wall or a boost pays off best, and can't learn to fight with the
 	 * sword alone.
 	 */
-	private static final java.util.Set<String> UTILITY = java.util.Set.of("lava", "web", "ranged", "wall", "boost");
+	private static final java.util.Set<String> UTILITY = java.util.Set.of("lava", "web", "ranged", "wall", "boost", "backline");
 	/** Held back by no more than this, a utility play still beats melee that is already running (0.6 + 0.05). */
 	private static final double UTILITY_HOLD_BACK = 0.04;
 	private static final java.util.Map<String, Double> LIFT = java.util.Map.of("engage", 0.0, "guard", 0.05, "retreat", 0.15);

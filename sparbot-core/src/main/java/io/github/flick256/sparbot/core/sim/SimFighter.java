@@ -480,7 +480,8 @@ public final class SimFighter {
 			if (in.attack()) {
 				click(other, rng);
 			}
-			if (in.use() && !useHeld) {
+			// A press, or a fresh click while the button is down (fast clicking).
+			if (in.use() && (!useHeld || in.tapUse())) {
 				startUse(other);
 			}
 		}

@@ -16,7 +16,7 @@ import java.util.Map;
 /** Parses skill profiles from JSON and exposes the bundled presets. */
 public final class SkillProfiles {
 	/** Bundled presets, weakest first. */
-	public static final List<String> PRESET_IDS = List.of("beginner", "casual", "intermediate", "advanced", "pro");
+	public static final List<String> PRESET_IDS = List.of("beginner", "casual", "intermediate", "advanced", "pro", "demon");
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

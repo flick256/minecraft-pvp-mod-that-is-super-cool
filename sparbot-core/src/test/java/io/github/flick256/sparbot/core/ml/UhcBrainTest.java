@@ -44,7 +44,7 @@ class UhcBrainTest {
 		int bias = p.length - LearnedTactics.OUTPUTS;
 		for (int k = 0; k < LearnedTactics.OUTPUTS; k++) {
 			String name = LearnedTactics.TACTICS.get(k);
-			boolean utility = java.util.Set.of("lava", "web", "ranged", "wall", "boost").contains(name);
+			boolean utility = java.util.Set.of("lava", "web", "ranged", "wall", "boost", "backline").contains(name);
 			p[bias + k] = name.equals("engage") || name.equals("guard") || name.equals("retreat") ? 10 : utility ? -10 : 0;
 		}
 		Tournament.Entrant suppressed = SelfPlay.entrant("suppressed", pro, melee.withTactics(tactics.withParams(p)));
