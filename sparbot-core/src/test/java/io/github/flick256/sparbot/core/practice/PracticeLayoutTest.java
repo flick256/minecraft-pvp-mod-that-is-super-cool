@@ -99,4 +99,17 @@ class PracticeLayoutTest {
 			assertEquals(PracticeLayout.FLOOR + s.standBase() + s.standRows(), s.lobbyY());
 		}
 	}
+
+	@Test
+	void theColosseumStandsAlone() {
+		int r = PracticeLayout.GRAND_REACH;
+		for (PracticeLayout.Site s : PracticeLayout.SITES) {
+			int e = s.standEnd() + 4;
+			boolean apart = s.centerX() + e < PracticeLayout.GRAND_X - r || s.centerX() - e > PracticeLayout.GRAND_X + r
+				|| s.centerZ() + e < PracticeLayout.GRAND_Z - r || s.centerZ() - e > PracticeLayout.GRAND_Z + r;
+			assertTrue(apart, "the colosseum overlaps " + s.id());
+		}
+		assertTrue(Math.abs(PracticeLayout.GRAND_Z) - r > PracticeLayout.HUB_RADIUS + 30, "the colosseum reaches the hub");
+		assertTrue(PracticeLayout.GRAND_PAD[1] > PracticeLayout.HUB_RADIUS, "its hub pad is outside the plaza");
+	}
 }

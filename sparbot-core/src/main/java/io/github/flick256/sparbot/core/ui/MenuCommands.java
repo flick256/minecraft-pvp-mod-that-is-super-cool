@@ -104,6 +104,11 @@ public final class MenuCommands {
 		return "sparbot practice";
 	}
 
+	/** To the Arcane Colosseum, the free-for-all stadium. */
+	public static String practiceColosseum() {
+		return "sparbot practice colosseum";
+	}
+
 	/** Back from the practice world. */
 	public static String practiceLeave() {
 		return "sparbot practice leave";

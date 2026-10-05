@@ -2,6 +2,21 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.8.0
+
+- **The Arcane Colosseum**: one grand stadium for free-for-all fights, medieval stone with an arcane glow.
+  A field inlaid with a magic circle (amethyst rings, a purpur hexagram, glowing rune stones) behind a
+  blackstone podium wall with crying-obsidian runes, soul-fire braziers and purple banners; two tiers of
+  seats with purpur aisles and glowing steps, split by a lantern-lit promenade; royal boxes behind purple
+  glass over the four gates; a three-storey outer wall whose arches are glowing purple windows; twelve
+  towers with lantern rooms and purpur spires; four gates with raised portcullises, soul-fire pillars and
+  bridges over a glowing moat; a cherry-blossom garden; and above it all a floating halo, crystal shards, an
+  amethyst crystal over the middle and four floating cherry islands hung with chains.
+- Reached from the purple gateway south of the hub (or the menu's Colosseum button, or
+  `/sparbot practice colosseum`). Fight anyone, spawn bots as you like; it resets itself once every player
+  has left (every block back as built, loose items, arrows, crystals and carts gone), a few columns per
+  tick so the server never stalls.
+
 ## 0.7.2
 
 - The practice world rebuilt (worlds built by 0.7.0 or 0.7.1 are rebuilt on the next visit):

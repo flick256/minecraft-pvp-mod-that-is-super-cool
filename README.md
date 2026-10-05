@@ -146,6 +146,10 @@ down to bedrock) with a hub and an arena for each kind of fight.
   bedrock; only lantern markers stand well outside it.
 - **Cart field:** fenced grass for rails (all three cart modes).
 - **Mace and bow court:** tuff and copper under open sky (mace and ranged).
+- **The Arcane Colosseum:** one grand free-for-all stadium, medieval and mystical (towers with purple spires,
+  glowing arches, a magic circle on the field, a moat, cherry blossoms, floating islands and crystals). Through
+  the purple gateway south of the hub, the menu's Colosseum button or `/sparbot practice colosseum`. It resets
+  itself once every player has left.
 
 Use it in any world: `/sparbot practice` (or the menu's Practice tab) takes you there, and the first visit
 builds it (a few seconds). To make a world that *is* the practice world, pick the **SparBot Practice**

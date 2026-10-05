@@ -208,8 +208,10 @@ public final class SparBotMenuScreen extends Screen {
 	/** The practice world: go to the hub or back, and a Fight button per mode (in that mode's arena) against the chosen tier. */
 	private void initPractice(int center) {
 		practiceProfile = pick(practiceProfile, state.profiles(), setting("defaultProfile"));
-		addRenderableWidget(Button.builder(Component.literal("Go to the hub"), b -> run(MenuCommands.practiceHub())).bounds(center - 190, TOP, 120, 20).build());
-		addRenderableWidget(Button.builder(Component.literal("Leave"), b -> run(MenuCommands.practiceLeave())).bounds(center - 66, TOP, 60, 20).build());
+		addRenderableWidget(Button.builder(Component.literal("Hub"), b -> run(MenuCommands.practiceHub())).bounds(center - 190, TOP, 50, 20).build());
+		addRenderableWidget(Button.builder(Component.literal("Colosseum"), b -> run(MenuCommands.practiceColosseum())).bounds(center - 136, TOP, 80, 20)
+			.build());
+		addRenderableWidget(Button.builder(Component.literal("Leave"), b -> run(MenuCommands.practiceLeave())).bounds(center - 52, TOP, 50, 20).build());
 		addRenderableWidget(cycle("Against", state.profiles(), practiceProfile, v -> practiceProfile = v, center + 2, TOP, 188));
 		List<String> modes = state.modes();
 		int perPage = Math.max(1, rows() - 1);

@@ -90,7 +90,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			context.clickScreenButton("Practice");
 			context.waitTicks(2);
 			context.takeScreenshot("sparbot-menu-practice");
-			context.clickScreenButton("Go to the hub");
+			context.clickScreenButton("Hub");
 			world.getServer().waitFor(server -> human(server) != null && human(server).level().dimension().equals(
 				io.github.flick256.sparbot.practice.PracticeWorld.DIMENSION), 600);
 			context.clickScreenButton("Done");
@@ -100,11 +100,39 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			}
 			world.getServer().runCommand("time set noon");
 			view(context, world, "sparbot-practice-hub", 0.5, 72, -24, 0, 18);
-			for (io.github.flick256.sparbot.core.practice.PracticeLayout.Site site : io.github.flick256.sparbot.core.practice.PracticeLayout.SITES) {
-				view(context, world, "sparbot-practice-" + site.id(), site.centerX() + 0.5, 64 + site.standBase() + site.standRows() + 26,
-					site.centerZ() + site.standEnd() + 22, 180, 32);
-				view(context, world, "sparbot-practice-" + site.id() + "-box", site.centerX() + 0.5, site.lobbyY() + 0.2, site.lobbyZ() + 0.5, 180, 12);
-			}
+			view(context, world, "sparbot-practice-hub-gateway", 0.5, 70, 6, 0, 10);
+			// The Arcane Colosseum, outside and in.
+			int cx = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_X;
+			int cz = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_Z;
+			view(context, world, "colosseum-arrival", cx + 0.5, 64, cz + 65.5, 180, -12);
+			view(context, world, "colosseum-aerial", cx + 0.5, 150, cz + 78, 180, 48);
+			view(context, world, "colosseum-diagonal", cx + 70, 120, cz + 70, 135, 35);
+			view(context, world, "colosseum-low", cx - 95, 72, cz + 40, -112, -6);
+			view(context, world, "colosseum-tunnel", cx + 0.5, 64, cz + 52, 180, 0);
+			view(context, world, "colosseum-field-edge", cx + 0.5, 65, cz + 27, 180, -10);
+			view(context, world, "colosseum-field-centre", cx + 0.5, 64, cz + 0.5, 0, -25);
+			view(context, world, "colosseum-royal-box", cx + 0.5, 85, cz + 48.5, 180, 22);
+			view(context, world, "colosseum-promenade", cx + 30, 81, cz + 34, 140, 6);
+			world.getServer().runCommand("time set midnight");
+			view(context, world, "colosseum-night-inside", cx + 0.5, 85, cz + 48.5, 180, 16);
+			view(context, world, "colosseum-night-outside", cx + 0.5, 100, cz + 92, 180, 22);
+			world.getServer().runCommand("time set noon");
+			// It resets once everyone has left: stand in the field, dig a hole and place a block, leave, and it is back.
+			world.getServer().runOnServer(server -> human(server).teleportTo((net.minecraft.server.level.ServerLevel) human(server).level(), cx + 0.5, 64,
+				cz + 0.5, java.util.Set.of(), 0, 0, true));
+			context.waitTicks(40);
+			world.getServer().runOnServer(server -> {
+				var level = (net.minecraft.server.level.ServerLevel) human(server).level();
+				level.setBlock(new net.minecraft.core.BlockPos(cx + 3, 63, cz + 3), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				level.setBlock(new net.minecraft.core.BlockPos(cx + 3, 64, cz + 4), net.minecraft.world.level.block.Blocks.COBBLESTONE.defaultBlockState(), 3);
+			});
+			world.getServer().runOnServer(server -> human(server).teleportTo((net.minecraft.server.level.ServerLevel) human(server).level(), 0.5, 64, -3.5,
+				java.util.Set.of(), 0, 0, true));
+			world.getServer().waitFor(server -> {
+				var level = human(server).level();
+				return !level.getBlockState(new net.minecraft.core.BlockPos(cx + 3, 63, cz + 3)).isAir()
+					&& level.getBlockState(new net.minecraft.core.BlockPos(cx + 3, 64, cz + 4)).isAir();
+			}, 1200);
 			// A fight in the meadow against a pro, started like the Fight button does.
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight uhc_duel pro"));
 			world.getServer().waitFor(server -> SparBot.matches().match("practice_uhc").isPresent(), 600);

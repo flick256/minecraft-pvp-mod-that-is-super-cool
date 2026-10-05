@@ -49,6 +49,7 @@ final class PracticeBuilder {
 			viewingBox(site, palette(site));
 			labels(site);
 		}
+		grand();
 		// The version marker under the hub: an older or missing one means the world gets built again.
 		set(0, S - 2, PracticeLayout.VERSION, Blocks.LODESTONE.defaultBlockState());
 	}
@@ -203,8 +204,66 @@ final class PracticeBuilder {
 				.append(Component.literal("\n" + String.join(", ", site.modes())).withStyle(st -> st.withColor(0xBBBBBB).withBold(false))), 1.1F,
 				0x60000000);
 		}
+		grandGateway();
 		PracticeLabels.put(level, 0.5, F + 9.5, 0.5, Component.literal("SparBot Practice").withStyle(st -> st.withColor(0xFFD966).withBold(true))
 			.append(Component.literal("\nstand on a pad to visit an arena").withStyle(st -> st.withColor(0xDDDDDD).withBold(false))), 2.2F, 0);
+	}
+
+	/** The Arcane Colosseum's pad, south of the plaza through a gap in the balustrade, between amethyst pillars. */
+	private void grandGateway() {
+		int[] p = PracticeLayout.GRAND_PAD;
+		fill(p[0] - 1, F, PracticeLayout.HUB_RADIUS - 1, p[0] + 1, F, p[1] + 1, Blocks.AIR.defaultBlockState());
+		for (int z = PracticeLayout.HUB_RADIUS - 1; z <= p[1] + 1; z++) {
+			for (int x = p[0] - 1; x <= p[0] + 1; x++) {
+				set(x, S, z, x == p[0] ? Blocks.PURPUR_BLOCK.defaultBlockState() : Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+			}
+		}
+		set(p[0], S, p[1], Blocks.AMETHYST_BLOCK.defaultBlockState());
+		set(p[0], F, p[1], Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState());
+		for (int side = -2; side <= 2; side += 4) {
+			int x = p[0] + side;
+			set(x, S, p[1], Blocks.CHISELED_DEEPSLATE.defaultBlockState());
+			fill(x, F, p[1], x, F + 4, p[1], Blocks.AMETHYST_BLOCK.defaultBlockState());
+			set(x, F + 5, p[1], Blocks.PURPUR_PILLAR.defaultBlockState());
+			set(x, F + 6, p[1], Blocks.END_ROD.defaultBlockState());
+			level.setBlock(new BlockPos(x, F + 3, p[1] - 1), Blocks.WALL_BANNER.purple().defaultBlockState()
+				.setValue(net.minecraft.world.level.block.WallBannerBlock.FACING, Direction.NORTH), Block.UPDATE_CLIENTS);
+		}
+		fill(p[0] - 1, F + 5, p[1], p[0] + 1, F + 5, p[1], Blocks.PURPUR_SLAB.defaultBlockState());
+		PracticeLabels.put(level, p[0] + 0.5, F + 2.4, p[1] + 0.5, Component.literal("The Arcane Colosseum")
+			.withStyle(st -> st.withColor(0xC77DFF).withBold(true))
+			.append(Component.literal("\nfree for all: it resets once everyone has left").withStyle(st -> st.withColor(0xDDDDDD).withBold(false))), 1.2F,
+			0x60000000);
+	}
+
+	/** The Arcane Colosseum (see {@link GrandStadium}): built in two passes, solid blocks then the ones that hang on them. */
+	private void grand() {
+		int r = GrandStadium.REACH;
+		load(GrandStadium.CX - r, GrandStadium.CZ - r, GrandStadium.CX + r, GrandStadium.CZ + r);
+		PracticeLabels.clear(level, new net.minecraft.world.phys.AABB(GrandStadium.CX - r, GrandStadium.Y0, GrandStadium.CZ - r, GrandStadium.CX + r,
+			GrandStadium.Y1 + 10, GrandStadium.CZ + r));
+		GrandStadium.apply(level, 0, GrandStadium.columns(), false);
+		GrandStadium.apply(level, 0, GrandStadium.columns(), true);
+		var holder = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(
+			net.minecraft.world.level.biome.Biomes.CHERRY_GROVE);
+		for (int x = GrandStadium.CX - r; x <= GrandStadium.CX + r; x += 16) {
+			for (int z = GrandStadium.CZ - r; z <= GrandStadium.CZ + r; z += 16) {
+				net.minecraft.server.commands.FillBiomeCommand.fill(level, new BlockPos(x, GrandStadium.Y0, z),
+					new BlockPos(Math.min(x + 15, GrandStadium.CX + r), GrandStadium.Y1, Math.min(z + 15, GrandStadium.CZ + r)), holder);
+			}
+		}
+		grandLabels(level);
+	}
+
+	static void grandLabels(ServerLevel level) {
+		int cx = GrandStadium.CX;
+		int cz = GrandStadium.CZ;
+		PracticeLabels.put(level, cx + 0.5, F + 42, cz + 60.5, Component.literal("The Arcane Colosseum")
+			.withStyle(st -> st.withColor(0xC77DFF).withBold(true)), 7.0F, 0);
+		for (int z : new int[] {PracticeLayout.GRAND_RETURN_BRIDGE, PracticeLayout.GRAND_RETURN_TUNNEL}) {
+			PracticeLabels.put(level, cx + 0.5, F + 1.6, cz + z + 0.5, Component.literal("Back to the hub")
+				.withStyle(st -> st.withColor(0x55FFFF).withBold(true)), 0.8F, 0x60000000);
+		}
 	}
 
 	/** A sandstone fountain: a round basin, and water falling from a lit column into it. */

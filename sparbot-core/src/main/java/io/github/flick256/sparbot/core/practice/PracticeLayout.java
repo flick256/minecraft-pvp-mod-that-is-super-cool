@@ -9,7 +9,7 @@ import java.util.List;
  */
 public final class PracticeLayout {
 	/** Bump when the hub or an arena changes: worlds built with an older version are rebuilt. */
-	public static final int VERSION = 2;
+	public static final int VERSION = 3;
 	/** The top block of the flat desert (sand). */
 	public static final int SURFACE = 63;
 	/** Where players stand on it. */
@@ -101,6 +101,19 @@ public final class PracticeLayout {
 		false);
 	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "ranged_duel"), 23, 1, 8, false);
 	public static final List<Site> SITES = List.of(SWORD, UHC, CRYSTAL, CART, MACE);
+
+	/** The Arcane Colosseum, the grand free-for-all stadium: its centre, north of the cart field. */
+	public static final int GRAND_X = 0;
+	public static final int GRAND_Z = -420;
+	/** Half the side of the square it fits in, floating islands included. */
+	public static final int GRAND_REACH = 88;
+	/** Its pad in the hub, just south of the plaza. */
+	public static final int[] GRAND_PAD = {0, 18};
+	/** Where the hub pad lands you: on the south bridge, looking at the gate. */
+	public static final int GRAND_ARRIVAL = 65;
+	/** Pads back to the hub (distances south of the centre): on the south bridge, and in the south tunnel by the field. */
+	public static final int GRAND_RETURN_BRIDGE = 67;
+	public static final int GRAND_RETURN_TUNNEL = 36;
 
 	private PracticeLayout() {
 	}

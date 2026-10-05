@@ -172,12 +172,79 @@ public final class PracticeWorld {
 		return "Spar" + Character.toUpperCase(id.charAt(0)) + id.substring(1);
 	}
 
+	/** Takes a player to the Arcane Colosseum's south bridge, looking up at its gate. */
+	public void toColosseum(ServerPlayer player) throws IOException {
+		ServerLevel level = ensure(player.level().getServer());
+		if (player.level() != level) {
+			returns.putIfAbsent(player.getUUID(), new Return(player.level().dimension(), player.position(), player.getYRot(), player.getXRot()));
+		}
+		player.teleportTo(level, GrandStadium.CX + 0.5, PracticeLayout.FLOOR, GrandStadium.CZ + PracticeLayout.GRAND_ARRIVAL + 0.5, Set.of(), 180, -12,
+			true);
+		player.sendSystemMessage(Component.literal("The Arcane Colosseum: free for all. Fight anyone here (spawn bots from the menu if you like). "
+			+ "It resets itself once everyone has left. The pads behind you and in the south tunnel go back to the hub."));
+	}
+
+	/** Columns of the colosseum put back per tick while it resets (spread out, so the server never stalls). */
+	private static final int RESET_COLUMNS_PER_TICK = 400;
+	/** Players were in the colosseum since it was last reset. */
+	private boolean colosseumDirty;
+	/** The column a reset has got to (-1: no reset running), and whether it is on the hanging blocks yet. */
+	private int resetCursor = -1;
+	private boolean resetHanging;
+
+	/**
+	 * Puts the colosseum back the way it was built once every player has left it (bots don't count): every
+	 * block the blueprint says, loose items, arrows, crystals and carts gone. Someone coming back stops it.
+	 */
+	private void colosseumTick(MinecraftServer server, ServerLevel level) {
+		if (server.getTickCount() % 20 == 0) {
+			boolean occupied = level.players().stream().anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer)
+				&& Math.abs(p.getX() - GrandStadium.CX) <= GrandStadium.REACH + 8 && Math.abs(p.getZ() - GrandStadium.CZ) <= GrandStadium.REACH + 8);
+			if (occupied) {
+				colosseumDirty = true;
+				resetCursor = -1;
+			} else if (colosseumDirty && resetCursor < 0) {
+				resetCursor = 0;
+				resetHanging = false;
+				int r = GrandStadium.REACH;
+				net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(GrandStadium.CX - r, GrandStadium.Y0 - 20, GrandStadium.CZ - r,
+					GrandStadium.CX + r + 1, GrandStadium.Y1 + 30, GrandStadium.CZ + r + 1);
+				for (net.minecraft.world.entity.Entity e : level.getEntities((net.minecraft.world.entity.Entity) null, box,
+					e -> e instanceof net.minecraft.world.entity.item.ItemEntity || e instanceof net.minecraft.world.entity.projectile.Projectile
+						|| e instanceof net.minecraft.world.entity.ExperienceOrb || e instanceof net.minecraft.world.entity.item.PrimedTnt
+						|| e instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal
+						|| e instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart
+						|| e instanceof net.minecraft.world.entity.item.FallingBlockEntity)) {
+					e.discard();
+				}
+			}
+		}
+		if (resetCursor >= 0) {
+			GrandStadium.apply(level, resetCursor, resetCursor + RESET_COLUMNS_PER_TICK, resetHanging);
+			resetCursor += RESET_COLUMNS_PER_TICK;
+			if (resetCursor >= GrandStadium.columns()) {
+				if (!resetHanging) {
+					resetHanging = true;
+					resetCursor = 0;
+				} else {
+					resetCursor = -1;
+					colosseumDirty = false;
+					SparBot.LOGGER.info("The Arcane Colosseum has been reset");
+				}
+			}
+		}
+	}
+
 	/** Pads: standing on one for half a second takes you to its arena (or from an arena's lobby back to the hub). */
 	public void tick(MinecraftServer server) {
+		ServerLevel practice = isPracticeWorld(server) ? server.overworld() : server.getLevel(DIMENSION);
+		if (practice != null) {
+			colosseumTick(server, practice);
+		}
 		if (server.getTickCount() % 2 != 0) {
 			return;
 		}
-		ServerLevel level = isPracticeWorld(server) ? server.overworld() : server.getLevel(DIMENSION);
+		ServerLevel level = practice;
 		if (level == null || level.players().isEmpty()) {
 			onPad.clear();
 			return;
@@ -190,6 +257,7 @@ public final class PracticeWorld {
 			}
 			Site target = null;
 			boolean home = false;
+			boolean colosseum = false;
 			BlockPos feet = player.blockPosition();
 			if (level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE)) {
 				for (Site site : PracticeLayout.SITES) {
@@ -201,8 +269,16 @@ public final class PracticeWorld {
 						home = true;
 					}
 				}
+				int[] g = PracticeLayout.GRAND_PAD;
+				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == g[0] && feet.getZ() == g[1]) {
+					colosseum = true;
+				}
+				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == GrandStadium.CX && (feet.getZ() == GrandStadium.CZ + PracticeLayout.GRAND_RETURN_BRIDGE
+					|| feet.getZ() == GrandStadium.CZ + PracticeLayout.GRAND_RETURN_TUNNEL)) {
+					home = true;
+				}
 			}
-			if (target == null && !home || now - padUsed.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2) < PAD_COOLDOWN) {
+			if (target == null && !home && !colosseum || now - padUsed.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2) < PAD_COOLDOWN) {
 				onPad.remove(player.getUUID());
 				continue;
 			}
@@ -212,6 +288,9 @@ public final class PracticeWorld {
 				padUsed.put(player.getUUID(), now);
 				if (home) {
 					player.teleportTo(level, 0.5, PracticeLayout.FLOOR, -3.5, Set.of(), 0, 0, true);
+				} else if (colosseum) {
+					player.teleportTo(level, GrandStadium.CX + 0.5, PracticeLayout.FLOOR, GrandStadium.CZ + PracticeLayout.GRAND_ARRIVAL + 0.5, Set.of(), 180,
+						-12, true);
 				} else {
 					toLobby(player, level, target);
 				}

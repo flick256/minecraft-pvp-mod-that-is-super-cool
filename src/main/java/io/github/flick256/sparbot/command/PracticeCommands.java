@@ -38,6 +38,14 @@ final class PracticeCommands {
 				}
 				return ok(ctx, "Welcome to the practice hub: step on a pad to visit an arena, or fight from the menu's Practice tab");
 			})
+			.then(Commands.literal("colosseum").executes(ctx -> {
+				try {
+					SparBot.practice().toColosseum(ctx.getSource().getPlayerOrException());
+				} catch (IOException | IllegalStateException e) {
+					throw fail(e.getMessage());
+				}
+				return 1;
+			}))
 			.then(Commands.literal("leave").executes(ctx -> {
 				if (!SparBot.practice().leave(ctx.getSource().getPlayerOrException())) {
 					throw fail("Nowhere to go back to: this world is the practice world");
