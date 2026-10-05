@@ -1,0 +1,10 @@
+{
+  "id": "cart_low",
+  "displayName": "Cart, low tier (PvPHQ)",
+  "description": "PvPHQ's low tier cart kit: rails, TNT minecarts and a Flame bow. First to 2.",
+  "kit": "pvphq_cart_low",
+  "roundsToWin": 2,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

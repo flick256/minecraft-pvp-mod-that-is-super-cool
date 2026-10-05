@@ -1,0 +1,10 @@
+{
+  "id": "cart_high",
+  "displayName": "Cart, high tier (PvPHQ)",
+  "description": "PvPHQ's high tier cart kit: rails, TNT minecarts, flint and steel and crossbows. First to 2.",
+  "kit": "pvphq_cart_high",
+  "roundsToWin": 2,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}
