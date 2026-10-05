@@ -51,6 +51,9 @@ public final class DuelMemory {
 	/** Ticks of sidestepping left after the wall ends, to clear its corner. */
 	int detourTicks;
 	int detourStrafe = 1;
+	/** Where the bot last put its own TNT minecart, and when (so it doesn't knock out its own cart). */
+	Vec3 ownCart;
+	long ownCartAt = Long.MIN_VALUE / 2;
 	/** The height of the ground the opponent last stood on (NaN until seen standing). */
 	double targetGroundY = Double.NaN;
 	/** When the bot last finished putting up a wall to heal behind (the heal tactic eats right after). */

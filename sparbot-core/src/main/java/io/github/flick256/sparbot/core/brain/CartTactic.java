@@ -19,11 +19,12 @@ import java.util.OptionalDouble;
  * (MinecartTNT#hurtServer) with power 4 + 1.5 x the arrow's speed x a random fraction. A Flame bow
  * shoots burning arrows.
  *
- * <p>The bot starts a cart only when the opponent is predictable: stuck in a web, standing still, or
- * running straight at it. It puts the rail where the opponent will be by the time the arrow arrives
- * (their motion times the combo's length, as well as its tracking skill allows), and once a rail or cart
- * is down it finishes the combo instead of wandering off: cart on the rail, then a short Flame-bow shot
- * (the arrow only has to cross a few blocks). It holds 2.5-4.5 blocks of distance throughout.
+ * <p>Cart players inst-cart all the time: whenever the opponent is a few blocks away on the ground (or
+ * stuck, or running in), the bot puts the rail where they will be by the time the arrow arrives (their
+ * motion times the combo's length, as well as its tracking skill allows), the cart on it, and fires a
+ * short-draw Flame shot straight away (a quarter draw is plenty to light a cart a few blocks off, and a
+ * full draw is what gets carts dodged). Once a rail or cart is down it finishes the combo instead of
+ * wandering off. It holds 2.5-4.5 blocks of distance throughout.
  */
 public final class CartTactic implements Tactic {
 	static final String FLAME = "minecraft:flame";
@@ -44,6 +45,13 @@ public final class CartTactic implements Tactic {
 	/** A TNT minecart's box is 0.98 wide and 0.7 tall; aim at its middle. */
 	private static final double CART_MID = 0.35;
 	private static final double SHOOT_RANGE = 10.0;
+	/** Cart range: far enough that the blast is mostly theirs, close enough for a quick rail and a short shot. */
+	private static final double CART_RANGE_MIN = 2.5;
+	private static final double CART_RANGE_MAX = 6.0;
+	/** Released when this close to the aim (the cart is a big target at a few blocks)... */
+	private static final float SHOT_TOLERANCE = 4.0F;
+	/** ...or once drawn this long whatever: a full draw is slow and gets the cart dodged. */
+	private static final int LATEST_RELEASE = DRAW_TICKS + 5;
 	private static final Ballistics.Projectile ARROW = new Ballistics.Projectile("arrow (short draw)", ARROW_SPEED, 0.05, 0.99,
 		Ballistics.Order.MOVE_DRAG_GRAVITY, Ballistics.LOOK_VECTOR);
 
@@ -84,13 +92,19 @@ public final class CartTactic implements Tactic {
 		return willCart.get(c.rng, c.profile.items().cartSkill(), 20) ? Scores.SPECIALIST : 0;
 	}
 
-	/** Webbed, standing still, or coming straight in: the moments a cart lands where it was aimed. */
+	/**
+	 * When a cart is worth starting: the opponent stuck, standing still or coming straight in (it lands
+	 * where it was aimed), or, for a practised cart player, simply on the ground at cart range (they cart
+	 * whenever they can; the lead takes care of the rest).
+	 */
 	static boolean opening(BrainContext c, TargetState t) {
 		double speed = Math.sqrt(t.velocity().x() * t.velocity().x() + t.velocity().z() * t.velocity().z());
 		Vec3 toUs = c.self.position().subtract(t.position());
 		double len = Math.sqrt(toUs.x() * toUs.x() + toUs.z() * toUs.z());
 		double closing = len < 1e-6 ? 0 : (t.velocity().x() * toUs.x() + t.velocity().z() * toUs.z()) / len;
-		return t.inWeb() || t.onGround() && speed < STILL || closing > speed * 0.8 && closing > 0.1;
+		boolean predictable = t.inWeb() || t.onGround() && speed < STILL || closing > speed * 0.8 && closing > 0.1;
+		boolean inRange = t.onGround() && len >= CART_RANGE_MIN && len <= CART_RANGE_MAX;
+		return predictable || inRange && c.profile.items().cartSkill() >= 0.5;
 	}
 
 	/** Where the opponent will be when the arrow arrives, as well as the bot's tracking skill can tell. */
@@ -150,6 +164,8 @@ public final class CartTactic implements Tactic {
 			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(ahead)));
 		if (rail.isPresent()) {
 			step = "place cart";
+			c.memory.ownCart = center(rail.get(), 0);
+			c.memory.ownCartAt = c.observation.tick();
 			return BlockPlay.clickTop(c, rail.get(), BlockPlay.RAIL_HEIGHT, cartSlot);
 		}
 
@@ -183,10 +199,11 @@ public final class CartTactic implements Tactic {
 		int bow = flameBow(inv);
 		int press = c.memory.hands.request(c, bow);
 		boolean armed = inv.selectedSlot() == bow;
-		boolean drawn = inv.usingItem() && inv.usingKind() == ItemKind.BOW && inv.useTicks() >= DRAW_TICKS;
-		boolean aimed = c.aimError(goalYaw, goalPitch) < 2.0F;
-		// Holding right click draws; letting go fires.
-		boolean use = armed && !(drawn && aimed);
+		boolean drawing = inv.usingItem() && inv.usingKind() == ItemKind.BOW;
+		boolean drawn = drawing && inv.useTicks() >= DRAW_TICKS;
+		boolean aimed = c.aimError(goalYaw, goalPitch) < SHOT_TOLERANCE;
+		// Holding right click draws; letting go fires (a short draw: never on to a full one).
+		boolean use = armed && !(drawn && aimed) && !(drawing && inv.useTicks() >= LATEST_RELEASE);
 		return BlockPlay.spacing(c, look, press).withUse(use);
 	}
 
