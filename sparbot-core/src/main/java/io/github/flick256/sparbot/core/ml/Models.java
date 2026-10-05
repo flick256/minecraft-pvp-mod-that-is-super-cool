@@ -14,7 +14,7 @@ public final class Models {
 	 * sword: melee for sword duels; uhc: melee with shield, axe and golden apples, for UHC. Both trained
 	 * by imitating the scripted pro, then self-play.
 	 */
-	public static final List<String> BUNDLED_IDS = List.of("sword", "uhc");
+	public static final List<String> BUNDLED_IDS = List.of("sword", "uhc", "uhc_demon");
 
 	private Models() {
 	}

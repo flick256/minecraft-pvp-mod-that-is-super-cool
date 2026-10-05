@@ -2,6 +2,16 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.7.1
+
+- A UHC brain built on the Demon: `uhc_demon`, trained against the scripted Demon at Demon limits. Demon
+  bots get it automatically (setting `autoModels`). In simulated UHC fights it beats the scripted Demon
+  94% of the time (the `uhc` brain: 89%) and the `uhc` brain itself 77%, with a little more utility
+  (5.4 webs, 2.3 lava pours and 7.5 water pours a fight) and much more shield play.
+- UHC matches and the UHC meadow use PvPHQ's UHC kit (`pvphq_uhc`) for both sides instead of SparBot's
+  own; the bots play it as well (the `uhc` brain wins 93% against the scripted pro in it, with 7 webs,
+  2.5 lava pours and 28 blocks a fight).
+
 ## 0.7.0
 
 - Practice world: SparBot's own flat desert (sand and sandstone over stone and deepslate, down to
