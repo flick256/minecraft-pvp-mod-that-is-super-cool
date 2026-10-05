@@ -147,7 +147,8 @@ down to bedrock) with a hub and an arena for each kind of fight.
 - **Cart field:** fenced grass for rails (all three cart modes).
 - **Mace and bow court:** tuff and copper under open sky (mace and ranged).
 - **The Arcane Colosseum:** one grand free-for-all stadium, medieval and mystical (towers with purple spires,
-  glowing arches, a magic circle on the field, a moat, cherry blossoms, floating islands and crystals). Through
+  glowing arches, a compass rose on the field, a moat, cherry blossoms, floating islands with waterfalls, rune
+  portals and a sky citadel). Through
   the purple gateway south of the hub, the menu's Colosseum button or `/sparbot practice colosseum`. It resets
   itself once every player has left.
 

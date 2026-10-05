@@ -2,6 +2,18 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 0.8.1
+
+- The colosseum's field is repaved: concentric flagstone courses round a heraldic compass rose (four long
+  points in calcite and tuff over four diagonal ones in smooth stone and andesite, each with a light and a
+  shaded half and a blackstone edge, round a gilded boss ringed in amethyst), a braided knotwork band, and a
+  tuff border with a gilded edge and twelve glowing stones. The hexagram is gone.
+- More in the sky: a citadel on its own floating island beyond the north gate (curtain walls, a gateway,
+  four corner towers and a tall keep with lit purple windows and purpur spires, cherry trees, hanging
+  chains); two floating islands pouring waterfalls into the moat; great rune portals hovering over the north
+  and south gates; and rock fragments drifting round the colosseum at different heights, some crowned with
+  amethyst.
+
 ## 0.8.0
 
 - **The Arcane Colosseum**: one grand stadium for free-for-all fights, medieval stone with an arcane glow.

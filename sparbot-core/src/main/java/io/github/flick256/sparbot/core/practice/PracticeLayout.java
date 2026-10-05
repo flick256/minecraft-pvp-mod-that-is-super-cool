@@ -9,7 +9,7 @@ import java.util.List;
  */
 public final class PracticeLayout {
 	/** Bump when the hub or an arena changes: worlds built with an older version are rebuilt. */
-	public static final int VERSION = 3;
+	public static final int VERSION = 4;
 	/** The top block of the flat desert (sand). */
 	public static final int SURFACE = 63;
 	/** Where players stand on it. */
@@ -105,8 +105,8 @@ public final class PracticeLayout {
 	/** The Arcane Colosseum, the grand free-for-all stadium: its centre, north of the cart field. */
 	public static final int GRAND_X = 0;
 	public static final int GRAND_Z = -420;
-	/** Half the side of the square it fits in, floating islands included. */
-	public static final int GRAND_REACH = 88;
+	/** Half the side of the square it fits in, floating islands and the sky citadel included. */
+	public static final int GRAND_REACH = 122;
 	/** Its pad in the hub, just south of the plaza. */
 	public static final int[] GRAND_PAD = {0, 18};
 	/** Where the hub pad lands you: on the south bridge, looking at the gate. */

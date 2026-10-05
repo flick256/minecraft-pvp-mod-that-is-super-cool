@@ -113,6 +113,10 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			view(context, world, "colosseum-field-centre", cx + 0.5, 64, cz + 0.5, 0, -25);
 			view(context, world, "colosseum-royal-box", cx + 0.5, 85, cz + 48.5, 180, 22);
 			view(context, world, "colosseum-promenade", cx + 30, 81, cz + 34, 140, 6);
+			view(context, world, "colosseum-floor", cx + 0.5, 92, cz + 0.5, 0, 90);
+			view(context, world, "colosseum-citadel", cx + 0.5, 122, cz - 50, 180, 2);
+			view(context, world, "colosseum-waterfall", cx + 82, 92, cz + 58, 139, 5);
+			view(context, world, "colosseum-portal", cx + 0.5, 70, cz + 80, 180, -22);
 			world.getServer().runCommand("time set midnight");
 			view(context, world, "colosseum-night-inside", cx + 0.5, 85, cz + 48.5, 180, 16);
 			view(context, world, "colosseum-night-outside", cx + 0.5, 100, cz + 92, 180, 22);

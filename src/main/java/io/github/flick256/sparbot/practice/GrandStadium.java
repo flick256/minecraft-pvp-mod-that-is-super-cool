@@ -17,12 +17,14 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 
 /**
  * The Arcane Colosseum: one grand stadium for free-for-all fights, medieval stone with an arcane glow.
- * From the middle out: a field inlaid with a magic circle (amethyst rings, a purpur hexagram, glowing rune
- * stones), a blackstone podium wall with crying-obsidian runes and purple banners, two tiers of seats with
+ * From the middle out: a field paved in flagstone courses round a heraldic compass rose, a knotwork band and a
+ * glowing border, a blackstone podium wall with crying-obsidian runes and purple banners, two tiers of seats with
  * purpur aisles split by a lantern-lit promenade, royal boxes over the four gates, a three-storey arcaded
  * outer wall lit by soul lanterns from inside, twelve towers with purple spires and glowing lantern rooms,
  * a moat crossed by four bridges under raised portcullises, a cherry-blossom garden, and above it all a
- * floating halo, crystal shards and four floating cherry islands hung on chains.
+ * floating halo, crystal shards and floating cherry islands hung on chains; two islands pouring waterfalls
+ * into the moat; great rune portals hovering over the north and south gates; drifting rock fragments; and,
+ * beyond the north gate, a citadel on its own floating island.
  *
  * <p>The whole stadium is a blueprint: {@link #column} gives every block of one column, so building it and
  * resetting it are the same pass (only blocks that differ are set), spread over ticks for a reset.
@@ -37,7 +39,7 @@ final class GrandStadium {
 	/** The column runs from here... */
 	static final int Y0 = S - 10;
 	/** ...to here. */
-	static final int Y1 = F + 66;
+	static final int Y1 = F + 96;
 	private static final int H = Y1 - Y0 + 1;
 
 	private static final double FIELD = 30.5;
@@ -106,6 +108,9 @@ final class GrandStadium {
 	 * hang on a neighbour (banners, lanterns, petals, rods, clusters, chains) are placed in a second pass.
 	 */
 	static BlockState[] column(int dx, int dz) {
+		if (!builtAt(dx, dz)) {
+			return null;
+		}
 		BlockState[] c = new BlockState[H];
 		Arrays.fill(c, AIR);
 		double d = Math.sqrt(dx * dx + dz * dz);
@@ -139,7 +144,33 @@ final class GrandStadium {
 		gateFacade(c, dx, dz, d, gate);
 		sky(c, dx, dz, d, deg);
 		islands(c, dx, dz);
+		waterfallIslands(c, dx, dz);
+		portals(c, dx, dz);
+		fragments(c, dx, dz);
+		citadel(c, dx, dz);
 		return c;
+	}
+
+	/** Whether anything is built in this column (beyond the garden there is only what floats). */
+	static boolean builtAt(int dx, int dz) {
+		if (Math.sqrt(dx * dx + dz * dz) <= 81) {
+			return true;
+		}
+		if (Math.hypot(dx - CITADEL_X, dz - CITADEL_Z) <= 17.5) {
+			return true;
+		}
+		for (int i = 0; i < 4; i++) {
+			double a = Math.toRadians(45 + i * 90);
+			if (Math.hypot(dx - Math.cos(a) * 80, dz - Math.sin(a) * 80) <= 7) {
+				return true;
+			}
+		}
+		for (Fragment f : FRAGMENTS) {
+			if (Math.hypot(dx - f.x(), dz - f.z()) <= f.r() + 0.5) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void put(BlockState[] c, int y, BlockState state) {
@@ -194,56 +225,105 @@ final class GrandStadium {
 		return Math.toRadians(off) * d;
 	}
 
-	/** The field: stone and earth to dig into, and the magic circle in the floor. */
+	private static final BlockState TUFF = Blocks.POLISHED_TUFF.defaultBlockState();
+	private static final BlockState TUFF_BRICKS = Blocks.TUFF_BRICKS.defaultBlockState();
+	private static final BlockState TUFF_CHISELED = Blocks.CHISELED_TUFF_BRICKS.defaultBlockState();
+	private static final BlockState BLACKSTONE = Blocks.POLISHED_BLACKSTONE.defaultBlockState();
+
+	/**
+	 * The field: stone and earth to dig into, paved like an old arena. Concentric courses of flagstones in two
+	 * shades of deepslate; a heraldic compass rose in the middle (four long points in calcite and tuff over four
+	 * diagonal ones in smooth stone and andesite, each split into a light and a shaded half and edged in
+	 * blackstone, round a gilded boss ringed in amethyst); a braided knotwork
+	 * band; and a tuff border with a gilded edge and twelve glowing stones.
+	 */
 	private static void field(BlockState[] c, int dx, int dz, double d, double deg) {
 		fill(c, Y0, S - 4, STONE);
 		fill(c, S - 3, S - 1, DIRT);
-		BlockState floor = ((int) Math.floor(d / 3) + (int) Math.floor((deg + 180) / 15)) % 2 == 0 ? TILES : POLISHED;
-		if (d <= 1.6) {
-			floor = AMETHYST;
-		} else if (Math.abs(d - 6) < 0.5 || Math.abs(d - 25) < 0.5) {
-			floor = AMETHYST;
-		} else if (Math.abs(d - 14) < 0.5) {
-			floor = PRISMARINE;
-		} else if (hexagram(dx, dz, 14)) {
-			floor = PURPUR;
-		} else if (Math.abs(d - 20) < 0.7 && offStep(deg, 15, d) < 0.7) {
-			floor = SEA_LANTERN;
-		} else if (d > 25.5 && d < 29.5 && offStep(deg, 30, d) < 0.55) {
-			floor = PRISMARINE;
-		} else if (d > 29.5) {
+		double ang = Math.atan2(dz, dx);
+		int ring = (int) Math.floor(d / 3);
+		int stone = (int) Math.floor((ang + Math.PI) * Math.max(d, 1) / 4.0);
+		BlockState floor = (ring + stone) % 2 == 0 ? TILES : POLISHED;
+		int rose = compassRose(d, deg);
+		if (d > 29.5) {
 			floor = BLACK_BRICKS;
-		} else if (d < 6 && offStep(deg, 60, d) < 0.5) {
-			floor = PURPUR;
+		} else if (Math.abs(d - 29) < 0.5) {
+			floor = BLACKSTONE;
+		} else if (d > 26.5) {
+			floor = offStep(deg, 30, d) < 0.6 && Math.abs(d - 27.75) < 0.75 ? SEA_LANTERN : offStep(deg, 15, d) < 0.6 ? TUFF_CHISELED : TUFF_BRICKS;
+		} else if (Math.abs(d - 26) < 0.5) {
+			floor = GILDED;
+		} else if (d > 16.5 && d < 19.5) {
+			// Knotwork: two cords braided round the band.
+			double t = ang * 18 / 2.2;
+			double w1 = 18 + 0.9 * Math.sin(t);
+			double w2 = 18 - 0.9 * Math.sin(t);
+			floor = Math.abs(d - w1) < 0.45 || Math.abs(d - w2) < 0.45 ? BLACKSTONE : d < 16.9 || d > 19.1 ? TUFF_BRICKS : TUFF;
+		} else if (d < 1.5) {
+			floor = GILDED;
+		} else if (d < 3.5) {
+			floor = TUFF_CHISELED;
+		} else if (Math.abs(d - 4) < 0.6) {
+			floor = AMETHYST;
+		} else if (Math.abs(d - 5) < 0.5) {
+			floor = BLACK_BRICKS;
+		} else if (rose == 3) {
+			floor = BLACK_BRICKS;
+		} else if (rose == 1) {
+			floor = Blocks.CALCITE.defaultBlockState();
+		} else if (rose == 2) {
+			floor = TUFF;
+		} else if (rose == 4) {
+			floor = Blocks.SMOOTH_STONE.defaultBlockState();
+		} else if (rose == 5) {
+			floor = Blocks.POLISHED_ANDESITE.defaultBlockState();
 		}
 		put(c, S, floor);
-		// Banners on the podium wall's inner face, and soul lanterns between them.
+		// Banners on the podium wall's inner face.
 		if (d > 29.5 && offStep(deg, 15, d) < 0.6 && gate(dx, dz) == null) {
 			Direction in = outward(-dx, -dz);
 			put(c, F + 4, Blocks.WALL_BANNER.purple().defaultBlockState().setValue(WallBannerBlock.FACING, in));
 		}
 	}
 
-	/** Whether (dx, dz) is on the hexagram inscribed in a circle of radius r. */
-	private static boolean hexagram(int dx, int dz, double r) {
-		for (int t = 0; t < 2; t++) {
-			for (int i = 0; i < 3; i++) {
-				double a1 = Math.toRadians(90 + t * 60 + i * 120);
-				double a2 = Math.toRadians(90 + t * 60 + (i + 1) * 120);
-				if (segment(dx, dz, r * Math.cos(a1), r * Math.sin(a1), r * Math.cos(a2), r * Math.sin(a2)) < 0.55) {
-					return true;
-				}
-			}
+	/**
+	 * Where (d, deg) falls on the compass rose: 0 outside it; for the four main points (north, east, south,
+	 * west, 16 blocks long) 1 the light half and 2 the dark half; for the four diagonal points beneath them
+	 * (11 long) 4 and 5; 3 the dark edge round every point.
+	 */
+	private static int compassRose(double d, double deg) {
+		int main = star(d, deg, 0, 16, 7.5);
+		if (main != 0) {
+			return main;
 		}
-		return false;
+		int diagonal = star(d, deg, 45, 11.5, 5.5);
+		return diagonal == 1 ? 4 : diagonal == 2 ? 5 : diagonal;
 	}
 
-	private static double segment(double px, double pz, double ax, double az, double bx, double bz) {
-		double vx = bx - ax;
-		double vz = bz - az;
-		double t = Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / (vx * vx + vz * vz)));
-		return Math.hypot(px - ax - t * vx, pz - az - t * vz);
+	/**
+	 * A four-point star with points at {@code first} + k x 90 degrees: tips {@code tip} out, the sides meeting
+	 * between the points at radius {@code valley}. 0 outside, 3 on its edge, 1 or 2 either half of a point.
+	 */
+	private static int star(double d, double deg, double first, double tip, double valley) {
+		double p = first + 90 * Math.round((deg - first) / 90);
+		double off = deg - p;
+		double along = d * Math.cos(Math.toRadians(off));
+		double across = Math.abs(d * Math.sin(Math.toRadians(off)));
+		double corner = valley * Math.cos(Math.toRadians(45));
+		if (along < 0 || along > tip) {
+			return 0;
+		}
+		// The point's side runs straight from the tip to the valley corner (corner, corner).
+		double halfWidth = along <= corner ? along : corner * (tip - along) / (tip - corner);
+		if (across > halfWidth + 0.01) {
+			return 0;
+		}
+		if (halfWidth - across < 0.75 || tip - along < 0.75) {
+			return 3;
+		}
+		return off > 0 ? 1 : 2;
 	}
+
 
 	/** The podium wall round the field: blackstone with glowing rune stones, a gilded band and a crest. */
 	private static void podium(BlockState[] c, int dx, int dz, double d, double deg, double arc, Gate gate) {
@@ -629,6 +709,208 @@ final class GrandStadium {
 		}
 	}
 
+	/** Two islands floating over the moat, east-north-east and west-south-west, each pouring a waterfall into it. */
+	private static void waterfallIslands(BlockState[] c, int dx, int dz) {
+		for (double angle : new double[] {30, 210}) {
+			double a = Math.toRadians(angle);
+			double ox = dx - Math.cos(a) * 65;
+			double oz = dz - Math.sin(a) * 65;
+			double t = Math.hypot(ox, oz);
+			if (t > 5.5) {
+				continue;
+			}
+			int top = F + 36;
+			int roll = PracticeLayout.scatter(CX + dx, CZ + dz, 41);
+			int depth = (int) Math.round((5.5 - t) * 1.5) + roll % 3 + 1;
+			fill(c, top - depth, top - 2, STONE);
+			put(c, top - 1, DIRT);
+			put(c, top, Blocks.MOSS_BLOCK.defaultBlockState());
+			if (t < 0.5) {
+				// The spring: a source over a shaft through the island, falling all the way to the moat.
+				fill(c, top - depth, top - 1, AIR);
+				put(c, top, WATER);
+			} else if (t > 3.5 && t <= 4.5 && roll < 400) {
+				put(c, top + 1, roll < 150 ? Blocks.AMETHYST_CLUSTER.defaultBlockState() : Blocks.AZURE_BLUET.defaultBlockState());
+			} else if (t > 4.5 && roll < 140) {
+				fill(c, top - depth - 5, top - depth - 1, CHAIN);
+			}
+			return;
+		}
+	}
+
+	/**
+	 * Rune portals: two great upright rings hovering over the north and south gates, purpur outside, amethyst
+	 * inside, set with sea lanterns and with end rods round the rim.
+	 */
+	private static void portals(BlockState[] c, int dx, int dz) {
+		if (Math.abs(dz) != 63 || Math.abs(dx) > 14) {
+			return;
+		}
+		int yc = F + 44;
+		double outer = 12.5;
+		for (int y = yc - 14; y <= yc + 14; y++) {
+			double r = Math.hypot(dx, y - yc);
+			double a = Math.toDegrees(Math.atan2(y - yc, dx));
+			if (r > outer - 1 && r <= outer) {
+				put(c, y, offStep(a, 30, r) < 0.7 ? SEA_LANTERN : PURPUR);
+			} else if (r > outer - 2 && r <= outer - 1) {
+				put(c, y, AMETHYST);
+			} else if (r > outer && r <= outer + 1 && offStep(a + 15, 30, r) < 0.5 && y > yc) {
+				put(c, y, END_ROD);
+			}
+		}
+	}
+
+	/** A drifting rock fragment: where it floats and how big it is. */
+	private record Fragment(double x, double z, int y, double r) {
+	}
+
+	private static final java.util.List<Fragment> FRAGMENTS = fragments();
+
+	private static java.util.List<Fragment> fragments() {
+		java.util.List<Fragment> list = new java.util.ArrayList<>();
+		for (int i = 0; i < 30; i++) {
+			int roll = PracticeLayout.scatter(i, 3, 77);
+			double a = Math.toRadians(i * 12 + roll % 9);
+			double d = 64 + roll % 38;
+			double x = Math.cos(a) * d;
+			double z = Math.sin(a) * d;
+			if (Math.hypot(x - CITADEL_X, z - CITADEL_Z) < 22 || Math.abs(z) > 58 && Math.abs(x) < 16) {
+				continue;
+			}
+			boolean nearIsland = false;
+			for (int k = 0; k < 4; k++) {
+				double b = Math.toRadians(45 + k * 90);
+				nearIsland |= Math.hypot(x - Math.cos(b) * 80, z - Math.sin(b) * 80) < 10;
+			}
+			for (double w : new double[] {30, 210}) {
+				nearIsland |= Math.hypot(x - Math.cos(Math.toRadians(w)) * 65, z - Math.sin(Math.toRadians(w)) * 65) < 9;
+			}
+			if (!nearIsland) {
+				list.add(new Fragment(x, z, F + 34 + roll % 40, 1.2 + (roll % 17) / 10.0));
+			}
+		}
+		return list;
+	}
+
+	/** Rock fragments drifting round the colosseum at different heights, some crowned with amethyst. */
+	private static void fragments(BlockState[] c, int dx, int dz) {
+		for (Fragment f : FRAGMENTS) {
+			double t = Math.hypot(dx - f.x(), dz - f.z());
+			if (t > f.r() + 0.5) {
+				continue;
+			}
+			double half = Math.sqrt(Math.max(0, (f.r() + 0.5) * (f.r() + 0.5) - t * t));
+			int bottom = f.y() - (int) Math.ceil(half * 1.2);
+			int top = f.y() + (int) Math.floor(half * 0.5);
+			int roll = PracticeLayout.scatter(CX + dx, CZ + dz, 55);
+			fill(c, bottom, top, roll % 3 == 0 ? Blocks.COBBLED_DEEPSLATE.defaultBlockState() : roll % 3 == 1 ? STONE : Blocks.TUFF.defaultBlockState());
+			put(c, top, roll < 300 ? Blocks.MOSS_BLOCK.defaultBlockState() : at(c, top));
+			if (roll < 140 && t < f.r() - 0.3) {
+				put(c, top + 1, Blocks.AMETHYST_CLUSTER.defaultBlockState());
+			}
+		}
+	}
+
+	/** The sky citadel's island, north of the colosseum. */
+	static final double CITADEL_X = 0;
+	static final double CITADEL_Z = -104;
+
+	/**
+	 * The sky citadel: a castle on its own floating island beyond the north gate. A curtain wall with
+	 * battlements and a gateway round a courtyard; four corner towers and a tall keep, deepslate banded in
+	 * amethyst, with purple windows lit from inside and purpur spires; cherry trees outside the walls, and
+	 * chains hanging from the island's underside.
+	 */
+	private static void citadel(BlockState[] c, int dx, int dz) {
+		double lx = dx - CITADEL_X;
+		double lz = dz - CITADEL_Z;
+		double t = Math.hypot(lx, lz);
+		if (t > 16.5) {
+			return;
+		}
+		int top = F + 52;
+		int roll = PracticeLayout.scatter(CX + dx, CZ + dz, 63);
+		int depth = (int) Math.round((16.5 - t) * 1.25) + roll % 4 + 2;
+		fill(c, top - depth, top - 3, t > 12 ? STONE : Blocks.DEEPSLATE.defaultBlockState());
+		fill(c, top - 2, top - 1, DIRT);
+		double square = Math.max(Math.abs(lx), Math.abs(lz));
+		put(c, top, square < 8 ? POLISHED : GRASS);
+		if (t > 14.5 && roll < 90) {
+			fill(c, top - depth - 8, top - depth - 1, CHAIN);
+		}
+		// Curtain wall with a gateway on the south side.
+		if (Math.round(square) == 8 && square <= 8.5) {
+			boolean gateway = lz > 7.5 && Math.abs(lx) <= 1.5;
+			fill(c, top + 1, top + 6, TILES);
+			if (gateway) {
+				fill(c, top + 1, top + 3, AIR);
+				put(c, top + 4, CHISELED);
+			}
+			if (((int) Math.round(lx) + (int) Math.round(lz)) % 2 == 0) {
+				put(c, top + 7, BRICKS);
+			}
+		}
+		// Corner towers.
+		for (int sx = -1; sx <= 1; sx += 2) {
+			for (int sz = -1; sz <= 1; sz += 2) {
+				double ox = lx - sx * 8;
+				double oz = lz - sz * 8;
+				double r = Math.hypot(ox, oz);
+				if (r <= 2.6) {
+					spiredTower(c, ox, oz, r, 2.6, top + 1, top + 14, 8);
+				}
+			}
+		}
+		// The keep.
+		if (t <= 4.6) {
+			spiredTower(c, lx, lz, t, 4.6, top + 1, top + 24, 16);
+		}
+		// Cherry trees outside the walls.
+		int[][] trees = {{12, 3}, {-12, -3}, {3, -12}, {-4, 12}};
+		for (int[] tr : trees) {
+			double ox = lx - tr[0];
+			double oz = lz - tr[1];
+			if (Math.hypot(ox, oz) <= 3.4) {
+				cherry(c, ox, oz, top + 1, roll);
+			}
+		}
+	}
+
+	/**
+	 * A round tower from {@code base} to {@code bodyTop}: deepslate tiles round brick, amethyst bands, a
+	 * lantern room behind purple windows, battlements, and a purpur spire {@code spire} blocks high with a
+	 * sea lantern and an end rod at the tip.
+	 */
+	private static void spiredTower(BlockState[] c, double ox, double oz, double t, double radius, int base, int bodyTop, int spire) {
+		boolean rim = t > radius - 1;
+		fill(c, base, bodyTop, rim ? TILES : BRICKS);
+		int room = base + (bodyTop - base) * 2 / 3;
+		put(c, base + (bodyTop - base) / 3, AMETHYST);
+		put(c, bodyTop - 1, AMETHYST);
+		if (t <= radius - 2) {
+			fill(c, room - 2, room + 2, AIR);
+			if (t < 0.5) {
+				put(c, room, SEA_LANTERN);
+			}
+		} else if (rim && (Math.abs(ox) < 1.2 || Math.abs(oz) < 1.2)) {
+			fill(c, room - 2, room + 2, PURPLE_GLASS);
+		}
+		if (rim && ((int) Math.round(ox) + (int) Math.round(oz)) % 2 == 0) {
+			put(c, bodyTop + 1, BRICK_WALL);
+		}
+		for (int y = bodyTop + 1; y <= bodyTop + spire; y++) {
+			double rr = radius * (1 - (y - bodyTop - 1) / (double) spire) - 0.3;
+			if (t <= rr) {
+				put(c, y, rr - t < 1.2 ? PURPUR : BRICKS);
+			}
+		}
+		if (t < 0.5) {
+			put(c, bodyTop + spire + 1, SEA_LANTERN);
+			put(c, bodyTop + spire + 2, END_ROD);
+		}
+	}
+
 	/** Whether a block hangs on a neighbour, so it goes in after everything solid. */
 	static boolean attached(BlockState state) {
 		Block b = state.getBlock();
@@ -648,6 +930,9 @@ final class GrandStadium {
 			int dx = dx(i);
 			int dz = dz(i);
 			BlockState[] col = column(dx, dz);
+			if (col == null) {
+				continue;
+			}
 			for (int y = Y0; y <= Y1; y++) {
 				BlockState want = col[y - Y0];
 				if (attached(want) != attachedPass) {
