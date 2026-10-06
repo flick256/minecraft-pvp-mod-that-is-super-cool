@@ -101,25 +101,35 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			world.getServer().runCommand("time set noon");
 			view(context, world, "sparbot-practice-hub", 0.5, 72, -24, 0, 18);
 			view(context, world, "sparbot-practice-hub-gateway", 0.5, 70, 6, 0, 10);
-			// The Arcane Colosseum, outside and in.
+			// The Celestial Colosseum, built in the background: wait for it, then look round outside and in.
+			world.getServer().waitFor(server -> SparBot.practice().colosseumReady(), 12000);
 			int cx = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_X;
 			int cz = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_Z;
-			view(context, world, "colosseum-arrival", cx + 0.5, 64, cz + 65.5, 180, -12);
-			view(context, world, "colosseum-aerial", cx + 0.5, 150, cz + 78, 180, 48);
-			view(context, world, "colosseum-diagonal", cx + 70, 120, cz + 70, 135, 35);
-			view(context, world, "colosseum-low", cx - 95, 72, cz + 40, -112, -6);
-			view(context, world, "colosseum-tunnel", cx + 0.5, 64, cz + 52, 180, 0);
-			view(context, world, "colosseum-field-edge", cx + 0.5, 65, cz + 27, 180, -10);
-			view(context, world, "colosseum-field-centre", cx + 0.5, 64, cz + 0.5, 0, -25);
-			view(context, world, "colosseum-royal-box", cx + 0.5, 85, cz + 48.5, 180, 22);
-			view(context, world, "colosseum-promenade", cx + 30, 81, cz + 34, 140, 6);
-			view(context, world, "colosseum-floor", cx + 0.5, 92, cz + 0.5, 0, 90);
-			view(context, world, "colosseum-citadel", cx + 0.5, 122, cz - 50, 180, 2);
-			view(context, world, "colosseum-waterfall", cx + 82, 92, cz + 58, 139, 5);
-			view(context, world, "colosseum-portal", cx + 0.5, 70, cz + 80, 180, -22);
+			// It is six hundred blocks across: look further than usual.
+			int distance = context.computeOnClient(client -> client.options.renderDistance().get());
+			context.runOnClient(client -> client.options.renderDistance().set(16));
+			view(context, world, "colosseum-arrival", cx + 0.5, 64, cz + 226.5, 180, -8);
+			view(context, world, "colosseum-approach", cx + 0.5, 110, cz + 262, 180, 12);
+			view(context, world, "colosseum-aerial", cx + 0.5, 230, cz + 170, 180, 45);
+			view(context, world, "colosseum-knights", cx + 70, 110, cz + 250, 150, 8);
+			view(context, world, "colosseum-tunnel", cx + 0.5, 65, cz + 56, 180, -4);
+			view(context, world, "colosseum-field", cx + 0.5, 66, cz + 0.5, 0, -22);
+			view(context, world, "colosseum-field-north", cx + 0.5, 70, cz + 30, 180, -18);
+			view(context, world, "colosseum-sky", cx + 0.5, 66, cz + 20, 180, -62);
+			view(context, world, "colosseum-top-tier", cx + 0.5, 164, cz + 140, 180, 18);
+			view(context, world, "colosseum-imperial-box", cx + 0.5, 96, cz + 70, 180, 12);
+			view(context, world, "colosseum-imperial-box-front", cx + 0.5, 82, cz + 40, 0, -14);
+			view(context, world, "colosseum-undercroft", cx + 70.5, 68, cz + 70.5, 45, 0);
+			view(context, world, "colosseum-dragon", cx - 40, 240, cz - 40, 142, 5);
+			view(context, world, "colosseum-whale", cx - 180, 215, cz + 90, 136, 5);
+			view(context, world, "colosseum-phoenix", cx + 170, 250, cz + 20, -134, 5);
+			view(context, world, "colosseum-fire", cx + 116, 120, cz - 116, -135, 30);
+			view(context, world, "colosseum-frost", cx + 116, 120, cz + 116, -45, 30);
+			view(context, world, "colosseum-citadel", cx + 0.5, 190, cz - 190, 180, 4);
 			world.getServer().runCommand("time set midnight");
-			view(context, world, "colosseum-night-inside", cx + 0.5, 85, cz + 48.5, 180, 16);
-			view(context, world, "colosseum-night-outside", cx + 0.5, 100, cz + 92, 180, 22);
+			view(context, world, "colosseum-night-inside", cx + 0.5, 96, cz + 70, 180, 12);
+			view(context, world, "colosseum-night-outside", cx + 0.5, 130, cz + 262, 180, 16);
+			context.runOnClient(client -> client.options.renderDistance().set(distance));
 			world.getServer().runCommand("time set noon");
 			// It resets once everyone has left: stand in the field, dig a hole and place a block, leave, and it is back.
 			world.getServer().runOnServer(server -> human(server).teleportTo((net.minecraft.server.level.ServerLevel) human(server).level(), cx + 0.5, 64,

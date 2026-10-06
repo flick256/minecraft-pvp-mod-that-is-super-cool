@@ -9,7 +9,7 @@ import java.util.List;
  */
 public final class PracticeLayout {
 	/** Bump when the hub or an arena changes: worlds built with an older version are rebuilt. */
-	public static final int VERSION = 4;
+	public static final int VERSION = 5;
 	/** The top block of the flat desert (sand). */
 	public static final int SURFACE = 63;
 	/** Where players stand on it. */
@@ -102,18 +102,18 @@ public final class PracticeLayout {
 	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "ranged_duel"), 23, 1, 8, false);
 	public static final List<Site> SITES = List.of(SWORD, UHC, CRYSTAL, CART, MACE);
 
-	/** The Arcane Colosseum, the grand free-for-all stadium: its centre, north of the cart field. */
+	/** The Celestial Colosseum, the grand free-for-all stadium: its centre, far north of the cart field. */
 	public static final int GRAND_X = 0;
-	public static final int GRAND_Z = -420;
-	/** Half the side of the square it fits in, floating islands and the sky citadel included. */
-	public static final int GRAND_REACH = 122;
+	public static final int GRAND_Z = -560;
+	/** Half the side of the square it fits in: six hundred blocks across, sky creatures and satellite stadiums included. */
+	public static final int GRAND_REACH = 300;
 	/** Its pad in the hub, just south of the plaza. */
 	public static final int[] GRAND_PAD = {0, 18};
-	/** Where the hub pad lands you: on the south bridge, looking at the gate. */
-	public static final int GRAND_ARRIVAL = 65;
-	/** Pads back to the hub (distances south of the centre): on the south bridge, and in the south tunnel by the field. */
-	public static final int GRAND_RETURN_BRIDGE = 67;
-	public static final int GRAND_RETURN_TUNNEL = 36;
+	/** Where the hub pad lands you (distance south of the centre): on the south causeway, looking up at the great gate. */
+	public static final int GRAND_ARRIVAL = 226;
+	/** Pads back to the hub (distances south of the centre): on the causeway behind the arrival, and in the south tunnel by the field. */
+	public static final int GRAND_RETURN_BRIDGE = 229;
+	public static final int GRAND_RETURN_TUNNEL = 54;
 
 	private PracticeLayout() {
 	}

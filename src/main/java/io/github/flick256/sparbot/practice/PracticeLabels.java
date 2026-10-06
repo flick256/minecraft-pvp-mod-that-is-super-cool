@@ -17,14 +17,14 @@ import org.joml.Vector3f;
  * over each arena and over the pads back to the hub. They carry a tag, so a rebuild removes the old
  * ones before it puts new ones up.
  */
-final class PracticeLabels {
+public final class PracticeLabels {
 	static final String TAG = "sparbot_practice";
 
 	private PracticeLabels() {
 	}
 
 	/** Removes every practice label in the box. */
-	static void clear(ServerLevel level, AABB box) {
+	public static void clear(ServerLevel level, AABB box) {
 		for (Entity e : level.getEntities((Entity) null, box, e -> e.entityTags().contains(TAG))) {
 			e.discard();
 		}
@@ -36,7 +36,7 @@ final class PracticeLabels {
 	 * @param scale 1 is the size of a name tag
 	 * @param background ARGB behind the text (0 for none)
 	 */
-	static void put(ServerLevel level, double x, double y, double z, Component text, float scale, int background) {
+	public static void put(ServerLevel level, double x, double y, double z, Component text, float scale, int background) {
 		Display.TextDisplay label = new Display.TextDisplay(EntityTypes.TEXT_DISPLAY, level);
 		label.setPos(x, y, z);
 		((TextDisplayAccessor) label).sparbot$setText(text);

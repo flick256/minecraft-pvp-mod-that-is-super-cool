@@ -9,6 +9,8 @@ import io.github.flick256.sparbot.core.practice.PracticeLayout.Site;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
 import io.github.flick256.sparbot.match.Arena;
 import io.github.flick256.sparbot.match.MatchManager;
+import io.github.flick256.sparbot.practice.colosseum.CelestialColosseum;
+import io.github.flick256.sparbot.practice.colosseum.ColosseumWorks;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -102,6 +104,7 @@ public final class PracticeWorld {
 					new Arena.Spawn(site.centerX() + 0.5, y, site.centerZ() + site.spawnOffset() + 0.5, 180));
 			}
 		}
+		colosseum(level).start();
 		if (fresh && level == server.overworld()) {
 			level.setRespawnData(net.minecraft.world.level.storage.LevelData.RespawnData.of(level.dimension(), new BlockPos(0, PracticeLayout.FLOOR, -4), 0, 0));
 		}
@@ -172,66 +175,62 @@ public final class PracticeWorld {
 		return "Spar" + Character.toUpperCase(id.charAt(0)) + id.substring(1);
 	}
 
-	/** Takes a player to the Arcane Colosseum's south bridge, looking up at its gate. */
+	/** The colosseum's builder for this world (made again if the world changed, as in a new singleplayer world). */
+	private @Nullable ColosseumWorks works;
+
+	private ColosseumWorks colosseum(ServerLevel level) {
+		if (works == null || works.level() != level) {
+			works = new ColosseumWorks(level);
+		}
+		return works;
+	}
+
+	/** Whether the colosseum is built and open in this world. */
+	public boolean colosseumReady() {
+		return works != null && works.ready();
+	}
+
+	/** Whether the colosseum is built, else a message saying how far the build has got. */
+	private @Nullable Component colosseumClosed(ServerLevel level) {
+		ColosseumWorks w = colosseum(level);
+		if (w.ready()) {
+			return null;
+		}
+		w.start();
+		return Component.literal("The Celestial Colosseum is still being built (" + Math.round(100 * w.progress())
+			+ "%). It opens by itself in a minute or two.");
+	}
+
+	/** Takes a player to the Celestial Colosseum's south causeway, looking up at its great gate. */
 	public void toColosseum(ServerPlayer player) throws IOException {
 		ServerLevel level = ensure(player.level().getServer());
+		Component closed = colosseumClosed(level);
+		if (closed != null) {
+			throw new IllegalStateException(closed.getString());
+		}
 		if (player.level() != level) {
 			returns.putIfAbsent(player.getUUID(), new Return(player.level().dimension(), player.position(), player.getYRot(), player.getXRot()));
 		}
-		player.teleportTo(level, GrandStadium.CX + 0.5, PracticeLayout.FLOOR, GrandStadium.CZ + PracticeLayout.GRAND_ARRIVAL + 0.5, Set.of(), 180, -12,
-			true);
-		player.sendSystemMessage(Component.literal("The Arcane Colosseum: free for all. Fight anyone here (spawn bots from the menu if you like). "
-			+ "It resets itself once everyone has left. The pads behind you and in the south tunnel go back to the hub."));
+		arrive(player, level);
 	}
 
-	/** Columns of the colosseum put back per tick while it resets (spread out, so the server never stalls). */
-	private static final int RESET_COLUMNS_PER_TICK = 400;
-	/** Players were in the colosseum since it was last reset. */
-	private boolean colosseumDirty;
-	/** The column a reset has got to (-1: no reset running), and whether it is on the hanging blocks yet. */
-	private int resetCursor = -1;
-	private boolean resetHanging;
+	private static void arrive(ServerPlayer player, ServerLevel level) {
+		player.teleportTo(level, CelestialColosseum.CX + 0.5, PracticeLayout.FLOOR, CelestialColosseum.CZ + CelestialColosseum.ARRIVAL + 0.5, Set.of(),
+			180, -8, true);
+		player.sendSystemMessage(Component.literal("The Celestial Colosseum: free for all, in the Grand Bowl or the Fire, Frost, Grove and Void "
+			+ "stadiums. Fight anyone here (spawn bots from the menu if you like). What you break is put back once everyone has left. "
+			+ "The pads behind you and in the south tunnel go back to the hub."));
+	}
 
-	/**
-	 * Puts the colosseum back the way it was built once every player has left it (bots don't count): every
-	 * block the blueprint says, loose items, arrows, crystals and carts gone. Someone coming back stops it.
-	 */
+	/** Old labels of the 0.8 colosseum, where it stood (the new one has none there). */
+	private static final net.minecraft.world.phys.AABB OLD_LABELS = new net.minecraft.world.phys.AABB(-1, PracticeLayout.FLOOR - 2, -390, 2,
+		PracticeLayout.FLOOR + 50, -350);
+
 	private void colosseumTick(MinecraftServer server, ServerLevel level) {
-		if (server.getTickCount() % 20 == 0) {
-			boolean occupied = level.players().stream().anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer)
-				&& Math.abs(p.getX() - GrandStadium.CX) <= GrandStadium.REACH + 8 && Math.abs(p.getZ() - GrandStadium.CZ) <= GrandStadium.REACH + 8);
-			if (occupied) {
-				colosseumDirty = true;
-				resetCursor = -1;
-			} else if (colosseumDirty && resetCursor < 0) {
-				resetCursor = 0;
-				resetHanging = false;
-				int r = GrandStadium.REACH;
-				net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(GrandStadium.CX - r, GrandStadium.Y0 - 20, GrandStadium.CZ - r,
-					GrandStadium.CX + r + 1, GrandStadium.Y1 + 30, GrandStadium.CZ + r + 1);
-				for (net.minecraft.world.entity.Entity e : level.getEntities((net.minecraft.world.entity.Entity) null, box,
-					e -> e instanceof net.minecraft.world.entity.item.ItemEntity || e instanceof net.minecraft.world.entity.projectile.Projectile
-						|| e instanceof net.minecraft.world.entity.ExperienceOrb || e instanceof net.minecraft.world.entity.item.PrimedTnt
-						|| e instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal
-						|| e instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart
-						|| e instanceof net.minecraft.world.entity.item.FallingBlockEntity)) {
-					e.discard();
-				}
-			}
-		}
-		if (resetCursor >= 0) {
-			GrandStadium.apply(level, resetCursor, resetCursor + RESET_COLUMNS_PER_TICK, resetHanging);
-			resetCursor += RESET_COLUMNS_PER_TICK;
-			if (resetCursor >= GrandStadium.columns()) {
-				if (!resetHanging) {
-					resetHanging = true;
-					resetCursor = 0;
-				} else {
-					resetCursor = -1;
-					colosseumDirty = false;
-					SparBot.LOGGER.info("The Arcane Colosseum has been reset");
-				}
-			}
+		ColosseumWorks w = colosseum(level);
+		w.tick();
+		if (w.ready() && server.getTickCount() % 100 == 0) {
+			PracticeLabels.clear(level, OLD_LABELS);
 		}
 	}
 
@@ -273,8 +272,9 @@ public final class PracticeWorld {
 				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == g[0] && feet.getZ() == g[1]) {
 					colosseum = true;
 				}
-				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == GrandStadium.CX && (feet.getZ() == GrandStadium.CZ + PracticeLayout.GRAND_RETURN_BRIDGE
-					|| feet.getZ() == GrandStadium.CZ + PracticeLayout.GRAND_RETURN_TUNNEL)) {
+				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == CelestialColosseum.CX
+					&& (feet.getZ() == CelestialColosseum.CZ + CelestialColosseum.RETURN_ARRIVAL
+					|| feet.getZ() == CelestialColosseum.CZ + CelestialColosseum.RETURN_TUNNEL)) {
 					home = true;
 				}
 			}
@@ -289,8 +289,12 @@ public final class PracticeWorld {
 				if (home) {
 					player.teleportTo(level, 0.5, PracticeLayout.FLOOR, -3.5, Set.of(), 0, 0, true);
 				} else if (colosseum) {
-					player.teleportTo(level, GrandStadium.CX + 0.5, PracticeLayout.FLOOR, GrandStadium.CZ + PracticeLayout.GRAND_ARRIVAL + 0.5, Set.of(), 180,
-						-12, true);
+					Component closed = colosseumClosed(level);
+					if (closed != null) {
+						player.sendSystemMessage(closed);
+					} else {
+						arrive(player, level);
+					}
 				} else {
 					toLobby(player, level, target);
 				}
