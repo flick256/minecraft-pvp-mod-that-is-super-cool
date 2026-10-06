@@ -35,7 +35,7 @@ import net.minecraft.world.phys.AABB;
  */
 public final class ColosseumWorks {
 	/** Bumped when the blueprint changes, so worlds with an older colosseum get it built again. */
-	public static final int VERSION = 1;
+	public static final int VERSION = 2;
 	/** At most this much building per tick. */
 	private static final long BUDGET_NANOS = 25_000_000L;
 	/** Chunks round each player or bot that count as visited (two each way: blasts, lava and water spread). */
@@ -47,6 +47,7 @@ public final class ColosseumWorks {
 	private final int minChunkZ = (CelestialColosseum.CZ - CelestialColosseum.REACH) >> 4;
 	private final int maxChunkZ = (CelestialColosseum.CZ + CelestialColosseum.REACH) >> 4;
 	private boolean built;
+	private int failures;
 	/** The job running: its chunks, which one it is on, how far through it, and whether on the hanging blocks yet. */
 	private Job job;
 	/** Chunks players or bots were in since the last reset. */
@@ -287,8 +288,15 @@ public final class ColosseumWorks {
 			}
 			pos.set(x, y, z);
 			if (!chunk.getBlockState(pos).equals(want)) {
-				level.setBlock(pos, want, Block.UPDATE_CLIENTS);
-				changed++;
+				try {
+					level.setBlock(pos, want, Block.UPDATE_CLIENTS);
+					changed++;
+				} catch (RuntimeException e) {
+					// One block that won't go in must never take the server down with it.
+					if (failures++ < 5) {
+						SparBot.LOGGER.warn("Could not place {} at {} in the colosseum: {}", want, pos, e.toString());
+					}
+				}
 			}
 		}
 		return changed;

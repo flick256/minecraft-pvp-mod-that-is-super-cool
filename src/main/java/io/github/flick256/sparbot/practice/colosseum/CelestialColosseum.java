@@ -61,41 +61,41 @@ public final class CelestialColosseum {
 	private static final int OLD_Z = -420;
 	private static final int OLD_REACH = 122;
 
-	private static final BlockState AIR = Blocks.AIR.defaultBlockState();
-	private static final BlockState SAND = Blocks.SAND.defaultBlockState();
-	private static final BlockState SANDSTONE = Blocks.SANDSTONE.defaultBlockState();
-	private static final BlockState STONE = Blocks.STONE.defaultBlockState();
-	private static final BlockState DIRT = Blocks.DIRT.defaultBlockState();
-	private static final BlockState GRASS = Blocks.GRASS_BLOCK.defaultBlockState();
-	private static final BlockState BRICKS = Blocks.DEEPSLATE_BRICKS.defaultBlockState();
-	private static final BlockState TILES = Blocks.DEEPSLATE_TILES.defaultBlockState();
-	private static final BlockState POLISHED = Blocks.POLISHED_DEEPSLATE.defaultBlockState();
-	private static final BlockState CHISELED = Blocks.CHISELED_DEEPSLATE.defaultBlockState();
-	private static final BlockState BLACK_BRICKS = Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
-	private static final BlockState BLACK_WALL = Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState();
-	private static final BlockState BRICK_WALL = Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState();
-	private static final BlockState BLACKSTONE = Blocks.POLISHED_BLACKSTONE.defaultBlockState();
-	private static final BlockState AMETHYST = Blocks.AMETHYST_BLOCK.defaultBlockState();
-	private static final BlockState PURPUR = Blocks.PURPUR_BLOCK.defaultBlockState();
-	private static final BlockState SEA_LANTERN = Blocks.SEA_LANTERN.defaultBlockState();
-	private static final BlockState CRYING = Blocks.CRYING_OBSIDIAN.defaultBlockState();
-	private static final BlockState GILDED = Blocks.GILDED_BLACKSTONE.defaultBlockState();
-	private static final BlockState WATER = Blocks.WATER.defaultBlockState();
-	private static final BlockState END_ROD = Blocks.END_ROD.defaultBlockState();
-	private static final BlockState LANTERN = Blocks.LANTERN.defaultBlockState();
-	private static final BlockState SOUL_LANTERN = Blocks.SOUL_LANTERN.defaultBlockState();
-	private static final BlockState HANGING_SOUL = Blocks.SOUL_LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true);
-	private static final BlockState PURPLE_GLASS = Blocks.STAINED_GLASS.purple().defaultBlockState();
-	private static final BlockState PURPLE_PANE = Blocks.STAINED_GLASS_PANE.purple().defaultBlockState();
-	private static final BlockState CHERRY_LOG = Blocks.CHERRY_LOG.defaultBlockState();
-	private static final BlockState CHERRY_LEAVES = Blocks.CHERRY_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
-	private static final BlockState CHAIN = Blocks.IRON_CHAIN.defaultBlockState();
-	private static final BlockState TUFF = Blocks.POLISHED_TUFF.defaultBlockState();
-	private static final BlockState TUFF_BRICKS = Blocks.TUFF_BRICKS.defaultBlockState();
-	private static final BlockState TUFF_CHISELED = Blocks.CHISELED_TUFF_BRICKS.defaultBlockState();
-	private static final BlockState WOOL_PURPLE = Blocks.WOOL.purple().defaultBlockState();
-	private static final BlockState WOOL_WHITE = Blocks.WOOL.white().defaultBlockState();
-	private static final BlockState PAD = Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState();
+	static final BlockState AIR = Blocks.AIR.defaultBlockState();
+	static final BlockState SAND = Blocks.SAND.defaultBlockState();
+	static final BlockState SANDSTONE = Blocks.SANDSTONE.defaultBlockState();
+	static final BlockState STONE = Blocks.STONE.defaultBlockState();
+	static final BlockState DIRT = Blocks.DIRT.defaultBlockState();
+	static final BlockState GRASS = Blocks.GRASS_BLOCK.defaultBlockState();
+	static final BlockState BRICKS = Blocks.DEEPSLATE_BRICKS.defaultBlockState();
+	static final BlockState TILES = Blocks.DEEPSLATE_TILES.defaultBlockState();
+	static final BlockState POLISHED = Blocks.POLISHED_DEEPSLATE.defaultBlockState();
+	static final BlockState CHISELED = Blocks.CHISELED_DEEPSLATE.defaultBlockState();
+	static final BlockState BLACK_BRICKS = Blocks.POLISHED_BLACKSTONE_BRICKS.defaultBlockState();
+	static final BlockState BLACK_WALL = Blocks.POLISHED_BLACKSTONE_BRICK_WALL.defaultBlockState();
+	static final BlockState BRICK_WALL = Blocks.DEEPSLATE_BRICK_WALL.defaultBlockState();
+	static final BlockState BLACKSTONE = Blocks.POLISHED_BLACKSTONE.defaultBlockState();
+	static final BlockState AMETHYST = Blocks.AMETHYST_BLOCK.defaultBlockState();
+	static final BlockState PURPUR = Blocks.PURPUR_BLOCK.defaultBlockState();
+	static final BlockState SEA_LANTERN = Blocks.SEA_LANTERN.defaultBlockState();
+	static final BlockState CRYING = Blocks.CRYING_OBSIDIAN.defaultBlockState();
+	static final BlockState GILDED = Blocks.GILDED_BLACKSTONE.defaultBlockState();
+	static final BlockState WATER = Blocks.WATER.defaultBlockState();
+	static final BlockState END_ROD = Blocks.END_ROD.defaultBlockState();
+	static final BlockState LANTERN = Blocks.LANTERN.defaultBlockState();
+	static final BlockState SOUL_LANTERN = Blocks.SOUL_LANTERN.defaultBlockState();
+	static final BlockState HANGING_SOUL = Blocks.SOUL_LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true);
+	static final BlockState PURPLE_GLASS = Blocks.STAINED_GLASS.purple().defaultBlockState();
+	static final BlockState PURPLE_PANE = Blocks.STAINED_GLASS_PANE.purple().defaultBlockState();
+	static final BlockState CHERRY_LOG = Blocks.CHERRY_LOG.defaultBlockState();
+	static final BlockState CHERRY_LEAVES = Blocks.CHERRY_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true);
+	static final BlockState CHAIN = Blocks.IRON_CHAIN.defaultBlockState();
+	static final BlockState TUFF = Blocks.POLISHED_TUFF.defaultBlockState();
+	static final BlockState TUFF_BRICKS = Blocks.TUFF_BRICKS.defaultBlockState();
+	static final BlockState TUFF_CHISELED = Blocks.CHISELED_TUFF_BRICKS.defaultBlockState();
+	static final BlockState WOOL_PURPLE = Blocks.WOOL.purple().defaultBlockState();
+	static final BlockState WOOL_WHITE = Blocks.WOOL.white().defaultBlockState();
+	static final BlockState PAD = Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState();
 
 	private CelestialColosseum() {
 	}
@@ -149,11 +149,11 @@ public final class CelestialColosseum {
 		} else if (d <= TIER1) {
 			tier(c, dx, dz, d, arc, gate, (int) Math.floor(d) - 51, F + 11, 1);
 		} else if (d <= CONCOURSE1) {
-			concourse(c, d, arc, gate, F + 42, TIER1 + 1);
+			concourse(c, dx, dz, d, arc, gate, F + 42, TIER1 + 1, 0, CONCOURSE1);
 		} else if (d <= TIER2) {
 			tier(c, dx, dz, d, arc, gate, (int) Math.floor(d) - 87, F + 45, 2);
 		} else if (d <= CONCOURSE2) {
-			concourse(c, d, arc, gate, F + 76, TIER2 + 1);
+			concourse(c, dx, dz, d, arc, gate, F + 76, TIER2 + 1, 1, CONCOURSE2);
 		} else if (d <= TIER3) {
 			tier(c, dx, dz, d, arc, gate, (int) Math.floor(d) - 122, F + 79, 3);
 		} else if (d <= CROWN) {
@@ -174,6 +174,9 @@ public final class CelestialColosseum {
 			put(c, S, AMETHYST);
 			put(c, F, PAD);
 		}
+		if (sat == null && d > PODIUM && d <= TIER3) {
+			ColosseumInterior.build(c, dx, dz, d, deg);
+		}
 		if (sat == null) {
 			tower(c, dx, dz);
 			canopy(c, d, deg);
@@ -188,19 +191,19 @@ public final class CelestialColosseum {
 		return c;
 	}
 
-	private static void put(BlockState[] c, int y, BlockState state) {
+	static void put(BlockState[] c, int y, BlockState state) {
 		if (y >= Y0 && y <= Y1) {
 			c[y - Y0] = state;
 		}
 	}
 
-	private static void fill(BlockState[] c, int y0, int y1, BlockState state) {
+	static void fill(BlockState[] c, int y0, int y1, BlockState state) {
 		for (int y = Math.max(y0, Y0); y <= Math.min(y1, Y1); y++) {
 			c[y - Y0] = state;
 		}
 	}
 
-	private static BlockState at(BlockState[] c, int y) {
+	static BlockState at(BlockState[] c, int y) {
 		return y >= Y0 && y <= Y1 ? c[y - Y0] : AIR;
 	}
 
@@ -372,7 +375,8 @@ public final class CelestialColosseum {
 				put(c, seat - 3, SEA_LANTERN);
 			}
 		}
-		boolean aisle = Math.floorMod(Math.round(arc), 16) == 0;
+		// Aisles run straight up the stands, lined up with the room walls below (and the steps up from the concourses).
+		boolean aisle = offStep(Math.toDegrees(Math.atan2(dz, dx)), AISLES[tier - 1], d) < 0.5;
 		Block stair = aisle ? Blocks.PURPUR_STAIRS : tier == 1 ? Blocks.DEEPSLATE_BRICK_STAIRS : tier == 2 ? Blocks.POLISHED_BLACKSTONE_STAIRS
 			: Blocks.DEEPSLATE_TILE_STAIRS;
 		put(c, seat, stair.defaultBlockState().setValue(StairBlock.FACING, outward(dx, dz)));
@@ -389,8 +393,21 @@ public final class CelestialColosseum {
 		}
 	}
 
-	/** A concourse between two tiers: a walk with a rail over the tier below and lanterns, on a shell over the undercroft. */
-	private static void concourse(BlockState[] c, double d, double arc, Gate gate, int floor, double railAt) {
+	/** Degrees between aisles on each tier. */
+	static final double[] AISLES = {7.5, 5.0, 3.75};
+
+	/**
+	 * A concourse between two tiers: a walk with a rail over the tier below (open at its aisles, to walk down
+	 * them) and lanterns, and two steps up to each aisle of the tier above, on a shell over the corridor below.
+	 */
+	private static void concourse(BlockState[] c, int dx, int dz, double d, double arc, Gate gate, int floor, double railAt, int below, double outer) {
+		double deg = Math.toDegrees(Math.atan2(dz, dx));
+		if (outer - d < 1.0 && offStep(deg, AISLES[below + 1], d) < 0.5) {
+			put(c, floor + 1, Blocks.PURPUR_STAIRS.defaultBlockState().setValue(StairBlock.FACING, outward(dx, dz)));
+		}
+		if (d <= railAt && offStep(deg, AISLES[below], d) < 0.5) {
+			railAt = -1;
+		}
 		fill(c, floor - 3, floor, BRICKS);
 		put(c, floor, Math.floorMod(Math.round(arc), 5) == 0 ? CHISELED : POLISHED);
 		boolean pillar = Math.floorMod(Math.round(arc), 12) <= 1 && !(gate != null && gate.perp() <= 5.5);
@@ -940,16 +957,7 @@ public final class CelestialColosseum {
 				fill(c, y0 + 5, y0 + 7, AMETHYST);
 			}
 		}
-		int core = F + 100;
-		int dist = Math.abs(dx) + Math.abs(dz);
-		for (int y = core - 6; y <= core + 6; y++) {
-			if (dist + Math.abs(y - core) <= 6) {
-				put(c, y, dist + Math.abs(y - core) <= 1 ? SEA_LANTERN : AMETHYST);
-			}
-		}
-		if (dist == 0) {
-			put(c, core + 7, END_ROD);
-		}
+		SkyCrystal.build(c, dx, dz);
 		// Floating islands with waterfalls, out past the gardens.
 		for (int i = 0; i < 6; i++) {
 			double a = Math.toRadians(i * 60);
@@ -1071,7 +1079,8 @@ public final class CelestialColosseum {
 		Block b = state.getBlock();
 		return b instanceof WallBannerBlock || b instanceof LanternBlock || b == Blocks.PINK_PETALS || b == Blocks.END_ROD
 			|| b == Blocks.AMETHYST_CLUSTER || b == Blocks.IRON_CHAIN || b == Blocks.SHORT_GRASS || b == Blocks.ALLIUM
-			|| b == Blocks.LILY_OF_THE_VALLEY || b == Blocks.PINK_TULIP || b == Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE || b == Blocks.SOUL_FIRE;
+			|| b == Blocks.LILY_OF_THE_VALLEY || b == Blocks.PINK_TULIP || b == Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE || b == Blocks.SOUL_FIRE
+			|| ColosseumInterior.attached(b);
 	}
 
 	/** Where the hub pad lands you (south of the centre): on the south causeway, looking up at the great gate. */

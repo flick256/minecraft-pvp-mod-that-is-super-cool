@@ -126,9 +126,22 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			view(context, world, "colosseum-fire", cx + 116, 120, cz - 116, -135, 30);
 			view(context, world, "colosseum-frost", cx + 116, 120, cz + 116, -45, 30);
 			view(context, world, "colosseum-citadel", cx + 0.5, 190, cz - 190, 180, 4);
+			view(context, world, "colosseum-corridor", cx + 64.0, 65.6, cz + 53.7, 40.0F, 5.0F);
+			view(context, world, "colosseum-room-a", cx + 45.5, 65.6, cz + 39.9, -48.8F, 15.0F);
+			view(context, world, "colosseum-room-b", cx + -19.4, 65.6, cz + 57.3, 18.8F, 15.0F);
+			view(context, world, "colosseum-room-c", cx + 59.7, 73.6, cz + 68.0, -41.2F, 15.0F);
+			view(context, world, "colosseum-room-d", cx + -81.2, 65.6, cz + 40.0, 63.8F, 15.0F);
+			view(context, world, "colosseum-room-e", cx + 70.3, 89.6, cz + 105.2, -33.8F, 15.0F);
+			view(context, world, "colosseum-room-f", cx + -70.3, 65.6, cz + -105.2, 146.2F, 15.0F);
+			view(context, world, "colosseum-stair", cx + 73.0, 66.0, cz + 40.5, -154.2F, -35.0F);
+			view(context, world, "colosseum-concourse", cx + -42.0, 108.6, cz + 72.7, -150.0F, 20.0F);
+			view(context, world, "colosseum-crystal", cx + 0.5, 70, cz + 40.5, 180, -40);
+			view(context, world, "colosseum-crystal-far", cx + 0.5, 215, cz + 110, 180, 0);
 			world.getServer().runCommand("time set midnight");
 			view(context, world, "colosseum-night-inside", cx + 0.5, 96, cz + 70, 180, 12);
 			view(context, world, "colosseum-night-outside", cx + 0.5, 130, cz + 262, 180, 16);
+			view(context, world, "colosseum-night-room", cx + 45.5, 65.6, cz + 39.9, -48.8F, 15.0F);
+			view(context, world, "colosseum-night-crystal", cx + 0.5, 215, cz + 110, 180, 0);
 			context.runOnClient(client -> client.options.renderDistance().set(distance));
 			world.getServer().runCommand("time set noon");
 			// It resets once everyone has left: stand in the field, dig a hole and place a block, leave, and it is back.

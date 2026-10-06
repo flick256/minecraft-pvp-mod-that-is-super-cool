@@ -245,11 +245,25 @@ public final class PracticeWorld {
 			+ "Pick one in the menu's Drills tab, or /sparbot drill to list them. The pad behind you goes back to the hub."));
 	}
 
+	/**
+	 * No hostile mobs in the practice world: it is for PvP, and the night (or a dark corner) would otherwise
+	 * fill the stands and arenas with them. Named ones (a name tag, or summoned with a name) are left alone.
+	 */
+	private static void clearMonsters(ServerLevel level) {
+		for (net.minecraft.world.entity.Mob mob : level.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(
+			net.minecraft.world.entity.Mob.class), m -> m instanceof net.minecraft.world.entity.monster.Enemy && !m.hasCustomName())) {
+			mob.discard();
+		}
+	}
+
 	/** Old labels of the 0.8 colosseum, where it stood (the new one has none there). */
 	private static final net.minecraft.world.phys.AABB OLD_LABELS = new net.minecraft.world.phys.AABB(-1, PracticeLayout.FLOOR - 2, -390, 2,
 		PracticeLayout.FLOOR + 50, -350);
 
 	private void colosseumTick(MinecraftServer server, ServerLevel level) {
+		if (server.getTickCount() % 20 == 7) {
+			clearMonsters(level);
+		}
 		ColosseumWorks w = colosseum(level);
 		w.tick();
 		games.tick(server);

@@ -156,7 +156,8 @@ down to bedrock) with a hub and an arena for each kind of fight.
   run (see below).
 - **The Celestial Colosseum** (south of the hub, through the purple gateway): six hundred blocks across. The
   Grand Bowl (a field round a compass rose, three tiers of seats over a hundred blocks high, an imperial box,
-  a vaulted undercroft, a crown wall of glowing arches and sixteen spired towers), a plaza, a lit moat and
+  storeys of rooms and corridors under the seats with spiral stairs up to the concourses, a crown wall of
+  glowing arches and sixteen spired towers, and the Great Crystal floating overhead), a plaza, a lit moat and
   cherry gardens; four satellite stadiums (Fire, Frost, Grove and Void) to fight in too; seventy-block knights
   guarding the bridges; and in the sky a dragon, a phoenix, a sky whale, jellyfish, a halo, a citadel and
   waterfall islands. It is built in the background the first time (a few minutes; progress shows on your

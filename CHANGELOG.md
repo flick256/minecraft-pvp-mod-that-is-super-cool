@@ -2,6 +2,27 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 1.0.1
+
+- **Inside the Celestial Colosseum's stands.** The space under the seats is no longer a dark undercroft (that
+  mobs spawned in): it is storeys of rooms every eight blocks, three ring corridors running all the way round
+  (behind the podium and under each concourse) lit by lanterns and glowing floor stones, with banners and
+  benches, and forty-eight sectors of rooms between them. Each room is one of nine kinds: feast halls (a long
+  candlelit table and benches), armouries (anvils, grindstones, smithing tables, weapon racks), libraries
+  (bookshelves to the ceiling, lecterns, an enchanting table), shrines (an amethyst altar, crying obsidian,
+  candles, crystals), training rooms (targets and straw dummies), treasuries (heaps of gold, decorated pots),
+  alchemists' rooms (brewing stands, cauldrons), lounges (carpets, sofas, azaleas, a jukebox) and storerooms.
+  Doors join every room to the corridors and to its neighbours.
+- **Getting to your seat:** sixteen spiral staircases round lit newels climb from the ground floor, past every
+  storey, to the two concourses; the aisles now run straight up the stands, the rail over each tier opens at
+  them, and two steps lead up from each concourse to the tier above. The gate passages are vaulted halls with
+  doors into the corridors they cross.
+- **The Great Crystal:** a hexagonal crystal a hundred blocks from tip to tip floats over the Grand Bowl inside
+  the halo, banded in purple, magenta and pink glass with amethyst edges, a column of light at its heart and
+  beams from its tips; six smaller crystals float round it, and a gold ring and a glass ring orbit it.
+- No hostile mobs in the practice world (named ones are left alone).
+- Worlds with the 1.0.0 colosseum rebuild it in the background on the next visit (its pad opens when done).
+
 ## 1.0.0
 
 - **Skill drills: every PvP skill trainable.** A training hall west of the hub (through the gold pad, the
