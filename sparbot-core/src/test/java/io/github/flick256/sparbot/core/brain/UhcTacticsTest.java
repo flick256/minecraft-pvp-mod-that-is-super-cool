@@ -214,4 +214,27 @@ class UhcTacticsTest {
 				ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15, false, true);
 		}
 	}
+
+	@Test
+	void scoopsTheOpponentsWaterAtAHumanPace() {
+		// Two of the opponent's water sources by the bot, the opponent well away: it takes them, but not at once.
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, BUCKET, 2, BUCKET),
+			TestFixtures.target(new Vec3(0, 0, 9), 0));
+		java.util.List<io.github.flick256.sparbot.core.sense.BlockSpot> water = new java.util.ArrayList<>(java.util.List.of(
+			new io.github.flick256.sparbot.core.sense.BlockSpot(2, 0, 1), new io.github.flick256.sparbot.core.sense.BlockSpot(-2, 0, 1)));
+		java.util.List<Integer> scoops = new java.util.ArrayList<>();
+		for (int tick = 0; tick < 160 && scoops.size() < 2; tick++) {
+			h.world = new io.github.flick256.sparbot.core.sense.Surroundings(java.util.List.of(), java.util.List.of(), java.util.List.of(),
+				java.util.List.of(), java.util.List.of(), java.util.List.copyOf(water), java.util.List.of(), java.util.List.of());
+			Inputs in = h.tick();
+			if (in.use() && h.slots[h.selected].is(ItemKind.BUCKET)) {
+				scoops.add(tick);
+				h.slots[h.selected] = WATER;
+				water.remove(0);
+			}
+		}
+		assertEquals(2, scoops.size(), "took both");
+		assertTrue(scoops.get(0) >= 6, "noticed the water first, scooped on tick " + scoops.get(0));
+		assertTrue(scoops.get(1) - scoops.get(0) >= 10, "a moment between scoops, " + (scoops.get(1) - scoops.get(0)) + " ticks");
+	}
 }

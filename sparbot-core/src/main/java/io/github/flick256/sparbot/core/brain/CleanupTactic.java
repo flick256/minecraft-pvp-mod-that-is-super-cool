@@ -18,6 +18,12 @@ import java.util.Optional;
  * standing in the opponent's reach or walking into lava. Lava close by that it can't scoop gets blocked
  * up with a block instead. This is what catches water a pickup missed (knocked away, a block in the
  * way) and lava that turned to stone around a source.
+ *
+ * <p>At a human pace: a new source has to be noticed first (the bot's reaction time plus a moment to take
+ * it in, shorter the more skilled it is: about 0.45 s for a Demon, 0.7 s for an advanced player), and after
+ * each scoop it takes a moment before the next (0.5 s for a Demon, about 1 s for an advanced player), so
+ * a run of the opponent's water and lava isn't drained near instantly. Lava right at its feet skips the
+ * pause between scoops, but still has to be noticed.
  */
 public final class CleanupTactic implements Tactic {
 	/** Scoop from no farther than this (eye to the source block's centre, horizontally). */
@@ -31,6 +37,11 @@ public final class CleanupTactic implements Tactic {
 	private static final int GIVE_UP_TICKS = 200;
 
 	private final Map<BlockSpot, Long> givenUp = new HashMap<>();
+	/** When each source lying around was first seen. */
+	private final Map<BlockSpot, Long> firstSeen = new HashMap<>();
+	private long lastScoop = Long.MIN_VALUE / 2;
+	/** Lava this close (horizontally) is dealt with without the pause between scoops. */
+	private static final double AT_FEET = 1.6;
 	private BlockSpot spot;
 	private boolean lava;
 	private boolean blockUp;
@@ -47,9 +58,40 @@ public final class CleanupTactic implements Tactic {
 		return spot == null ? "" : (blockUp ? "block lava" : lava ? "scoop lava" : "scoop water");
 	}
 
+	/** Ticks a new source must have been in sight before the bot reacts to it. */
+	static int noticeTicks(BrainContext c) {
+		return c.memory.reactionDelayTicks + (int) Math.round(6 + 10 * (1 - c.profile.items().uhcSkill()));
+	}
+
+	/** Ticks between one scoop and the next. */
+	static int pauseTicks(BrainContext c) {
+		return (int) Math.round(10 + 20 * (1 - c.profile.items().uhcSkill()));
+	}
+
+	private void see(BrainContext c) {
+		long now = c.observation.tick();
+		java.util.Set<BlockSpot> present = new java.util.HashSet<>(c.world.waterSources());
+		present.addAll(c.world.lavaSources());
+		firstSeen.keySet().retainAll(present);
+		for (BlockSpot s : present) {
+			firstSeen.putIfAbsent(s, now);
+		}
+	}
+
+	/** Noticed long enough ago, and (unless it is lava at its feet) the pause since the last scoop is over. */
+	private boolean ready(BrainContext c, BlockSpot s, boolean isLava) {
+		long now = c.observation.tick();
+		if (now - firstSeen.getOrDefault(s, now) < noticeTicks(c)) {
+			return false;
+		}
+		boolean atFeet = isLava && s.horizontalDistanceTo(c.self.position()) < AT_FEET;
+		return atFeet || now - lastScoop >= pauseTicks(c);
+	}
+
 	@Override
 	public double score(BrainContext c) {
 		InventoryState inv = c.self.inventory();
+		see(c);
 		givenUp.values().removeIf(t -> c.observation.tick() - t > GIVE_UP_TICKS);
 		if (spot != null) {
 			return Scores.SPECIALIST + 0.04;
@@ -75,9 +117,9 @@ public final class CleanupTactic implements Tactic {
 		boolean emptyBucket = inv.hotbarSlot(ItemKind.BUCKET) >= 0;
 		Vec3 eye = c.self.eyePosition();
 		if (emptyBucket) {
-			Optional<BlockSpot> water = c.world.waterSources().stream().filter(s -> ok(c, s, eye) && !standingIn(c.self, s))
+			Optional<BlockSpot> water = c.world.waterSources().stream().filter(s -> ok(c, s, eye) && !standingIn(c.self, s) && ready(c, s, false))
 				.min(java.util.Comparator.comparingDouble(s -> s.horizontalDistanceTo(eye)));
-			Optional<BlockSpot> lavaSpot = c.world.lavaSources().stream().filter(s -> ok(c, s, eye))
+			Optional<BlockSpot> lavaSpot = c.world.lavaSources().stream().filter(s -> ok(c, s, eye) && ready(c, s, true))
 				.min(java.util.Comparator.comparingDouble(s -> s.horizontalDistanceTo(eye)));
 			// Lava next to the bot first, then water (a bucket of water back), then other lava.
 			if (lavaSpot.isPresent() && lavaSpot.get().horizontalDistanceTo(c.self.position()) < LAVA_THREAT) {
@@ -92,7 +134,7 @@ public final class CleanupTactic implements Tactic {
 		}
 		if (blockSlot(inv) >= 0) {
 			Optional<BlockSpot> near = c.world.lavaSources().stream()
-				.filter(s -> s.horizontalDistanceTo(c.self.position()) < LAVA_THREAT && !givenUp.containsKey(s))
+				.filter(s -> s.horizontalDistanceTo(c.self.position()) < LAVA_THREAT && !givenUp.containsKey(s) && ready(c, s, true))
 				.min(java.util.Comparator.comparingDouble(s -> s.horizontalDistanceTo(c.self.position())));
 			if (near.isPresent()) {
 				return start(c, near.get(), true, true);
@@ -123,6 +165,8 @@ public final class CleanupTactic implements Tactic {
 	public void reset() {
 		spot = null;
 		givenUp.clear();
+		firstSeen.clear();
+		lastScoop = Long.MIN_VALUE / 2;
 	}
 
 	@Override
@@ -133,6 +177,7 @@ public final class CleanupTactic implements Tactic {
 		}
 		boolean stillThere = (lava ? c.world.lavaSources() : c.world.waterSources()).contains(spot);
 		if (!stillThere || filled(inv) > bucketsBefore) {
+			lastScoop = c.observation.tick();
 			return done();
 		}
 		if (++ticks > TIMEOUT || unsafe(c)) {
