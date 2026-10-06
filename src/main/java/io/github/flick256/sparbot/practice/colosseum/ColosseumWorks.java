@@ -35,7 +35,7 @@ import net.minecraft.world.phys.AABB;
  */
 public final class ColosseumWorks {
 	/** Bumped when the blueprint changes, so worlds with an older colosseum get it built again. */
-	public static final int VERSION = 2;
+	public static final int VERSION = 3;
 	/** At most this much building per tick. */
 	private static final long BUDGET_NANOS = 25_000_000L;
 	/** Chunks round each player or bot that count as visited (two each way: blasts, lava and water spread). */
@@ -290,6 +290,10 @@ public final class ColosseumWorks {
 			if (!chunk.getBlockState(pos).equals(want)) {
 				try {
 					level.setBlock(pos, want, Block.UPDATE_CLIENTS);
+					if (want.getBlock() instanceof net.minecraft.world.level.block.SignBlock || want.is(Blocks.LECTERN)) {
+						// What the sign says, or the book on the lectern.
+						ColosseumLore.apply(level, pos, dx, y, dz);
+					}
 					changed++;
 				} catch (RuntimeException e) {
 					// One block that won't go in must never take the server down with it.

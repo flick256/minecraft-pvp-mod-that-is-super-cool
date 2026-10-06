@@ -2,6 +2,28 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 1.0.2
+
+- **The Hollow Crown: a mystery inside the Celestial Colosseum.** The colosseum has a story now, told in books
+  on lecterns and inscriptions on the walls, and a trail to follow through it. A Visitor's Guide in every gate
+  passage explains the arena and points to the Founders' Archive; the Archivist's Chronicle of the Falling Star
+  leads to the Warden's Hall; the Warden's Log to the Chapel and the Treasury's Tithe Ledger; the Chaplain's
+  Litany gives away the lower door in the Cells. Below it a stair and a long tunnel run under the field to the
+  Heartwell, a secret vault beneath the compass rose holding the seal, eight warded frames, an empty throne and
+  the Seven's confession. Books put back on their lecterns when the colosseum resets; signs are waxed.
+- **Six landmark halls:** the Archive of the Founders (books to the ceiling, a reading table, a globe), the
+  Warden's Hall, the Chapel of the Fallen Star (pews, an amethyst altar under a great window of glass), the
+  Cells (barred cells, chains, scratchings, the lower door), the Treasury of Tithes (gold, scales, a barred
+  vault) and the Hall of Champions (ten champions on pedestals with their records, and one struck off).
+- **The Grand Stairs:** every gate passage opens, under the first two tiers, into a towering atrium hung with
+  chandeliers on long chains. Beside it two flights climb behind balustrades, a bridge (the Bridge of the
+  Seven) crosses the atrium, and the second flight comes out through the seats onto the first concourse.
+- **Sixteen kinds of hall** instead of nine, each with its own furnishings (new: baths with lit pools, garden
+  halls with azaleas, spore blossoms and a fountain, music halls with a stage, crypts, barracks, map rooms with
+  the bowl laid out in the floor, kitchens), plus beams, sconces, windows beside every door, scrawled rumours on
+  the walls, and a plaque over every door naming the hall beyond (sector, name, gallery and level).
+- The gate passages name the rings they cross and welcome you at the outer end.
+
 ## 1.0.1
 
 - **Inside the Celestial Colosseum's stands.** The space under the seats is no longer a dark undercroft (that

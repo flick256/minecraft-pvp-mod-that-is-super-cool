@@ -177,6 +177,9 @@ public final class CelestialColosseum {
 		if (sat == null && d > PODIUM && d <= TIER3) {
 			ColosseumInterior.build(c, dx, dz, d, deg);
 		}
+		if (sat == null && Heartwell.near(d)) {
+			Heartwell.build(c, dx, dz, d, deg);
+		}
 		if (sat == null) {
 			tower(c, dx, dz);
 			canopy(c, d, deg);
