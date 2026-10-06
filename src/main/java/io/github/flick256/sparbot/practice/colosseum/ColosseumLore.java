@@ -22,16 +22,16 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * The story told inside the Celestial Colosseum, and the signs and books that tell it.
  *
- * <p><b>The Hollow Crown.</b> A star fell on the plain and did not burn out. The Seven Archons named it Aster
- * and raised the arena round it, and it brightened with every bout. Then came Vaelor of the Ninth Gate, who
- * never lost; in the Year of the Silence the Archons gave him to the star and struck his name from the lists.
- * The arena is no monument but a cage: Vaelor is the lock that holds Aster shut, every bout fought above him
- * is a breath he can take, and the crowd that cheers is its keeper.
+ * <p><b>The Hollow Crown.</b> A star fell on the plain and did not go out. The Seven built the arena round it,
+ * and fighters grew strong in its light. Vaelor the Unbroken won a thousand bouts and lost none. When the star
+ * cracked, he went down under the field with its heart and held it shut, swearing to stay until a champion came
+ * who could beat him. Two hundred went down after him and none of them won. Beat him, and he can rest: you
+ * become the Champion of the Crown, his blade is yours and your name goes on the wall.
  *
- * <p>The trail: the Visitor's Guide in the south gate points to the Founders' Archive; the Archivist's
- * Chronicle points to the Warden's Hall; the Warden's Log points to the Chapel (and the Treasury's ledger);
- * the Chaplain's Litany gives away the lower door in the Cells; below the Cells a stair runs under the field
- * to the Heartwell, where the Seven left their confession.
+ * <p>The trail: the Visitor's Guide (south gate) leads to the Archive; Tell's Chronicle leads to the Warden's
+ * Hall; the Warden's Log leads to the Cells (and, for a blessing, the Chapel). From the Cells a stair goes down
+ * under the field to the Hall of the Fallen and the Heartwell, where Vaelor waits (see {@link VaelorFight}). Four
+ * vaults hidden in the stair halls hold the rest of the story: Vaelor was the seventh of the Seven.
  *
  * <p>Signs and lecterns are blocks of the blueprint; what they say is kept here, keyed by position, as the
  * blueprint is worked out, and written into their block entities when they are placed (so a reset puts a
@@ -104,59 +104,54 @@ final class ColosseumLore {
 	// --- The books ---
 
 	static final Book GUIDE = new Book("A Visitor's Guide", "The Stewards", List.of(
-		"Welcome, visitor, to the Celestial Colosseum, greatest of the arenas of the Glass Crown.\n\nThis guide will see you to your seat, and perhaps a little further.",
-		"THE BOWL\n\nThree tiers of seats rise above the field, with two concourses between them. From the concourses, aisles climb straight up the stands to every row.",
-		"BENEATH THE STANDS\n\nThree rings run all the way round: the Inner Ring behind the podium wall, the Middle Ring under the first concourse, and the Outer Ring under the second.",
-		"THE GALLERIES\n\nBetween the rings lie the First, Second and Third Galleries, each of forty-eight sectors, numbered sunwise from the east gate. Every door bears the name of its hall.",
-		"THE WAY UP\n\nAt the four corners the Grand Stairs rise in two great flights to the first concourse. Sixteen spiral stairs climb from the Middle and Outer Rings to both concourses.",
-		"ABOVE\n\nThe crystal over the field is Aster, the Falling Star. The Seven Archons raised this arena around it in the first year of the Crown, and it has brightened with every bout since.",
-		"Those curious about the Founders may consult their Archive, in the Second Gallery, sector 3, east of the field.\n\nThe Archive keeps few visitors now. Do knock."));
+		"Welcome to the Celestial Colosseum!\n\nThree tiers of seats, two concourses, and under the stands a whole city of halls. This guide will get you to your seat.",
+		"GETTING ABOUT\n\nThree rings run round under the stands: the Inner, Middle and Outer Rings. Between them lie the three Galleries of halls, 48 sectors each, numbered sunwise from the east gate.",
+		"GOING UP\n\nThe Grand Stairs climb from each gate to the first concourse. Inside, each Gallery has four stair halls, at the four diagonals: sectors 7, 19, 31 and 43.",
+		"ONE NAME MISSING\n\nOne hero of this arena is never named on its walls: Vaelor the Unbroken. If you want to know why, ask at the Archive: Second Gallery, sector 3.",
+		"FINDINGS\n\nEvery secret you find in here is remembered (open your advancements). Some walls in the stair halls sound hollow. Kneel by them and listen."));
 
-	static final Book CHRONICLE = new Book("Chronicle of the Falling Star", "Archivist Tell", List.of(
-		"Year 1 of the Crown.\n\nA star fell upon the plain and did not burn out. It hung above its crater, singing, and the Seven Archons came to hear it.",
-		"They named it Aster. Where its light fell, wounds closed and blades rang truer. The Archons swore to raise a house worthy of it, and the masons came from every gate.",
-		"Year 4.\n\nThe Bowl is finished. The first bout is fought beneath Aster, and the star brightens with every blow. The crowd weeps for joy. So do I.",
-		"Year 9.\n\nA champion rises: Vaelor of the Ninth Gate. He does not lose. Not once. Aster burns brightest when he fights, and hums when he leaves the field.",
-		"Year 12.\n\nVaelor has fought a thousand bouts and won them all. The Archons grow uneasy. They meet at night, in the halls beneath the north stands.",
-		"Year 13. The Year of the Silence.\n\nVaelor's name is struck from every list. The Archons will not speak of it. I am told to stop writing.",
-		"I have stopped.\n\nBut Warden Corvin keeps a log, and the Warden sees everything. His hall is in the First Gallery, sector 38, under the north stands."));
+	static final Book CHRONICLE = new Book("The Chronicle", "Archivist Tell", List.of(
+		"Year 1.\n\nA star fell on the plain and did not go out. We named it Aster. Where its light fell, fighters grew stronger, so the Seven built this arena round it.",
+		"Year 9.\n\nVaelor of the Ninth Gate fought his first bout. He never lost. Not once, in a thousand bouts.",
+		"Year 13.\n\nAster cracked. Its light went wild and the stands shook. If its heart broke open, the whole Crown would fall with it.",
+		"Vaelor went down under the field with the star's heart and held it shut with his own strength.\n\nHe swore to stay down there until a champion came who could beat him.",
+		"Only then would he know someone was strong enough to keep it after him.\n\nMany went down after him. Ask Warden Corvin how many came back: First Gallery, sector 38."));
 
 	static final Book WARDEN = new Book("The Warden's Log", "Warden Corvin", List.of(
-		"Night 1 after the Silence.\n\nThe Archons brought Vaelor to the field at midnight. He came willingly. He thought it was a bout.",
-		"They led him to the heart of the compass rose. Aster came down out of the sky, low as the crown wall, and the light took him. He did not cry out.",
-		"Night 2.\n\nAster is back in its place above the field, but it is larger now, and there is a shape in it that turns to watch the stands.",
-		"Night 9.\n\nThe Archons decree: the bouts must never stop. Every bout pays a tithe of light into the star. The Treasury keeps the count, in the Third Gallery, sector 11.",
-		"Night 40.\n\nWhen the bouts paused for the winter storms, the crystal cracked. Something knocked from the inside. We fought on through the snow until it stopped.",
-		"Night 41.\n\nI have sealed the lower door and given the words to Sister Imre. If you would know where it leads, ask in the Chapel: Second Gallery, sector 26.",
-		"Night 300.\n\nI have watched the stands from this hall for three hundred nights. The crowd still cheers. None of them know what they are cheering for."));
+		"I keep the count of those who went down to face him.\n\nAurel the Swift. Brenna Ironhand. Dorn of Embers. Mira the Bright. Old Marr. Ysolde of the Rose. And two hundred more.",
+		"Not one of them beat him.\n\nSome came back up, beaten and quiet. Some never came back at all.",
+		"The way down is in the Cells: First Gallery, sector 34. The stair in the floor.\n\nSister Imre blesses everyone who goes. Her chapel: Second Gallery, sector 26.",
+		"If you are reading this, you are thinking of going.\n\nGo armed. Go ready. He is waiting, and he will not go easy on you. He never has."));
 
-	static final Book LEDGER = new Book("The Tithe Ledger", "The Treasury", List.of(
-		"Light owed to the Star, by order of the Seven.\n\nEach bout: one measure.\nEach champion felled: three.\nEach night without a bout: the Star takes its own.",
-		"Year 13: 4,112 bouts. Paid.\nYear 14: 4,380 bouts. Paid.\nYear 15: 3,906 bouts. Short by 209. The east stair fell that winter.",
-		"Year 40: 9,733 bouts. Paid in full.\n\nThe crystal grows. A second ring of light has been raised to hold it.",
-		"(In another hand:)\n\nThe ledger balances. It always balances.\n\nHave you asked yourself what happens on the night it doesn't?"));
+	static final Book LITANY = new Book("The Champion's Blessing", "Sister Imre", List.of(
+		"To whoever goes down:\n\nYou will hear his music before you see him. Don't be afraid of it. It is a welcome.",
+		"He does not hate you. He has waited a hundred years for someone to beat him.\n\nFight him with everything you have. That is the kindest thing you can do for him.",
+		"Take my blessing with you, and come back up.\n\n-- Sister Imre"));
 
-	static final Book LITANY = new Book("The Litany of the Lock", "Sister Imre", List.of(
-		"We do not pray to Aster.\n\nWe pray for it: that it holds, and that he sleeps.",
-		"Blade to shield and blow for blow,\nthe light goes up, the dark below.\nWhile champions fight and crowds still roar,\nthe Unbroken sleeps behind the door.",
-		"The Warden asked me to keep the words. I keep them badly, for I have written them here. Forgive me. Someone should know the truth.",
-		"The lower door is in the Cells, First Gallery, sector 34, under the north-west stands. The stair goes down beneath the field, to the Heartwell under the rose.",
-		"If you go, go quietly.\n\nAnd if you hear knocking, fight. Any bout will do. It only needs a bout."));
+	static final Book LEDGER = new Book("The Champion's Purse", "The Treasury", List.of(
+		"Set aside in Year 13, by order of the Seven:\n\nTHE CHAMPION'S PURSE\n\nfor whoever beats Vaelor the Unbroken in fair combat.",
+		"Year 14: unclaimed.\nYear 15: unclaimed.\nYear 40: unclaimed.\nYear 112: unclaimed.\n\n(Someone has written underneath: \"Not for long.\")"));
 
-	static final Book CONFESSION = new Book("The Confession of the Seven", "The Seven Archons", List.of(
-		"To whoever finds this:\n\nWe are the Seven, and we are sorry.",
-		"Aster was not a gift. It was a hunger that fell from the sky. It fed on battle, and it made us rich and our champions mighty, and we never asked what it was growing into.",
-		"When Vaelor could not be beaten, Aster wanted him. It would have taken him in the end, and grown strong enough to take the rest of us. So we gave him to it first, and sealed it shut with him inside.",
-		"Now Vaelor is the lock, and his strength holds the star shut. But even he must be fed. Every bout fought above him is a breath he can take.",
-		"The arena is not a monument. It is a cage. The crowd is its keeper, and every champion who steps onto that field turns the key.",
-		"So fight, champion. Fight often, and fight well.\n\nAbove you, the star is listening.\nBelow you, he is waiting.",
-		"-- the Seven Archons,\nin the last year of the Crown"));
+	static final Book FALLEN = new Book("The Roll of the Fallen", "Warden Corvin", List.of(
+		"These went down to face Vaelor, and lost.\n\nWe honour them here, at the last door.",
+		"Aurel the Swift\nBrenna Ironhand\nDorn of Embers\nIlsa Moonward\nKael Two-Blades\nMira the Bright\nOld Marr\nSable Night\nTobin Farshot\nYsolde of the Rose",
+		"...and two hundred more.\n\nThe next name on this roll could be yours. Or your name could go on the other wall: the one for champions."));
 
-	// --- The rooms' names ---
+	static final Book TELL_PAGE = new Book("The Last Page", "Archivist Tell", List.of(
+		"I left this page out of the Chronicle.\n\nVaelor asked me to keep his name off the walls, so that nobody would follow him down and get hurt.",
+		"I could not keep that promise. Too many people need to know what he did for us.\n\nI hope you are the one who beats him. He has earned his rest."));
 
-	static final String[] EPITHETS = {"of Aurel", "of the Ninth Gate", "of Embers", "of the Seven", "of Whispers", "of the Crown", "of Saint Imre",
-		"of the Long Night", "of Dawnward", "of the Rose", "of Old Marr", "of the Lantern", "of Stillwater", "of the Glass", "of Hollowmere",
-		"of the Victor", "of Asterfall", "of Ironvale"};
+	static final Book MASONS_MARK = new Book("The Masons' Mark", "The Masons", List.of(
+		"We built the Bowl in four years.\n\nWe built the stair under the field in four nights, and sealed the Lower Door behind him.",
+		"Every stone in this place carries our mark. We hid four vaults in the stair halls, one for each quarter.\n\nFind them all and you will know this place better than we did."));
+
+	static final Book SEVENTH_SEAT = new Book("The Seventh Seat", "The Six", List.of(
+		"There were Seven of us who built this arena.\n\nThe seventh was Vaelor.",
+		"We kept his seat empty.\n\nWhen someone beats him, he can come back up and sit in it again."));
+
+	static final Book VAELOR_OATH = new Book("Vaelor's Oath", "Vaelor", List.of(
+		"I will hold the heart of the star for as long as it takes.\n\nI will not lose on purpose. I will not go easy.",
+		"When someone beats me fairly, the heart is theirs to keep, and I can rest.\n\n-- V."));
 
 	static final String[] ROMAN = {"I", "II", "III"};
 }

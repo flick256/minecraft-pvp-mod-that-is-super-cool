@@ -177,7 +177,7 @@ final class Heartwell {
 			fill(c, DEEP, DEEP + 1, Blocks.GOLD_BLOCK.defaultBlockState());
 		} else if (dx == 0 && dz == 8) {
 			ColosseumLore.lectern(c, dx, DEEP, dz, Blocks.LECTERN.defaultBlockState().setValue(LecternBlock.FACING, Direction.NORTH)
-				.setValue(LecternBlock.HAS_BOOK, true), ColosseumLore.CONFESSION);
+				.setValue(LecternBlock.HAS_BOOK, true), ColosseumLore.FALLEN);
 		}
 	}
 }

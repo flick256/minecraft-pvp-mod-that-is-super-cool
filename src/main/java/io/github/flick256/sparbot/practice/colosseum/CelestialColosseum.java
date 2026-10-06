@@ -408,11 +408,23 @@ public final class CelestialColosseum {
 		if (outer - d < 1.0 && offStep(deg, AISLES[below + 1], d) < 0.5) {
 			put(c, floor + 1, Blocks.PURPUR_STAIRS.defaultBlockState().setValue(StairBlock.FACING, outward(dx, dz)));
 		}
-		if (d <= railAt && offStep(deg, AISLES[below], d) < 0.5) {
+		boolean aisleDown = offStep(deg, AISLES[below], d) < 0.5;
+		double edge = railAt - 1;
+		if (d <= railAt && aisleDown) {
 			railAt = -1;
 		}
 		fill(c, floor - 3, floor, BRICKS);
 		put(c, floor, Math.floorMod(Math.round(arc), 5) == 0 ? CHISELED : POLISHED);
+		if (aisleDown && d <= edge + 2) {
+			// Two steps down into the floor to the top row of the tier below (two blocks lower than the walk).
+			Direction up = outward(dx, dz);
+			if (d <= edge + 1) {
+				put(c, floor - 1, Blocks.PURPUR_STAIRS.defaultBlockState().setValue(StairBlock.FACING, up));
+				put(c, floor, AIR);
+			} else {
+				put(c, floor, Blocks.PURPUR_STAIRS.defaultBlockState().setValue(StairBlock.FACING, up));
+			}
+		}
 		boolean pillar = Math.floorMod(Math.round(arc), 12) <= 1 && !(gate != null && gate.perp() <= 5.5);
 		if (pillar) {
 			fill(c, S, floor, TILES);
@@ -976,9 +988,12 @@ public final class CelestialColosseum {
 			fill(c, top - depth, top - 3, STONE);
 			fill(c, top - 2, top - 1, DIRT);
 			put(c, top, GRASS);
-			if (t < 0.5) {
-				fill(c, top - depth, top - 1, AIR);
+			if (t < 1.5) {
+				// A spring in a hollow of the turf (closed all round, so it never runs off the edge).
 				put(c, top, WATER);
+				put(c, top - 1, Blocks.MOSS_BLOCK.defaultBlockState());
+			} else if (t < 2.5 && roll % 3 == 0) {
+				put(c, top + 1, Blocks.FERN.defaultBlockState());
 			} else if (Math.abs(ox - 4) < 3.4 && Math.abs(oz + 3) < 3.4 && Math.hypot(ox - 4, oz + 3) <= 3.4) {
 				cherry(c, ox - 4, oz + 3, top + 1, roll);
 			} else if (t > 10 && roll < 300) {
@@ -1077,13 +1092,16 @@ public final class CelestialColosseum {
 
 	// --- Placement ---
 
-	/** Whether a block hangs on a neighbour, so it is set after everything solid. */
+	/**
+	 * Whether a block hangs on a neighbour, so it is set after everything solid. Water goes in then too: set
+	 * among the solid blocks, it would run into neighbours not built yet before its basin is closed.
+	 */
 	public static boolean attached(BlockState state) {
 		Block b = state.getBlock();
 		return b instanceof WallBannerBlock || b instanceof LanternBlock || b == Blocks.PINK_PETALS || b == Blocks.END_ROD
 			|| b == Blocks.AMETHYST_CLUSTER || b == Blocks.IRON_CHAIN || b == Blocks.SHORT_GRASS || b == Blocks.ALLIUM
 			|| b == Blocks.LILY_OF_THE_VALLEY || b == Blocks.PINK_TULIP || b == Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE || b == Blocks.SOUL_FIRE
-			|| ColosseumInterior.attached(b);
+			|| b == Blocks.FERN || b == Blocks.WATER || ColosseumInterior.attached(b);
 	}
 
 	/** Where the hub pad lands you (south of the centre): on the south causeway, looking up at the great gate. */

@@ -34,7 +34,7 @@ final class Landmarks {
 	/** Each landmark's gallery (0-2) and sector (0-47, sunwise from the east gate). */
 	private static final int[][] WHERE = {{1, 2}, {0, 37}, {1, 25}, {0, 33}, {2, 10}, {2, 46}};
 	static final String[][] NAMES = {{"ARCHIVE OF", "THE FOUNDERS"}, {"THE WARDEN'S", "HALL"}, {"CHAPEL OF THE", "FALLEN STAR"}, {"THE CELLS", ""},
-		{"TREASURY OF", "TITHES"}, {"HALL OF", "CHAMPIONS"}};
+		{"TREASURY OF", "THE CROWN"}, {"HALL OF", "CHAMPIONS"}};
 
 	private Landmarks() {
 	}
@@ -107,7 +107,7 @@ final class Landmarks {
 		} else if (r.av < 0.5 && r.iu == (int) Math.floor(r.depth - 3.5)) {
 			r.lectern(r.in, ColosseumLore.CHRONICLE);
 		} else if (r.iv == 1 && r.depth - r.u < 2.0 && r.depth - r.u >= 1.0) {
-			r.sign(r.feet + 2, r.in, DyeColor.YELLOW, true, "THE CHRONICLE", "OF THE", "FALLING STAR", "by Archivist Tell");
+			r.sign(r.feet + 2, r.in, DyeColor.YELLOW, true, "THE CHRONICLE", "OF THE CROWN", "by Archivist", "Tell");
 		} else if (r.iv == 3 && r.u >= 2.0 && r.u < 3.0) {
 			r.put(r.feet, Blocks.BOOKSHELF.defaultBlockState());
 			r.put(r.feet + 1, Blocks.POTTED_FERN.defaultBlockState());
@@ -136,7 +136,7 @@ final class Landmarks {
 		} else if (r.outer && r.iv == 1) {
 			r.sign(r.feet + 2, r.in, DyeColor.YELLOW, true, "THE WARDEN'S", "HALL", "the watch is", "never over");
 		} else if (r.outer && r.iv == -1) {
-			r.sign(r.feet + 2, r.in, DyeColor.RED, false, "NIGHTS", "WATCHED:", "300", "and counting");
+			r.sign(r.feet + 2, r.in, DyeColor.RED, false, "WENT DOWN: 214", "CAME BACK", "BEATEN: 61", "WON: 0");
 		}
 	}
 
@@ -170,12 +170,13 @@ final class Landmarks {
 		} else if (r.iu % 3 == 0 && r.av >= 1.5 && r.u >= 3 && back >= 5.5) {
 			r.put(r.feet, Blocks.DARK_OAK_STAIRS.defaultBlockState().setValue(StairBlock.FACING, r.in));
 		} else if (r.inner && r.iv == 3) {
-			r.sign(r.feet + 2, r.out, DyeColor.WHITE, true, "WE PRAY FOR", "THE STAR,", "NOT TO IT.", "- Sister Imre");
+			r.sign(r.feet + 2, r.out, DyeColor.WHITE, true, "GO DOWN", "BRAVELY.", "COME BACK UP.", "- Sister Imre");
 		}
 	}
 
-	private static final String[][] SCRATCHED = {{"HE COUNTS", "THE BOUTS", "", ""}, {"1000 - 0", "1000 - 0", "1000 - 0", ""},
-		{"THE STAR", "IS HUNGRY", "", ""}, {"I HEAR HIM", "BREATHING", "", ""}, {"SEVEN LOCKS", "ONE KEY", "", ""}, {"FIGHT FOR", "US. KEEP", "FIGHTING", ""}};
+	private static final String[][] SCRATCHED = {{"I LOST TO HIM", "AND I'D GO", "AGAIN", ""}, {"1000 - 0", "1000 - 0", "1000 - 0", ""},
+		{"HE FIGHTS", "FAIR. DON'T", "EXPECT MERCY", ""}, {"THE MUSIC", "MEANS HE", "HEARD YOU", ""}, {"TRAIN FIRST.", "THEN GO", "DOWN", ""},
+		{"BRING", "TOTEMS", "", "- Kael"}};
 
 	/**
 	 * The Cells: barred cells down both sides with chains and cots, scratchings on the walls, and in the middle
@@ -230,7 +231,7 @@ final class Landmarks {
 		} else if (r.av < 0.5 && r.u >= 3 && r.u < 4) {
 			r.lectern(r.in, ColosseumLore.LEDGER);
 		} else if (r.iv == 2 && r.inner) {
-			r.sign(r.feet + 2, r.out, DyeColor.YELLOW, true, "TREASURY OF", "TITHES", "one measure", "per bout");
+			r.sign(r.feet + 2, r.out, DyeColor.YELLOW, true, "THE CHAMPION'S", "PURSE", "unclaimed", "since Year 13");
 		} else if (r.iu % 4 == 2 && r.av >= 2.0 && r.av < 4.0 && r.u > 5) {
 			r.put(r.feet, Blocks.POLISHED_DEEPSLATE.defaultBlockState());
 			r.put(r.feet + 1, r.iv % 2 == 0 ? candles(2) : Blocks.GOLD_BLOCK.defaultBlockState());
@@ -271,7 +272,7 @@ final class Landmarks {
 			// Vaelor's pedestal: cracked, and empty.
 			r.put(r.feet, Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS.defaultBlockState());
 		} else if (r.outer && r.iv == 0) {
-			r.sign(r.feet + 2, r.in, DyeColor.RED, false, "VAELOR OF THE", "NINTH GATE", "1000 - 0", "-- STRUCK OFF --");
+			r.sign(r.feet + 2, r.in, DyeColor.PURPLE, true, "VAELOR THE", "UNBROKEN", "1000 - 0", "(still below)");
 		} else if (r.outer && r.iv % 2 == 1) {
 			r.put(r.feet + 3, (r.iv > 0 ? Blocks.WALL_BANNER.yellow() : Blocks.WALL_BANNER.black()).defaultBlockState()
 				.setValue(WallBannerBlock.FACING, r.in));

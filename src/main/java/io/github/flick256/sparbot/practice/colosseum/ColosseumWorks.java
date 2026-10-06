@@ -35,7 +35,7 @@ import net.minecraft.world.phys.AABB;
  */
 public final class ColosseumWorks {
 	/** Bumped when the blueprint changes, so worlds with an older colosseum get it built again. */
-	public static final int VERSION = 3;
+	public static final int VERSION = 4;
 	/** At most this much building per tick. */
 	private static final long BUDGET_NANOS = 25_000_000L;
 	/** Chunks round each player or bot that count as visited (two each way: blasts, lava and water spread). */
