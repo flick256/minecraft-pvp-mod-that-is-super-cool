@@ -112,4 +112,26 @@ class PracticeLayoutTest {
 		assertTrue(Math.abs(PracticeLayout.GRAND_Z) - r > PracticeLayout.HUB_RADIUS + 30, "the colosseum reaches the hub");
 		assertTrue(PracticeLayout.GRAND_PAD[1] > PracticeLayout.HUB_RADIUS, "its hub pad is outside the plaza");
 	}
+
+	@Test
+	void theTrainingHallStandsAlone() {
+		for (PracticeLayout.Site s : PracticeLayout.SITES) {
+			int e = s.standEnd() + 4;
+			boolean apart = s.centerX() + e < PracticeLayout.HALL_X - PracticeLayout.HALL_REACH_X
+				|| s.centerX() - e > PracticeLayout.HALL_X + PracticeLayout.HALL_REACH_X
+				|| s.centerZ() + e < PracticeLayout.HALL_Z - PracticeLayout.HALL_REACH_Z || s.centerZ() - e > PracticeLayout.HALL_Z + PracticeLayout.HALL_REACH_Z;
+			assertTrue(apart, "the training hall overlaps " + s.id());
+		}
+		for (int i = 0; i < PracticeLayout.BAYS; i++) {
+			int[] b = PracticeLayout.bay(i);
+			assertTrue(Math.abs(b[0] - PracticeLayout.HALL_X) + PracticeLayout.BAY_RADIUS + 1 <= PracticeLayout.HALL_REACH_X, "bay " + i + " sticks out");
+			assertTrue(Math.abs(b[1] - PracticeLayout.HALL_Z) + PracticeLayout.BAY_RADIUS + 1 <= PracticeLayout.HALL_REACH_Z, "bay " + i + " sticks out");
+			for (int j = 0; j < i; j++) {
+				int[] o = PracticeLayout.bay(j);
+				assertTrue(Math.max(Math.abs(b[0] - o[0]), Math.abs(b[1] - o[1])) > 2 * PracticeLayout.BAY_RADIUS + 4, "bays " + i + " and " + j + " touch");
+			}
+		}
+		int[] p = PracticeLayout.HALL_PAD;
+		assertTrue(Math.abs(p[0]) > PracticeLayout.HUB_RADIUS, "the hall's hub pad is outside the plaza");
+	}
 }

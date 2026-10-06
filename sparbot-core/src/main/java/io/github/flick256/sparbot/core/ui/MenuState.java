@@ -3,6 +3,7 @@ package io.github.flick256.sparbot.core.ui;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * What the in-game menu shows, sent by the server when a player opens or refreshes it: the profiles,
@@ -12,9 +13,24 @@ import java.util.List;
  *
  * @param open whether the client should open the menu (false: refresh it if it is open)
  * @param myLayouts the kits the viewing player has their own layout for
+ * @param myMedals the viewing player's best medal per drill (stages passed, 0-3)
+ * @param myFights the viewing player's last fights against bots, newest last
  */
 public record MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
-	List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts) {
+	List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts, Map<String, Integer> myMedals,
+	List<io.github.flick256.sparbot.core.drill.FightReport> myFights) {
+	/** Without fight reports. */
+	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
+		List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts, Map<String, Integer> myMedals) {
+		this(open, profiles, kits, styles, modes, bots, settings, kitInfo, models, myLayouts, myMedals, List.of());
+	}
+
+	/** Without medals. */
+	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
+		List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts) {
+		this(open, profiles, kits, styles, modes, bots, settings, kitInfo, models, myLayouts, Map.of());
+	}
+
 	/** Without per-player layouts. */
 	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
 		List<Setting> settings, List<KitEntry> kitInfo, List<String> models) {
@@ -45,7 +61,11 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null || state.kitInfo() == null || state.models() == null) {
 			throw new JsonParseException("Incomplete SparBot menu state");
 		}
-		return state.myLayouts() == null ? new MenuState(state.open(), state.profiles(), state.kits(), state.styles(), state.modes(), state.bots(),
-			state.settings(), state.kitInfo(), state.models()) : state;
+		if (state.myLayouts() == null || state.myMedals() == null || state.myFights() == null) {
+			return new MenuState(state.open(), state.profiles(), state.kits(), state.styles(), state.modes(), state.bots(), state.settings(),
+				state.kitInfo(), state.models(), state.myLayouts() == null ? List.of() : state.myLayouts(),
+				state.myMedals() == null ? Map.of() : state.myMedals(), state.myFights() == null ? List.of() : state.myFights());
+		}
+		return state;
 	}
 }

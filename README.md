@@ -104,7 +104,7 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot arena reset <id>` / `arena list` | Restores an arena's blocks and clears drops, arrows and pearls |
 | `/sparbot match start <mode> <arena> <a> <b>` | Starts a match; `a` and `b` are bot names or online players |
 | `/sparbot match stop <arena>` / `match list` | Stops a match (unrated) / shows running matches |
-| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `spear_duel`, `crystal_duel`, `cart_duel`, `uhc_duel`, `benchmark`, plus your own) |
+| `/sparbot modes` | Game modes (`sword_duel`, `combat_duel`, `ranged_duel`, `nodebuff`, `mace_duel`, `spear_duel`, `crystal_duel`, `cart_duel`, `cart_low`, `cart_high`, `uhc_duel`, `sword_pvphq`, `crystal_pvphq`, `mace_pvphq`, `benchmark`, plus your own) |
 | `/sparbot benchmark <arena> <profileA> <profileB> <n> [styleA styleB]` | Plays `n` bot-vs-bot matches and rates them |
 | `/sparbot record start <name> <players>` / `stop <name>` / `list` | Records a fight (bots or humans) to `config/sparbot/recordings/<name>.spbr`: every tick, each fighter's position, state and inputs |
 | `/sparbot replay <name>` / `replay stop <name>` | Plays a recording back where it was recorded, with mannequins standing in for the fighters |
@@ -113,6 +113,10 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot elo` | The Elo ladder: every bot configuration and player that has played a match |
 | `/sparbot list` / `profiles` / `kits` / `style list` / `layout list` | Lists bots, skill profiles, kits, playstyles and layouts |
 | `/sparbot stats <bot>` / `info <bot>` | Fight statistics and the current decision trace |
+| `/sparbot practice` / `practice hall` / `practice colosseum` / `practice leave` | The practice hub, the training hall, the Celestial Colosseum, or back to where you were |
+| `/sparbot practice fight <mode> [profile]` | A match against a new bot of that tier in the mode's practice arena |
+| `/sparbot drill` / `drill <name>` / `drill stop` | Lists the skill drills (with your medals), starts one in a free bay of the training hall, or stops yours |
+| `/sparbot practice colosseum waves [kit]` / `hill [profile] [kit]` / `stop` | Waves of bots, or king of the hill, in the colosseum's Grand Bowl |
 | `/sparbot reload` | Reloads the config, profiles and kits |
 
 ## The menu
@@ -122,9 +126,11 @@ With SparBot installed on your client too, press **B** (rebindable in Controls) 
   **Tech** opens the bot's page: its melee (scripted or a learned model) and an on/off switch per technique
 - **Spawn:** name, profile, kit and playstyle, then *Spawn bot*
 - **Kits:** every kit with an *Equip* button that gives it to you (replacing your inventory)
-- **You:** a full heal, natural regeneration, and your saved kit layouts
-- **Practice:** go to the practice hub (or leave it), pick the tier to fight, and a *Fight* button per mode that
-  starts a match in that mode's practice arena
+- **You:** a full heal, natural regeneration, your saved kit layouts, and your last fight against a bot:
+  your numbers, the coach's lines, and how your full-charge share moved over your last ten fights
+- **Practice:** go to the practice hub (or leave it), the colosseum games (*Waves*, *Hill*), pick the tier to
+  fight, and a *Fight* button per mode that starts a match in that mode's practice arena
+- **Drills:** every skill drill with your best medal and a *Start* button, the training hall, and *Stop drill*
 - **Settings:** every setting from `config/sparbot.json` except `commandPermission`
 
 Every button just sends a `/sparbot` command, so the server checks permissions and values as if you had
@@ -146,11 +152,17 @@ down to bedrock) with a hub and an arena for each kind of fight.
   bedrock; only lantern markers stand well outside it.
 - **Cart field:** fenced grass for rails (all three cart modes).
 - **Mace and bow court:** tuff and copper under open sky (mace and ranged).
-- **The Arcane Colosseum:** one grand free-for-all stadium, medieval and mystical (towers with purple spires,
-  glowing arches, a compass rose on the field, a moat, cherry blossoms, floating islands with waterfalls, rune
-  portals and a sky citadel). Through
-  the purple gateway south of the hub, the menu's Colosseum button or `/sparbot practice colosseum`. It resets
-  itself once every player has left.
+- **The training hall** (west of the hub, through the gold pad): six glass-walled bays where the skill drills
+  run (see below).
+- **The Celestial Colosseum** (south of the hub, through the purple gateway): six hundred blocks across. The
+  Grand Bowl (a field round a compass rose, three tiers of seats over a hundred blocks high, an imperial box,
+  a vaulted undercroft, a crown wall of glowing arches and sixteen spired towers), a plaza, a lit moat and
+  cherry gardens; four satellite stadiums (Fire, Frost, Grove and Void) to fight in too; seventy-block knights
+  guarding the bridges; and in the sky a dragon, a phoenix, a sky whale, jellyfish, a halo, a citadel and
+  waterfall islands. It is built in the background the first time (a few minutes; progress shows on your
+  action bar and its pad opens when it is done), and once every player has left, the parts anyone was in
+  are put back. In its Grand Bowl: **waves** (two beginners, three intermediates, a pro and two advanced, a
+  Demon and two pros) and **king of the hill** (hold the heart of the compass rose for sixty seconds).
 
 Use it in any world: `/sparbot practice` (or the menu's Practice tab) takes you there, and the first visit
 builds it (a few seconds). To make a world that *is* the practice world, pick the **SparBot Practice**
@@ -158,6 +170,30 @@ world type when you create it; you spawn in the hub. `/sparbot practice fight <m
 *Fight* button) starts a match against a new bot of that tier in the mode's arena, with the mode's kit
 for both of you; the arena resets every round and the bot leaves when the match ends.
 `/sparbot practice leave` takes you back to where you were.
+
+After every match against a bot you get a **fight report**: your hits and how many were at full charge, crits,
+sprint hits, reach, longest combo, trades won, jump resets, blocks, time in webs, pot accuracy, arrows and
+re-totems (whatever happened), and up to three coach lines on what to work on, each naming the drill that
+trains it. The menu's You page keeps your last ten.
+
+### Skill drills
+
+Every PvP skill as a drill, in the training hall: `/sparbot drill <name>` or the menu's Drills tab. Each has
+three stages that get harder (a dummy, then a moving bot, then a bot that fights back, or three tiers of
+fighting bot), each a timed round scored on that one skill from what the server sees you do. Pass a stage
+for the next; one stage is bronze, two silver, three gold. Your inventory is kept safe and comes back after.
+
+| Group | Drills |
+|---|---|
+| Sword | `charge` (full-charge hits), `reach` (edge of reach), `crits`, `wtap` (sprint resets), `stap` (spacing: trades won), `combo` (longest combo), `jumpreset` (the bot combos you), `aim` (swings that hit) |
+| Shield | `blockhit` (hits blocked between swings), `shieldstun` (disable a shield with an axe and follow up), `shielddefence` (block without losing your shield to an axe) |
+| NoDebuff | `pots` (how much of each healing pot lands on you) |
+| UHC | `webs` (seconds to get out), `lava` (time the bot burns), `bow` (arrows that hit), `rod` (rods that hook) |
+| Crystal | `crystals` (blasts that hurt), `anchors` (anchor blasts), `retotem` (seconds to a new totem) |
+| Cart | `carts` (cart blasts that hurt) |
+| Mace | `mace` (smashes from a fall) |
+
+The pass marks are first estimates of what each tier of bot manages; they will be tuned.
 
 ## Skill profiles
 

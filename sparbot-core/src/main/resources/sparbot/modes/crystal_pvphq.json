@@ -1,0 +1,10 @@
+{
+  "id": "crystal_pvphq",
+  "displayName": "Crystal (PvPHQ kit)",
+  "description": "The crystal duel in PvPHQ's crystal kit (some items unverified: see the kit's notes).",
+  "kit": "pvphq_crystal",
+  "roundsToWin": 2,
+  "roundSeconds": 300,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

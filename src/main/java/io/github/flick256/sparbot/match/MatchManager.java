@@ -70,6 +70,7 @@ public final class MatchManager {
 		}
 		Match match = new Match(arena, mode, kit, a, b, this);
 		running.put(arena.id(), match);
+		watch(server, match);
 		if (finished != null) {
 			onFinish.put(arena.id(), finished);
 		}
@@ -81,6 +82,7 @@ public final class MatchManager {
 		for (Match match : new ArrayList<>(running.values())) {
 			if (match.tick(server)) {
 				running.remove(match.arena().id());
+				report(server, match, false);
 				Consumer<Match> callback = onFinish.remove(match.arena().id());
 				if (callback != null) {
 					callback.accept(match);
@@ -108,6 +110,7 @@ public final class MatchManager {
 			return false;
 		}
 		onFinish.remove(arenaId);
+		report(server, match, true);
 		for (Fighter f : new Fighter[] {match.a(), match.b()}) {
 			ServerPlayer player = f.resolve(server);
 			if (f.isBot()) {
@@ -120,6 +123,30 @@ public final class MatchManager {
 		}
 		arenas.reset(server, match.arena());
 		return true;
+	}
+
+	/** A human against a bot: their fight is measured for the report and coach lines at the end. */
+	private static void watch(MinecraftServer server, Match match) {
+		Fighter human = !match.a().isBot() ? match.a() : !match.b().isBot() ? match.b() : null;
+		Fighter bot = match.a().isBot() ? match.a() : match.b().isBot() ? match.b() : null;
+		ServerPlayer player = human == null ? null : human.resolve(server);
+		if (player != null && bot != null) {
+			SparBot.drills().watchMatch(player, bot.bot());
+		}
+	}
+
+	private static void report(MinecraftServer server, Match match, boolean stopped) {
+		Fighter human = !match.a().isBot() ? match.a() : !match.b().isBot() ? match.b() : null;
+		Fighter bot = match.a().isBot() ? match.a() : match.b().isBot() ? match.b() : null;
+		if (human == null || bot == null) {
+			return;
+		}
+		io.github.flick256.sparbot.core.match.MatchState.Side mine = human == match.a() ? io.github.flick256.sparbot.core.match.MatchState.Side.A
+			: io.github.flick256.sparbot.core.match.MatchState.Side.B;
+		var winner = match.state().winner();
+		String score = match.state().score();
+		String result = stopped ? "stopped at " + score : winner == null ? "draw " + score : winner == mine ? "won " + score : "lost " + score;
+		SparBot.drills().endMatch(server, human.uuid(), match.state().mode().id(), bot.bot().name() + " (" + bot.bot().profile().id() + ")", result);
 	}
 
 	/** Gives a human their own inventory back now, or as soon as they respawn. */

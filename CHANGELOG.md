@@ -2,6 +2,43 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 1.0.0
+
+- **Skill drills: every PvP skill trainable.** A training hall west of the hub (through the gold pad, the
+  menu's new Drills tab, or `/sparbot drill`) with six glass-walled bays and 21 drills: full charge, edge of
+  reach, crits, W-tap, S-tap and spacing, combos, jump reset, aim; block-hitting, shield stun, shield
+  defence; health pots; out of webs, lava, bow shots, rod hits; crystal speed, anchor chain, re-totem;
+  inst-cart; mace smash. Each has three stages that get harder (a dummy, a moving bot, a bot that fights
+  back, or three tiers of fighting bot), each a timed round scored on that one skill from what the server
+  sees you do: the charge, reach, sprint and fall of every hit, the bot's hits on you and whether you jumped
+  or blocked, shields disabled and followed up, how much of each pot landed on you, seconds in a web, the
+  bot on fire, arrows and hooks that hit, blasts, smashes and seconds to a new totem. Bronze, silver and gold
+  medals, your best kept; your inventory is kept safe and comes back after. A drill's bot is held to the same
+  human limits as any other, scripted moves included.
+- **Fight reports and a coach.** After every match against a bot, your numbers (from the same measurements)
+  and up to three coach lines on what to work on, each naming the drill that trains it ("62% of your hits
+  were below full charge..."). The menu's You page shows your last fight and how your full-charge share moved
+  over your last ten.
+- **The Celestial Colosseum** replaces the Arcane Colosseum: six hundred blocks across, 560 blocks north of
+  the hub. The Grand Bowl (a field round the compass rose, three tiers of seats over a hundred blocks high
+  split by two concourses, a balcony imperial box with thrones, a vaulted undercroft lit from its ceiling, a
+  crown wall with four storeys of glowing arches and flying buttresses, sixteen towers with purpur spires and
+  a striped canopy), a plaza, a lit moat with four bridges, cherry gardens and a causeway under a great arch;
+  four satellite stadiums of their own, Fire, Frost, Grove and Void; eight seventy-block knights with
+  greatswords guarding the bridges; and in the sky a dragon coiling over the bowl, a phoenix, a sky whale
+  with an island on its back, glowing jellyfish, the halo, a sky citadel and waterfall islands. It is built in
+  the background (a twentieth of a second's work per tick at most; a few minutes, progress on your action
+  bar, its pad opens when done), and a reset only goes over the chunks people were in.
+- **Colosseum games** in the Grand Bowl: waves (two beginners, three intermediates, a pro and two advanced, a
+  Demon and two pros; your kit and health back between waves) and king of the hill (hold the heart of the
+  compass rose for sixty seconds), from the Practice tab or `/sparbot practice colosseum waves|hill`.
+- **PvPHQ kits for every arena:** `sword_pvphq`, `crystal_pvphq` and `mace_pvphq` modes beside SparBot's own
+  (cart and UHC already used PvPHQ's).
+- Bots scoop up your water and lava at a human pace: a source lying around has to be noticed first (reaction
+  time plus a moment: about 0.45 s for a Demon, 0.7 s for an advanced bot) and each scoop is followed by a
+  pause (0.5 s for a Demon, about 1 s for an advanced bot). Lava at their own feet still goes at once.
+- Worlds built by 0.8 are rebuilt on the next visit (the old colosseum's ground is cleared back to desert).
+
 ## 0.8.1
 
 - The colosseum's field is repaved: concentric flagstone courses round a heraldic compass rose (four long

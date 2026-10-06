@@ -1,5 +1,18 @@
 # Roadmap: 0.9.0 and 1.0
 
+## Where 1.0.0 landed
+
+1.0.0 took the foundations of both plans below and shipped them together, skipping the long training runs:
+- **Done:** skill drills for every skill (21 drills, three stages, medals) in a training hall; fight reports
+  and coach lines after every match against a bot, the You page with your last ten; the Celestial Colosseum
+  (600 blocks, background build, chunk-only resets) with waves and king of the hill; PvPHQ-kit modes for
+  sword, crystal and mace; bots scooping water and lava at a human pace.
+- **1.0.1:** the training runs: `sword_demon`, crystal and cart in the simulator and their learned brains,
+  and drill pass marks tuned from what each tier really scores.
+- **Still to come:** adaptive difficulty, weakness targeting, mirror matches, tiers and gate fights, queues
+  and party fights, replay review, the in-game kit editor (sections 1-5 of 1.0 below), and the PvPHQ kit
+  items still unverified.
+
 Where SparBot is at 0.8.1: fair, mortal bots for sword, UHC, crystal and anchors, cart, mace, spear,
 nodebuff and ranged; learned UHC brains (`uhc`, `uhc_demon`) that beat the scripted bots of their own
 tier about 9 times in 10; shield stuns and the shield counter; PvPHQ kits; and the practice world (hub,

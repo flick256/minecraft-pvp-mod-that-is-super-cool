@@ -107,7 +107,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			int cz = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_Z;
 			// It is six hundred blocks across: look further than usual.
 			int distance = context.computeOnClient(client -> client.options.renderDistance().get());
-			context.runOnClient(client -> client.options.renderDistance().set(16));
+			context.runOnClient(client -> client.options.renderDistance().set(12));
 			view(context, world, "colosseum-arrival", cx + 0.5, 64, cz + 226.5, 180, -8);
 			view(context, world, "colosseum-approach", cx + 0.5, 110, cz + 262, 180, 12);
 			view(context, world, "colosseum-aerial", cx + 0.5, 230, cz + 170, 180, 45);
@@ -147,6 +147,36 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				return !level.getBlockState(new net.minecraft.core.BlockPos(cx + 3, 63, cz + 3)).isAir()
 					&& level.getBlockState(new net.minecraft.core.BlockPos(cx + 3, 64, cz + 4)).isAir();
 			}, 1200);
+			// The training hall, and a drill: full charge against the dummy, real clicks scored by the server.
+			view(context, world, "training-hall", io.github.flick256.sparbot.core.practice.PracticeLayout.HALL_X + 0.5, 92,
+				io.github.flick256.sparbot.core.practice.PracticeLayout.HALL_Z + 60, 180, 30);
+			context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill charge"));
+			world.getServer().waitFor(server -> SparBot.drills().inDrill(human(server).getUUID()), 200);
+			// After the countdown, nine full-charge hits a little over a second apart.
+			world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
+			for (int i = 0; i < 9; i++) {
+				context.runOnClient(client -> {
+					net.minecraft.world.entity.Entity dummy = null;
+					for (net.minecraft.world.entity.Entity e : client.level.entitiesForRendering()) {
+						if (e instanceof net.minecraft.world.entity.player.Player p && p.getName().getString().equals("Drill1")) {
+							dummy = e;
+						}
+					}
+					if (dummy != null) {
+						client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, dummy.getEyePosition());
+						client.gameMode.attack(client.player, dummy);
+						client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+					}
+				});
+				context.waitTicks(25);
+				if (i == 2) {
+					context.takeScreenshot("drill-charge");
+				}
+			}
+			// Stage one ends 30 s after it started and is scored: six or more hits, all at full charge.
+			world.getServer().waitFor(server -> SparBot.drills().stagesPassed(human(server).getUUID()) >= 1, 900);
+			context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill stop"));
+			world.getServer().waitFor(server -> !SparBot.drills().inDrill(human(server).getUUID()), 200);
 			// A fight in the meadow against a pro, started like the Fight button does.
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight uhc_duel pro"));
 			world.getServer().waitFor(server -> SparBot.matches().match("practice_uhc").isPresent(), 600);
@@ -177,7 +207,9 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			player.teleportTo((net.minecraft.server.level.ServerLevel) player.level(), x, y, z, java.util.Set.of(), yaw, pitch, true);
 		});
 		context.waitTicks(40);
-		world.getConnection().waitForChunksRender();
+		// The near chunks for certain; the far ones as far as they get in a few seconds (software rendering is slow).
+		world.getConnection().waitForChunksRender(false, 2400);
+		context.waitTicks(100);
 		context.getInput().pressKey(GLFW.GLFW_KEY_F1);
 		context.waitTicks(10);
 		context.takeScreenshot(name);

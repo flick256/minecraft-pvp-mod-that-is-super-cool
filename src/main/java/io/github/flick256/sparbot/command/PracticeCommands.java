@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
  */
 final class PracticeCommands {
 	private static final SuggestionProvider<CommandSourceStack> MODES = (ctx, b) -> SharedSuggestionProvider.suggest(SparBot.matches().modes().ids(), b);
+	private static final SuggestionProvider<CommandSourceStack> KITS = (ctx, b) -> SharedSuggestionProvider.suggest(SparBot.kits().ids(), b);
 	private static final SuggestionProvider<CommandSourceStack> PROFILES = (ctx, b) -> SharedSuggestionProvider.suggest(SparBot.profiles().ids(), b);
 
 	private PracticeCommands() {
@@ -45,6 +46,33 @@ final class PracticeCommands {
 					throw fail(e.getMessage());
 				}
 				return 1;
+			})
+				.then(Commands.literal("waves").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.WAVES, "pvphq_sword",
+						"intermediate"))
+					.then(Commands.argument("kit", StringArgumentType.word()).suggests(KITS)
+						.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.WAVES,
+							StringArgumentType.getString(ctx, "kit"), "intermediate"))))
+				.then(Commands.literal("hill").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "pvphq_sword",
+						SparBot.config().defaultProfile))
+					.then(Commands.argument("profile", StringArgumentType.word()).suggests(PROFILES)
+						.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "pvphq_sword",
+							StringArgumentType.getString(ctx, "profile")))
+						.then(Commands.argument("kit", StringArgumentType.word()).suggests(KITS)
+							.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL,
+								StringArgumentType.getString(ctx, "kit"), StringArgumentType.getString(ctx, "profile"))))))
+				.then(Commands.literal("stop").executes(ctx -> {
+					if (!SparBot.practice().games().stop(ctx.getSource().getServer(), "stopped")) {
+						throw fail("No colosseum game is on");
+					}
+					return 1;
+				})))
+			.then(Commands.literal("hall").executes(ctx -> {
+				try {
+					SparBot.practice().toHall(ctx.getSource().getPlayerOrException());
+				} catch (IOException | IllegalStateException e) {
+					throw fail(e.getMessage());
+				}
+				return 1;
 			}))
 			.then(Commands.literal("leave").executes(ctx -> {
 				if (!SparBot.practice().leave(ctx.getSource().getPlayerOrException())) {
@@ -56,6 +84,51 @@ final class PracticeCommands {
 				.executes(ctx -> fight(ctx, SparBot.config().defaultProfile))
 				.then(Commands.argument("profile", StringArgumentType.word()).suggests(PROFILES)
 					.executes(ctx -> fight(ctx, StringArgumentType.getString(ctx, "profile")))))));
+	}
+
+	/** {@code /sparbot drill}: lists the drills; {@code drill <id>} starts one; {@code drill stop} ends yours. */
+	static void addDrillsTo(LiteralArgumentBuilder<CommandSourceStack> root) {
+		SuggestionProvider<CommandSourceStack> drills = (ctx, b) -> SharedSuggestionProvider.suggest(
+			io.github.flick256.sparbot.core.drill.Drills.ALL.stream().map(io.github.flick256.sparbot.core.drill.Drill::id), b);
+		root.then(Commands.literal("drill")
+			.executes(ctx -> {
+				ServerPlayer player = ctx.getSource().getPlayerOrException();
+				java.util.Map<String, Integer> mine = SparBot.drills().medalsOf(player.getUUID());
+				StringBuilder list = new StringBuilder("Skill drills (/sparbot drill <name>):");
+				for (String discipline : io.github.flick256.sparbot.core.drill.Drills.disciplines()) {
+					list.append("\n").append(discipline).append(": ");
+					list.append(String.join(", ", io.github.flick256.sparbot.core.drill.Drills.ALL.stream().filter(d -> d.discipline().equals(discipline))
+						.map(d -> d.id() + (mine.getOrDefault(d.id(), 0) > 0 ? " (" + io.github.flick256.sparbot.core.drill.Drill.medal(mine.get(d.id())) + ")" : ""))
+						.toList()));
+				}
+				return ok(ctx, list.toString());
+			})
+			.then(Commands.literal("stop").executes(ctx -> {
+				if (!SparBot.drills().stop(ctx.getSource().getPlayerOrException(), "you stopped it")) {
+					throw fail("You aren't in a drill");
+				}
+				return 1;
+			}))
+			.then(Commands.argument("drill", StringArgumentType.word()).suggests(drills).executes(ctx -> {
+				ServerPlayer player = ctx.getSource().getPlayerOrException();
+				String id = StringArgumentType.getString(ctx, "drill");
+				io.github.flick256.sparbot.core.drill.Drill drill = io.github.flick256.sparbot.core.drill.Drills.get(id)
+					.orElseThrow(() -> fail("Unknown drill " + id + " (/sparbot drill lists them)"));
+				try {
+					return ok(ctx, "Drill: " + SparBot.drills().start(player, drill));
+				} catch (IOException | IllegalArgumentException | IllegalStateException e) {
+					throw fail(e.getMessage());
+				}
+			})));
+	}
+
+	private static int game(CommandContext<CommandSourceStack> ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind kind, String kit,
+		String profile) throws CommandSyntaxException {
+		try {
+			return ok(ctx, SparBot.practice().games().start(ctx.getSource().getPlayerOrException(), kind, kit, profile));
+		} catch (IOException | IllegalArgumentException | IllegalStateException e) {
+			throw fail(e.getMessage());
+		}
 	}
 
 	private static int fight(CommandContext<CommandSourceStack> ctx, String profileId) throws CommandSyntaxException {

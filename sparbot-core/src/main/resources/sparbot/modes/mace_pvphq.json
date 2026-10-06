@@ -1,0 +1,10 @@
+{
+  "id": "mace_pvphq",
+  "displayName": "Mace (PvPHQ kit)",
+  "description": "The mace duel in PvPHQ's mace kit (some items unverified: see the kit's notes).",
+  "kit": "pvphq_mace",
+  "roundsToWin": 2,
+  "roundSeconds": 240,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

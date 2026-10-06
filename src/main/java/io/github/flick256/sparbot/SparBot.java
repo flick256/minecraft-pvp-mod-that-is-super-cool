@@ -42,6 +42,7 @@ public final class SparBot implements ModInitializer {
 	private static final Recorder RECORDER = new Recorder();
 	private static final ReplayManager REPLAYS = new ReplayManager();
 	private static final io.github.flick256.sparbot.practice.PracticeWorld PRACTICE = new io.github.flick256.sparbot.practice.PracticeWorld();
+	private static final io.github.flick256.sparbot.drill.DrillManager DRILLS = new io.github.flick256.sparbot.drill.DrillManager();
 	private static final io.github.flick256.sparbot.kit.PlayerLayouts PLAYER_LAYOUTS = new io.github.flick256.sparbot.kit.PlayerLayouts(
 		FabricLoader.getInstance().getConfigDir().resolve("sparbot").resolve("my_layouts"));
 
@@ -50,10 +51,12 @@ public final class SparBot implements ModInitializer {
 		reloadConfigAndProfiles();
 		StatsTracker.register();
 		MenuSync.register();
+		DRILLS.register();
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> SparBotCommand.register(dispatcher));
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			reloadKits(server);
 			MATCHES.reload(server, configDir().resolve("sparbot"));
+			DRILLS.load(configDir().resolve("sparbot"));
 			PRACTICE.onServerStarted(server);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(BOTS::tick);
@@ -62,8 +65,11 @@ public final class SparBot implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(RECORDER::tick);
 		ServerTickEvents.END_SERVER_TICK.register(REPLAYS::tick);
 		ServerTickEvents.END_SERVER_TICK.register(PRACTICE::tick);
+		ServerTickEvents.END_SERVER_TICK.register(DRILLS::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> MATCHES.onJoin(handler.player));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			DRILLS.stopAll(server);
+			PRACTICE.games().stop(server, "the server is stopping");
 			MATCHES.stopAll(server);
 			RECORDER.stopAll();
 			REPLAYS.stopAll();
@@ -141,6 +147,10 @@ public final class SparBot implements ModInitializer {
 
 	public static io.github.flick256.sparbot.practice.PracticeWorld practice() {
 		return PRACTICE;
+	}
+
+	public static io.github.flick256.sparbot.drill.DrillManager drills() {
+		return DRILLS;
 	}
 
 	public static MatchManager matches() {

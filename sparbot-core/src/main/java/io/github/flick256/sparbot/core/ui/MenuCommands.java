@@ -118,4 +118,29 @@ public final class MenuCommands {
 	public static String practiceFight(String mode, String profile) {
 		return "sparbot practice fight " + id(mode) + " " + id(profile);
 	}
+
+	/** Starts a skill drill in the training hall. */
+	public static String drill(String id) {
+		return "sparbot drill " + id(id);
+	}
+
+	public static String drillStop() {
+		return "sparbot drill stop";
+	}
+
+	public static String practiceHall() {
+		return "sparbot practice hall";
+	}
+
+	public static String colosseumWaves() {
+		return "sparbot practice colosseum waves";
+	}
+
+	public static String colosseumHill(String profile) {
+		return "sparbot practice colosseum hill " + id(profile);
+	}
+
+	public static String colosseumStop() {
+		return "sparbot practice colosseum stop";
+	}
 }

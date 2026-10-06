@@ -37,13 +37,15 @@ public final class SparBotMenuScreen extends Screen {
 		YOU,
 		/** The practice world: the hub, and a fight in any mode's arena. */
 		PRACTICE,
+		/** The skill drills: every PvP skill, with your medals. */
+		DRILLS,
 		SETTINGS,
 		/** One bot's techniques (opened from its row in the Bots tab). */
 		TECHNIQUES
 	}
 
 	/** The tabs along the top, in order. */
-	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.PRACTICE, Tab.SETTINGS};
+	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.PRACTICE, Tab.DRILLS, Tab.SETTINGS};
 
 	private MenuState state;
 	private Tab tab = Tab.BOTS;
@@ -84,10 +86,10 @@ public final class SparBotMenuScreen extends Screen {
 	protected void init() {
 		labels.clear();
 		int center = width / 2;
-		String[] names = {"Bots", "Spawn", "Kits", "You", "Practice", "Settings"};
+		String[] names = {"Bots", "Spawn", "Kits", "You", "Practice", "Drills", "Settings"};
 		for (int i = 0; i < TAB_BAR.length; i++) {
 			Tab each = TAB_BAR[i];
-			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 201 + i * 68, 28, 64, 20).build()).active = tab != each;
+			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 203 + i * 58, 28, 56, 20).build()).active = tab != each;
 		}
 		switch (tab) {
 			case BOTS -> initBots(center);
@@ -95,6 +97,7 @@ public final class SparBotMenuScreen extends Screen {
 			case KITS -> initKits(center);
 			case YOU -> initYou(center);
 			case PRACTICE -> initPractice(center);
+			case DRILLS -> initDrills(center);
 			case SETTINGS -> initSettings(center);
 			case TECHNIQUES -> initTechniques(center);
 		}
@@ -198,11 +201,42 @@ public final class SparBotMenuScreen extends Screen {
 		addRenderableWidget(CycleButton.onOffBuilder(regen).displayOnlyValue().create(center + 20, TOP + ROW_HEIGHT, 120, 20,
 			Component.literal("naturalRegeneration"), (button, value) -> run(MenuCommands.setConfig("naturalRegeneration", value.toString()))));
 		labels.add(new Label("(off: UHC rules outside matches, for you and the bots)", center - 190, TOP + 2 * ROW_HEIGHT + 6, GREY));
-		labels.add(new Label("Kit layouts: equip a kit, arrange your inventory,", center - 190, TOP + 3 * ROW_HEIGHT + 12, WHITE));
-		labels.add(new Label("then Save layout in the Kits tab (* = saved). Equip uses it.", center - 190, TOP + 3 * ROW_HEIGHT + 24, WHITE));
-		List<String> mine = state.myLayouts() == null ? List.of() : state.myLayouts();
-		labels.add(new Label(mine.isEmpty() ? "No layouts of your own yet" : "Your layouts: " + font.plainSubstrByWidth(String.join(", ", mine), 300),
-			center - 190, TOP + 5 * ROW_HEIGHT, GREY));
+		labels.add(new Label("Kit layouts: equip a kit, arrange it, then Save layout in the Kits tab (* = saved).", center - 190, TOP + 2 * ROW_HEIGHT + 18,
+			GREY));
+		// Your last fight against a bot: the numbers, the coach's lines, and how one number moved over your last fights.
+		List<io.github.flick256.sparbot.core.drill.FightReport> fights = state.myFights() == null ? List.of() : state.myFights();
+		int y = TOP + 3 * ROW_HEIGHT + 10;
+		if (fights.isEmpty()) {
+			labels.add(new Label("Your fights: none yet. Fight a bot (Practice tab) for a report and coach lines.", center - 190, y, GREY));
+			return;
+		}
+		io.github.flick256.sparbot.core.drill.FightReport last = fights.get(fights.size() - 1);
+		labels.add(new Label(font.plainSubstrByWidth("Last fight: " + last.mode() + " vs " + last.opponent() + ", " + last.result(), 380), center - 190, y,
+			WHITE));
+		StringBuilder numbers = new StringBuilder();
+		last.numbers().forEach((k, v) -> numbers.append(numbers.length() == 0 ? "" : "  ").append(k).append(" ").append(v));
+		for (String line : font.getSplitter().splitLines(numbers.toString(), 380, net.minecraft.network.chat.Style.EMPTY).stream()
+			.map(net.minecraft.network.chat.FormattedText::getString).limit(2).toList()) {
+			y += 11;
+			labels.add(new Label(line, center - 190, y, GREY));
+		}
+		for (String coach : last.coach()) {
+			for (String line : font.getSplitter().splitLines(coach, 380, net.minecraft.network.chat.Style.EMPTY).stream()
+				.map(net.minecraft.network.chat.FormattedText::getString).limit(2).toList()) {
+				y += 11;
+				labels.add(new Label(line, center - 190, y, 0xFF55FFFF));
+			}
+		}
+		StringBuilder trend = new StringBuilder();
+		for (io.github.flick256.sparbot.core.drill.FightReport f : fights) {
+			String v = f.numbers().get("Full charge");
+			if (v != null) {
+				trend.append(trend.length() == 0 ? "" : " > ").append(v);
+			}
+		}
+		if (trend.length() > 0 && fights.size() > 1) {
+			labels.add(new Label(font.plainSubstrByWidth("Full charge over your last fights: " + trend, 380), center - 190, y + 14, 0xFFFFD966));
+		}
 	}
 
 	/** The practice world: go to the hub or back, and a Fight button per mode (in that mode's arena) against the chosen tier. */
@@ -213,18 +247,60 @@ public final class SparBotMenuScreen extends Screen {
 			.build());
 		addRenderableWidget(Button.builder(Component.literal("Leave"), b -> run(MenuCommands.practiceLeave())).bounds(center - 52, TOP, 50, 20).build());
 		addRenderableWidget(cycle("Against", state.profiles(), practiceProfile, v -> practiceProfile = v, center + 2, TOP, 188));
+		labels.add(new Label("Grand Bowl games", center - 190, TOP + ROW_HEIGHT + 6, WHITE));
+		addRenderableWidget(Button.builder(Component.literal("Waves"), b -> run(MenuCommands.colosseumWaves())).bounds(center - 60, TOP + ROW_HEIGHT, 60, 20)
+			.build());
+		addRenderableWidget(Button.builder(Component.literal("Hill"), b -> run(MenuCommands.colosseumHill(practiceProfile)))
+			.bounds(center + 4, TOP + ROW_HEIGHT, 60, 20).build());
+		addRenderableWidget(Button.builder(Component.literal("Stop game"), b -> run(MenuCommands.colosseumStop())).bounds(center + 68, TOP + ROW_HEIGHT, 80, 20)
+			.build());
 		List<String> modes = state.modes();
-		int perPage = Math.max(1, rows() - 1);
+		int perPage = Math.max(1, rows() - 2);
 		int pages = Math.max(1, (modes.size() + perPage - 1) / perPage);
 		page = Math.max(0, Math.min(page, pages - 1));
 		int first = page * perPage;
 		for (int i = first; i < Math.min(first + perPage, modes.size()); i++) {
 			String mode = modes.get(i);
-			int y = TOP + (i - first + 1) * ROW_HEIGHT;
+			int y = TOP + (i - first + 2) * ROW_HEIGHT;
 			labels.add(new Label(mode, center - 190, y + 6, WHITE));
 			labels.add(new Label(io.github.flick256.sparbot.core.practice.PracticeLayout.siteFor(mode).displayName(), center - 60, y + 6, GREY));
 			addRenderableWidget(Button.builder(Component.literal("Fight"), b -> run(MenuCommands.practiceFight(mode, practiceProfile)))
 				.bounds(center + 110, y, 80, 20).build());
+		}
+		if (pages > 1) {
+			int y = TOP + rows() * ROW_HEIGHT + 4;
+			addRenderableWidget(Button.builder(Component.literal("<"), b -> turn(-1)).bounds(center - 60, y, 20, 20).build()).active = page > 0;
+			labels.add(new Label((page + 1) + " / " + pages, center - 14, y + 6, GREY));
+			addRenderableWidget(Button.builder(Component.literal(">"), b -> turn(1)).bounds(center + 40, y, 20, 20).build()).active = page < pages - 1;
+		}
+	}
+
+	/**
+	 * Every skill drill with your best medal and a Start button (it takes you to a free bay in the training
+	 * hall), and buttons to visit the hall or stop the drill you are in.
+	 */
+	private void initDrills(int center) {
+		addRenderableWidget(Button.builder(Component.literal("Training hall"), b -> run(MenuCommands.practiceHall())).bounds(center - 190, TOP, 100, 20)
+			.build());
+		addRenderableWidget(Button.builder(Component.literal("Stop drill"), b -> run(MenuCommands.drillStop())).bounds(center - 86, TOP, 80, 20).build());
+		java.util.Map<String, Integer> medals = state.myMedals() == null ? java.util.Map.of() : state.myMedals();
+		long golds = medals.values().stream().filter(v -> v >= 3).count();
+		labels.add(new Label(golds + " of " + io.github.flick256.sparbot.core.drill.Drills.ALL.size() + " gold", center + 10, TOP + 6, 0xFFFFD700));
+		List<io.github.flick256.sparbot.core.drill.Drill> drills = io.github.flick256.sparbot.core.drill.Drills.ALL;
+		int perPage = Math.max(1, rows() - 1);
+		int pages = Math.max(1, (drills.size() + perPage - 1) / perPage);
+		page = Math.max(0, Math.min(page, pages - 1));
+		int first = page * perPage;
+		for (int i = first; i < Math.min(first + perPage, drills.size()); i++) {
+			io.github.flick256.sparbot.core.drill.Drill drill = drills.get(i);
+			int y = TOP + (i - first + 1) * ROW_HEIGHT;
+			labels.add(new Label(drill.discipline(), center - 190, y + 6, GREY));
+			labels.add(new Label(font.plainSubstrByWidth(drill.name(), 120), center - 130, y + 6, WHITE));
+			int passed = medals.getOrDefault(drill.id(), 0);
+			int color = passed >= 3 ? 0xFFFFD700 : passed == 2 ? 0xFFC0C0C0 : passed == 1 ? 0xFFCD7F32 : GREY;
+			labels.add(new Label(passed == 0 ? "-" : io.github.flick256.sparbot.core.drill.Drill.medal(passed), center + 10, y + 6, color));
+			addRenderableWidget(Button.builder(Component.literal("Start"), b -> run(MenuCommands.drill(drill.id()))).bounds(center + 110, y, 80, 20)
+				.build());
 		}
 		if (pages > 1) {
 			int y = TOP + rows() * ROW_HEIGHT + 4;

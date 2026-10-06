@@ -8,7 +8,9 @@
 		"PlayerListMixin",
 		"ServerGamePacketListenerImplMixin",
 		"DisplayAccessor",
-		"TextDisplayAccessor"
+		"TextDisplayAccessor",
+		"LivingEntityBlockingMixin",
+		"HealOrHarmMobEffectMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

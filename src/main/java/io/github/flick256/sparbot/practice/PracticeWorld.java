@@ -185,6 +185,13 @@ public final class PracticeWorld {
 		return works;
 	}
 
+	private final io.github.flick256.sparbot.practice.colosseum.ColosseumGames games = new io.github.flick256.sparbot.practice.colosseum.ColosseumGames();
+
+	/** Waves and king of the hill in the Grand Bowl. */
+	public io.github.flick256.sparbot.practice.colosseum.ColosseumGames games() {
+		return games;
+	}
+
 	/** Whether the colosseum is built and open in this world. */
 	public boolean colosseumReady() {
 		return works != null && works.ready();
@@ -222,6 +229,22 @@ public final class PracticeWorld {
 			+ "The pads behind you and in the south tunnel go back to the hub."));
 	}
 
+	/** Takes a player to the training hall's walkway. */
+	public void toHall(ServerPlayer player) throws IOException {
+		ServerLevel level = ensure(player.level().getServer());
+		if (player.level() != level) {
+			returns.putIfAbsent(player.getUUID(), new Return(player.level().dimension(), player.position(), player.getYRot(), player.getXRot()));
+		}
+		toHall(player, level);
+	}
+
+	private static void toHall(ServerPlayer player, ServerLevel level) {
+		BlockPos at = TrainingHall.arrival();
+		player.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, Set.of(), 180, 0, true);
+		player.sendSystemMessage(Component.literal("The training hall: every PvP skill as a drill, scored, with bronze, silver and gold medals. "
+			+ "Pick one in the menu's Drills tab, or /sparbot drill to list them. The pad behind you goes back to the hub."));
+	}
+
 	/** Old labels of the 0.8 colosseum, where it stood (the new one has none there). */
 	private static final net.minecraft.world.phys.AABB OLD_LABELS = new net.minecraft.world.phys.AABB(-1, PracticeLayout.FLOOR - 2, -390, 2,
 		PracticeLayout.FLOOR + 50, -350);
@@ -229,6 +252,7 @@ public final class PracticeWorld {
 	private void colosseumTick(MinecraftServer server, ServerLevel level) {
 		ColosseumWorks w = colosseum(level);
 		w.tick();
+		games.tick(server);
 		if (w.ready() && server.getTickCount() % 100 == 0) {
 			PracticeLabels.clear(level, OLD_LABELS);
 		}
@@ -251,12 +275,13 @@ public final class PracticeWorld {
 		long now = server.getTickCount();
 		for (ServerPlayer player : level.players()) {
 			if (player instanceof io.github.flick256.sparbot.bot.BotPlayer || SparBot.matches().matches().stream()
-				.anyMatch(m -> m.involves(player.getUUID()))) {
+				.anyMatch(m -> m.involves(player.getUUID())) || SparBot.drills().inDrill(player.getUUID())) {
 				continue;
 			}
 			Site target = null;
 			boolean home = false;
 			boolean colosseum = false;
+			boolean hall = false;
 			BlockPos feet = player.blockPosition();
 			if (level.getBlockState(feet).is(net.minecraft.world.level.block.Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE)) {
 				for (Site site : PracticeLayout.SITES) {
@@ -268,6 +293,13 @@ public final class PracticeWorld {
 						home = true;
 					}
 				}
+				int[] h = PracticeLayout.HALL_PAD;
+				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == h[0] && feet.getZ() == h[1]) {
+					hall = true;
+				}
+				if (feet.equals(TrainingHall.returnPad())) {
+					home = true;
+				}
 				int[] g = PracticeLayout.GRAND_PAD;
 				if (feet.getY() == PracticeLayout.FLOOR && feet.getX() == g[0] && feet.getZ() == g[1]) {
 					colosseum = true;
@@ -278,7 +310,7 @@ public final class PracticeWorld {
 					home = true;
 				}
 			}
-			if (target == null && !home && !colosseum || now - padUsed.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2) < PAD_COOLDOWN) {
+			if (target == null && !home && !colosseum && !hall || now - padUsed.getOrDefault(player.getUUID(), Long.MIN_VALUE / 2) < PAD_COOLDOWN) {
 				onPad.remove(player.getUUID());
 				continue;
 			}
@@ -288,6 +320,8 @@ public final class PracticeWorld {
 				padUsed.put(player.getUUID(), now);
 				if (home) {
 					player.teleportTo(level, 0.5, PracticeLayout.FLOOR, -3.5, Set.of(), 0, 0, true);
+				} else if (hall) {
+					toHall(player, level);
 				} else if (colosseum) {
 					Component closed = colosseumClosed(level);
 					if (closed != null) {

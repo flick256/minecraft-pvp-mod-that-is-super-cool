@@ -86,7 +86,7 @@ public final class PracticeLayout {
 	}
 
 	public static final Site SWORD = new Site("sword", "Sword court", 160, 0, 16, 4, 10, 5,
-		List.of("sword_duel", "combat_duel", "benchmark", "nodebuff", "spear_duel"), 19, 1, 8, false);
+		List.of("sword_duel", "sword_pvphq", "combat_duel", "benchmark", "nodebuff", "spear_duel"), 19, 1, 8, false);
 	/** Colosseum stands rising from the top of the meadow's wall. */
 	public static final Site UHC = new Site("uhc", "UHC meadow", 0, 160, 30, 12, 16, 12, List.of("uhc_duel"), 33, 7, 9, true);
 	/**
@@ -94,12 +94,12 @@ public final class PracticeLayout {
 	 * blocks out, beyond any crystal or anchor blast set off inside (a power-6 blast breaks blocks about 10
 	 * blocks away at most).
 	 */
-	public static final Site CRYSTAL = new Site("crystal", "Crystal desert", -160, 0, 24, SURFACE - BEDROCK, 24, 7, List.of("crystal_duel"), 36, 1, 9,
+	public static final Site CRYSTAL = new Site("crystal", "Crystal desert", -160, 0, 24, SURFACE - BEDROCK, 24, 7, List.of("crystal_duel", "crystal_pvphq"), 36, 1, 9,
 		true);
 	/** Its stands start 14 blocks out, in deepslate: a crossbow cart's blast (up to power 8.7) dies before them. */
 	public static final Site CART = new Site("cart", "Cart field", 0, -160, 20, 6, 12, 6, List.of("cart_duel", "cart_low", "cart_high"), 34, 1, 8,
 		false);
-	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "ranged_duel"), 23, 1, 8, false);
+	public static final Site MACE = new Site("mace", "Mace and bow court", 160, 160, 20, 4, 24, 7, List.of("mace_duel", "mace_pvphq", "ranged_duel"), 23, 1, 8, false);
 	public static final List<Site> SITES = List.of(SWORD, UHC, CRYSTAL, CART, MACE);
 
 	/** The Celestial Colosseum, the grand free-for-all stadium: its centre, far north of the cart field. */
@@ -114,6 +114,23 @@ public final class PracticeLayout {
 	/** Pads back to the hub (distances south of the centre): on the causeway behind the arrival, and in the south tunnel by the field. */
 	public static final int GRAND_RETURN_BRIDGE = 229;
 	public static final int GRAND_RETURN_TUNNEL = 54;
+
+	/** The training hall, where the skill drills run: its centre, west of the meadow. */
+	public static final int HALL_X = -160;
+	public static final int HALL_Z = 160;
+	/** Six bays in two rows of three either side of a walkway, each a square floor this far from its centre to its walls. */
+	public static final int BAYS = 6;
+	public static final int BAY_RADIUS = 15;
+	/** Half the hall's size along x and z (bays, walkway and paving). */
+	public static final int HALL_REACH_X = 62;
+	public static final int HALL_REACH_Z = 46;
+	/** The hall's pad in the hub, west of the plaza. */
+	public static final int[] HALL_PAD = {-18, 0};
+
+	/** Bay {@code i}'s centre: three bays north of the walkway, three south. */
+	public static int[] bay(int i) {
+		return new int[] {HALL_X + (i % 3 - 1) * 40, HALL_Z + (i < 3 ? -22 : 22)};
+	}
 
 	private PracticeLayout() {
 	}

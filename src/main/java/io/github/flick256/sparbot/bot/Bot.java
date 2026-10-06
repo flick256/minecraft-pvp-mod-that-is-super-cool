@@ -65,6 +65,8 @@ public final class Bot {
 	private Inputs lastInputs = Inputs.IDLE;
 	private @Nullable List<String> violations;
 	private boolean brainPaused;
+	/** A drill's scripted moves in place of the brain (still held to the human limits), or null. */
+	private java.util.function.@Nullable Function<BotPlayer, Inputs> pattern;
 	private boolean inMatch;
 	private final ConsumptionTracker consumption = new ConsumptionTracker();
 
@@ -114,6 +116,12 @@ public final class Bot {
 			lastInputs = Inputs.IDLE;
 			return;
 		}
+		if (pattern != null) {
+			Inputs scripted = shaper.shape(pattern.apply(player));
+			client.apply(player, this, scripted);
+			lastInputs = scripted;
+			return;
+		}
 		SparBotConfig config = SparBot.config();
 		Observation observation = perception.observe(this, player, player.level().getGameTime(), config.awarenessRadius,
 			config.autoTarget, config.autoTargetBots);
@@ -154,6 +162,11 @@ public final class Bot {
 	/** Start of a new round: forget the last round's fight (stats are kept). */
 	public void resetMindForRound() {
 		resetMind();
+	}
+
+	/** Scripted moves for a drill (a dummy walking side to side, a raised shield) instead of the brain; null for the brain. */
+	public void setPattern(java.util.function.@Nullable Function<BotPlayer, Inputs> pattern) {
+		this.pattern = pattern;
 	}
 
 	public boolean brainPaused() {
@@ -357,6 +370,13 @@ public final class Bot {
 
 	public ResourceKey<Level> homeDimension() {
 		return homeDimension;
+	}
+
+	/** Where the bot respawns and starts each round. */
+	public void setHome(ResourceKey<Level> dimension, Vec3 home, float yaw) {
+		this.homeDimension = dimension;
+		this.home = home;
+		this.homeYaw = yaw;
 	}
 
 	public Vec3 home() {

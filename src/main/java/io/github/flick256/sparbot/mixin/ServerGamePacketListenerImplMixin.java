@@ -22,5 +22,6 @@ abstract class ServerGamePacketListenerImplMixin {
 	@Inject(method = "handleAnimate", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;swing(Lnet/minecraft/world/InteractionHand;)V"))
 	private void sparbot$noteSwing(ServerboundSwingPacket packet, CallbackInfo ci) {
 		HumanInputs.noteSwing(this.player);
+		io.github.flick256.sparbot.SparBot.drills().onSwing(this.player);
 	}
 }

@@ -573,15 +573,17 @@ public final class CelestialColosseum {
 		} else {
 			put(c, floor + 1, Blocks.CARPET.purple().defaultBlockState());
 		}
-		if ((front || back) && p > 12.5 || front && p < 0.5) {
+		if ((front || back || Math.abs(d - 69) < 0.5) && p > 12.5) {
 			fill(c, floor + 1, floor + 9, Blocks.PURPUR_PILLAR.defaultBlockState());
 			put(c, floor + 1, GILDED);
 			put(c, floor + 9, GILDED);
 		}
-		put(c, floor + 10, d < 62 ? Blocks.PURPUR_STAIRS.defaultBlockState().setValue(StairBlock.FACING, Direction.SOUTH)
-			: Blocks.PURPUR_SLAB.defaultBlockState());
-		if (front && Math.floorMod(Math.round(p), 4) == 0 && p > 0.5) {
-			put(c, floor + 9, HANGING_SOUL);
+		// A canopy over the thrones' half only, so the box stays open to the field; lanterns along its edge.
+		if (d > 68.5) {
+			put(c, floor + 10, d < 69.5 ? GILDED : Blocks.PURPUR_SLAB.defaultBlockState());
+			if (d < 69.5 && Math.floorMod(Math.round(p), 4) == 0) {
+				put(c, floor + 9, HANGING_SOUL);
+			}
 		}
 		if (d > 74.5 && d <= 75.5 && (p < 0.5 || Math.abs(p - 4) < 0.5)) {
 			// The thrones: a seat facing the field, its back amethyst crowned with gold.

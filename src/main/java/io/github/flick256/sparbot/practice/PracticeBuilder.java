@@ -49,6 +49,9 @@ final class PracticeBuilder {
 			viewingBox(site, palette(site));
 			labels(site);
 		}
+		load(PracticeLayout.HALL_X - PracticeLayout.HALL_REACH_X, PracticeLayout.HALL_Z - PracticeLayout.HALL_REACH_Z,
+			PracticeLayout.HALL_X + PracticeLayout.HALL_REACH_X, PracticeLayout.HALL_Z + PracticeLayout.HALL_REACH_Z);
+		TrainingHall.build(level);
 		// The version marker under the hub: an older or missing one means the world gets built again.
 		set(0, S - 2, PracticeLayout.VERSION, Blocks.LODESTONE.defaultBlockState());
 	}
@@ -204,8 +207,35 @@ final class PracticeBuilder {
 				0x60000000);
 		}
 		grandGateway();
+		hallGateway();
 		PracticeLabels.put(level, 0.5, F + 9.5, 0.5, Component.literal("SparBot Practice").withStyle(st -> st.withColor(0xFFD966).withBold(true))
 			.append(Component.literal("\nstand on a pad to visit an arena").withStyle(st -> st.withColor(0xDDDDDD).withBold(false))), 2.2F, 0);
+	}
+
+	/** The training hall's pad, west of the plaza through a gap in the balustrade, between stone-brick pillars with lanterns. */
+	private void hallGateway() {
+		int[] p = PracticeLayout.HALL_PAD;
+		fill(p[0] - 1, F, p[1] - 1, -PracticeLayout.HUB_RADIUS + 1, F + 3, p[1] + 1, Blocks.AIR.defaultBlockState());
+		for (int x = p[0] - 1; x <= -PracticeLayout.HUB_RADIUS + 1; x++) {
+			for (int z = p[1] - 1; z <= p[1] + 1; z++) {
+				set(x, S, z, z == p[1] ? Blocks.CHISELED_STONE_BRICKS.defaultBlockState() : Blocks.STONE_BRICKS.defaultBlockState());
+			}
+		}
+		set(p[0], S, p[1], Blocks.GOLD_BLOCK.defaultBlockState());
+		set(p[0], F, p[1], Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE.defaultBlockState());
+		for (int side = -2; side <= 2; side += 4) {
+			int z = p[1] + side;
+			fill(p[0], F, z, p[0], F + 4, z, Blocks.STONE_BRICKS.defaultBlockState());
+			set(p[0], F + 5, z, Blocks.CHISELED_STONE_BRICKS.defaultBlockState());
+			set(p[0], F + 6, z, Blocks.LANTERN.defaultBlockState());
+			level.setBlock(new BlockPos(p[0] + 1, F + 3, z), Blocks.WALL_BANNER.yellow().defaultBlockState()
+				.setValue(net.minecraft.world.level.block.WallBannerBlock.FACING, Direction.EAST), Block.UPDATE_CLIENTS);
+		}
+		fill(p[0], F + 5, p[1] - 1, p[0], F + 5, p[1] + 1, Blocks.STONE_BRICK_SLAB.defaultBlockState());
+		PracticeLabels.put(level, p[0] + 0.5, F + 2.4, p[1] + 0.5, Component.literal("Training Hall")
+			.withStyle(st -> st.withColor(0xFFD966).withBold(true))
+			.append(Component.literal("\nskill drills: bronze, silver, gold").withStyle(st -> st.withColor(0xDDDDDD).withBold(false))), 1.2F,
+			0x60000000);
 	}
 
 	/** The Celestial Colosseum's pad, south of the plaza through a gap in the balustrade, between amethyst pillars. */

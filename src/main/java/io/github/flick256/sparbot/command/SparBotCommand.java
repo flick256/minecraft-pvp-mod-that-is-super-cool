@@ -319,6 +319,7 @@ public final class SparBotCommand {
 		RecordCommands.addTo(root);
 		ConfigCommands.addTo(root);
 		PracticeCommands.addTo(root);
+		PracticeCommands.addDrillsTo(root);
 		dispatcher.register(root);
 	}
 

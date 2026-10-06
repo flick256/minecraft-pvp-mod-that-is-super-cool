@@ -1,0 +1,10 @@
+{
+  "id": "sword_pvphq",
+  "displayName": "Sword (PvPHQ kit)",
+  "description": "The sword duel in PvPHQ's sword kit (some items unverified: see the kit's notes).",
+  "kit": "pvphq_sword",
+  "roundsToWin": 3,
+  "roundSeconds": 120,
+  "countdownSeconds": 3,
+  "timeoutRule": "health"
+}

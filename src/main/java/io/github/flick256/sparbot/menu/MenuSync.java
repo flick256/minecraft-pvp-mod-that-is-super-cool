@@ -61,7 +61,9 @@ public final class MenuSync {
 			sorted(SparBot.matches().modes().ids()), bots, settings, sorted(SparBot.kits().ids()).stream()
 				.flatMap(id -> SparBot.kits().get(id).stream())
 				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList(),
-			sorted(SparBot.models().ids()), viewer == null ? List.of() : SparBot.playerLayouts().kits(viewer.getUUID()));
+			sorted(SparBot.models().ids()), viewer == null ? List.of() : SparBot.playerLayouts().kits(viewer.getUUID()),
+			viewer == null ? java.util.Map.of() : SparBot.drills().medalsOf(viewer.getUUID()),
+			viewer == null || SparBot.drills().reports() == null ? List.of() : SparBot.drills().reports().of(viewer.getUUID()));
 	}
 
 	private static List<String> sorted(java.util.Collection<String> ids) {
