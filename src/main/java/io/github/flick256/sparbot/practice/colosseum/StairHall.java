@@ -213,6 +213,13 @@ final class StairHall {
 		fill(c, feet - 1, ceiling - 1, BRICKS);
 	}
 
+	/** Whether this lobby column is the one with the floor's signpost (one block, a pace before the wall between the flights). */
+	private static boolean signpost(Room r, int band) {
+		double a = Math.toRadians((r.sector + 0.5) * ColosseumInterior.SECTOR);
+		double d = ColosseumInterior.ROOMS[band][0] + (band == 0 ? 18.5 : 2.5);
+		return r.dx == (int) Math.round(Math.cos(a) * d) && r.dz == (int) Math.round(Math.sin(a) * d);
+	}
+
 	/**
 	 * One column of a lobby: a patterned floor, the floor's number on the wall between the flights, banners in
 	 * the hall's colours, benches along the walls and lanterns.
@@ -228,14 +235,18 @@ final class StairHall {
 		if (r.doorway) {
 			return;
 		}
-		Direction toLobby = lobbyInner(band) ? r.in : r.out;
 		int top = top(band);
-		if (w >= -1 && r.av < 0.5) {
-			// On the wall between the flights: which floor this is.
+		if (signpost(r, band)) {
+			// A signpost before the wall between the flights: which floor this is.
 			String here = "LEVEL " + (r.k + 1);
 			String up = r.k < top ? "up: level " + (r.k + 2) : "the top";
 			String down = r.k > 0 ? "down: level " + r.k : "the ground";
-			r.sign(r.k < top ? r.feet + 2 : r.feet + 1, toLobby, DyeColor.YELLOW, true, here, name(r.sector)[0] + " STAIR", up, down);
+			double a = Math.toRadians((r.sector + 0.5) * ColosseumInterior.SECTOR);
+			double sign = lobbyInner(band) ? -1 : 1;
+			float yaw = (float) Math.toDegrees(Math.atan2(-Math.cos(a) * sign, Math.sin(a) * sign));
+			ColosseumLore.sign(r.c, r.dx, r.feet, r.dz, Blocks.DARK_OAK_SIGN.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.StandingSignBlock.ROTATION, net.minecraft.world.level.block.state.properties.RotationSegment.convertToSegment(yaw)),
+				DyeColor.YELLOW, true, here, name(r.sector)[0] + " STAIR", up, down);
 		} else if (r.side && w >= -1) {
 			r.put(r.feet + 3, colours[quarter].setValue(WallBannerBlock.FACING, r.awayFromSide));
 		} else if (r.side && Math.floorMod(r.iu, 2) == 0) {
