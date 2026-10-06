@@ -1,0 +1,35 @@
+{
+  "id": "sparbot_vaelor",
+  "displayName": "Vaelor's Challenge",
+  "mode": "combat",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "combat",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own kit for the fight with Vaelor in the Heartwell under the Celestial Colosseum. Both fighters get it: netherite, a shield, sword and axe, a bow, pearls, golden apples and two totems.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {"id": "minecraft:netherite_helmet", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}},
+    "chest": {"id": "minecraft:netherite_chestplate", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}},
+    "legs": {"id": "minecraft:netherite_leggings", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}},
+    "feet": {"id": "minecraft:netherite_boots", "enchantments": {"minecraft:protection": 4, "minecraft:unbreaking": 3}}
+  },
+  "offhand": {"id": "minecraft:shield"},
+  "slots": {
+    "0": {"id": "minecraft:netherite_sword", "enchantments": {"minecraft:sharpness": 5, "minecraft:unbreaking": 3}},
+    "1": {"id": "minecraft:netherite_axe", "enchantments": {"minecraft:sharpness": 5}},
+    "2": {"id": "minecraft:bow", "enchantments": {"minecraft:power": 4}},
+    "5": {"id": "minecraft:ender_pearl", "count": 4},
+    "6": {"id": "minecraft:golden_apple", "count": 8},
+    "7": {"id": "minecraft:cooked_beef", "count": 32},
+    "8": {"id": "minecraft:totem_of_undying"},
+    "9": {"id": "minecraft:arrow", "count": 32},
+    "10": {"id": "minecraft:totem_of_undying"}
+  },
+  "effects": []
+}

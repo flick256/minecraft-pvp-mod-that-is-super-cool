@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/lower_door",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "text": "The Hall of the Fallen"
+    },
+    "description": {
+      "text": "Reach the hall of those who went down and lost"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

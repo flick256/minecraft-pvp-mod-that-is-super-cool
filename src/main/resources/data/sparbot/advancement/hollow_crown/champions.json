@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:paper"
+    },
+    "title": {
+      "text": "The Hall of Champions"
+    },
+    "description": {
+      "text": "Find the Hall of Champions, and Vaelor's empty pedestal"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

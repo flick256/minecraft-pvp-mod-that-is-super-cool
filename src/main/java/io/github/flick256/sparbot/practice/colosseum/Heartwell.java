@@ -11,173 +11,336 @@ import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.F
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.GILDED;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.HANGING_SOUL;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.POLISHED;
-import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.PURPLE_GLASS;
+import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.PURPUR;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.S;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.SEA_LANTERN;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.TILES;
-import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.fill;
+import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.deep;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.offStep;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.outward;
 import static io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.put;
 
+import io.github.flick256.sparbot.core.practice.PracticeLayout;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.AmethystClusterBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CandleBlock;
-import net.minecraft.world.level.block.EndPortalFrameBlock;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.WallBannerBlock;
+import net.minecraft.world.level.block.WallSignBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The end of the trail: the lower door in the Cells, a stair down under the Inner Ring and the podium, a long
- * tunnel beneath the field, and at the end, right under the heart of the compass rose, the Heartwell. It is a
- * round vault of calcite and amethyst lit through purple windows. In its middle is the seal on its pedestal,
- * with a beam rising to the star above, ringed by eight wards. Across from the door stands an empty throne,
- * with the Seven's confession before it.
+ * The end of the trail, dug out of the rock under the field:
+ * <ul>
+ * <li><b>The Lower Door</b>: a wide stair in the floor of the Cells, going down under the Inner Ring and the
+ * podium. It is lit and bannered all the way, with words on the walls for whoever goes down.</li>
+ * <li><b>The Hall of the Fallen</b>: a long hall with plaques for those who went down and lost, the Roll of the
+ * Fallen on a lectern, the champions' plaque across from it, and braziers either side of the great arch.</li>
+ * <li><b>The Heartwell</b>: a round arena forty-four across under a dome, right under the compass rose. It has a
+ * ring of eight pillars to fight round, the heart of the star hung over a seal in the middle, and Vaelor's
+ * throne on a dais across from the arch. Stepping in starts the fight (see {@link VaelorFight}).</li>
+ * </ul>
  */
 final class Heartwell {
 	/** The way down runs along this bearing, from the middle of the Cells. */
-	private static final double BEARING = Math.toRadians(Landmarks.centre(Landmarks.CELLS));
-	private static final double COS = Math.cos(BEARING);
-	private static final double SIN = Math.sin(BEARING);
-	/** Feet height down below, and the vault's floor, ceiling and radius. */
-	static final int DEEP = F - 10;
-	private static final double RADIUS = 14.5;
-	/** The stair runs from the Cells' floor (along 70) down to the tunnel (along 60). */
-	private static final int STAIR_TOP = 70;
-	private static final int STAIR_FOOT = 60;
+	static final double BEARING = Math.toRadians(Landmarks.centre(Landmarks.CELLS));
+	static final double COS = Math.cos(BEARING);
+	static final double SIN = Math.sin(BEARING);
+	/** The arena's floor block, and the height people stand at down there. */
+	static final int FLOOR = S - 28;
+	static final int FEET = FLOOR + 1;
+	/** The arena's radius (inside its wall), and the wall's outer edge. */
+	static final double RADIUS = 22;
+	static final double SHELL = 25;
+	/** The stair runs from the Cells' floor (along 70) down to the hall (along 42), a block down for each along. */
+	static final int STAIR_TOP = 70;
+	static final int STAIR_FOOT = STAIR_TOP - (F - FEET);
+	/** The great arch at the end of the Hall of the Fallen (along 26 to 30); the hall runs on to the stair. */
+	static final int ARCH = 26;
+	static final int HALL = ARCH + 4;
+	/** Where the way into the arena is sealed during a fight (along), and the throne (along, across the arena). */
+	static final int SEAL = 24;
+	static final double THRONE = 20;
 
 	private Heartwell() {
 	}
 
-	/** Whether the column could hold any of it (the vault, or the way down). */
+	/** Whether the column could hold any of it. */
 	static boolean near(double d) {
-		return d <= STAIR_TOP + 3;
+		return d <= STAIR_TOP + 4;
+	}
+
+	/** The top of the arena's air at distance {@code d} from the middle: walls twelve high, a dome rising to twenty. */
+	static int dome(double d) {
+		double t = Math.min(1, d / (RADIUS + 0.5));
+		return FEET + 11 + (int) Math.round(8 * Math.sqrt(1 - t * t));
+	}
+
+	/** The height people stand at on the stair, along {@code fa}. */
+	static int stairFeet(int fa) {
+		return FEET + (fa - STAIR_FOOT);
 	}
 
 	static void build(BlockState[] c, int dx, int dz, double d, double deg) {
 		double a = dx * COS + dz * SIN;
 		double lat = -dx * SIN + dz * COS;
-		if (d <= RADIUS) {
-			vault(c, dx, dz, d, deg);
+		if (d <= SHELL) {
+			arena(c, dx, dz, d, deg, a, lat);
 		}
-		if (a >= 12.0 && a < STAIR_TOP + 1 && Math.abs(lat) <= 2.5) {
+		if (a > RADIUS - 1 && a < STAIR_TOP + 1 && Math.abs(lat) <= 5.5) {
 			way(c, dx, dz, a, lat);
 		}
 	}
 
-	private static BlockState candles(int n) {
-		return Blocks.CANDLE.defaultBlockState().setValue(CandleBlock.CANDLES, n).setValue(CandleBlock.LIT, true);
+	private static BlockState stair(Block b, Direction f) {
+		return b.defaultBlockState().setValue(StairBlock.FACING, f);
 	}
 
-	/** The stair and tunnel: lined with brick, lit by soul lanterns, a few cobwebs, and warnings on the walls. */
+	private static final String[][] WALL_WORDS = {{"THE LOWER", "DOOR", "to the", "Heartwell"}, {"TWO HUNDRED", "WENT DOWN", "THIS STAIR.", ""},
+		{"CHECK YOUR", "GEAR. EAT.", "BREATHE.", ""}, {"HE FIGHTS", "FAIR. SO", "DO YOU.", ""}, {"THE HALL OF", "THE FALLEN", "is ahead", ""}};
+
+	/** The stair down, the Hall of the Fallen, the arch and the way through the arena's wall. */
 	private static void way(BlockState[] c, int dx, int dz, double a, double lat) {
 		int fa = (int) Math.floor(a);
 		double p = Math.abs(lat);
-		boolean stair = fa >= STAIR_FOOT && fa < STAIR_TOP;
-		int feet = stair ? F - (STAIR_TOP - fa) : DEEP;
-		if (fa >= STAIR_TOP) {
+		Direction up = outward(COS, SIN);
+		Direction toLine = lat > 0 ? outward(SIN, -COS) : outward(-SIN, COS);
+		if (fa >= STAIR_FOOT && fa < STAIR_TOP) {
+			if (p <= 3.5) {
+				stairway(c, dx, dz, fa, p, lat, toLine, up);
+			}
+		} else if (fa >= HALL && fa < STAIR_FOOT) {
+			hall(c, dx, dz, fa, p, lat, toLine, up);
+		} else if (fa >= ARCH && fa < HALL) {
+			arch(c, fa, p);
+		} else if (fa >= (int) RADIUS && fa < ARCH && p < 2.5) {
+			// Through the arena's wall.
+			deep(c, FEET, FEET + 5, AIR);
+			put(c, FLOOR, p < 1 ? PURPUR : BLACK_BRICKS);
+			put(c, FEET + 6, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
+		}
+	}
+
+	/** One column of the stair: steps with a purpur runner, lit ceiling, walls with a gilded course, and a rail round its well in the Cells. */
+	private static void stairway(BlockState[] c, int dx, int dz, int fa, double p, double lat, Direction toLine, Direction up) {
+		int feet = stairFeet(fa);
+		boolean open = feet + 4 >= S;
+		boolean edge = !open && stairFeet(fa + 1) + 4 >= S;
+		int roof = open ? S : feet + 5;
+		if (p < 2.5) {
+			deep(c, feet, roof - 1, AIR);
+			if (open) {
+				put(c, S, AIR);
+			}
+			put(c, feet - 1, fa > STAIR_FOOT ? stair(p < 1 ? Blocks.PURPUR_STAIRS : Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, up) : p < 1 ? PURPUR : BLACK_BRICKS);
+			put(c, feet - 2, BLACK_BRICKS);
+			if (!open) {
+				put(c, roof, Math.floorMod(fa, 3) == 0 && p < 0.5 ? SEA_LANTERN : TILES);
+				if (p < 0.5 && Math.floorMod(fa, 6) == 4) {
+					put(c, roof - 1, HANGING_SOUL);
+				}
+			}
+			if (edge) {
+				// A rail in the Cells across the low end of the well.
+				put(c, S + 1, BLACK_WALL);
+			}
+			int say = fa == STAIR_TOP - 7 ? 0 : fa == STAIR_TOP - 12 ? 1 : fa == STAIR_TOP - 17 ? 2 : fa == STAIR_TOP - 22 ? 3 : fa == STAIR_FOOT + 2 ? 4 : -1;
+			if (say >= 0 && lat > 1.5) {
+				ColosseumInterior.wallSign(c, dx, feet + 1, dz, toLine, DyeColor.WHITE, true, WALL_WORDS[say]);
+			} else if (p >= 1.5 && Math.floorMod(fa, 6) == 1) {
+				put(c, feet + 2, Blocks.WALL_BANNER.purple().defaultBlockState().setValue(WallBannerBlock.FACING, toLine));
+			}
 			return;
 		}
-		boolean open = feet + 4 > S;
-		Direction toLine = lat > 0 ? outward(SIN, -COS) : outward(-SIN, COS);
-		if (p <= 1.5) {
-			if (open) {
-				fill(c, feet, S, AIR);
+		deep(c, feet - 2, open ? S - 1 : roof, BRICKS);
+		put(c, feet + 3, Math.floorMod(fa, 4) == 1 ? GILDED : TILES);
+		if (open) {
+			// A rail round the stairwell in the Cells' floor.
+			put(c, S, POLISHED);
+			put(c, S + 1, BLACK_WALL);
+		}
+	}
+
+	private static final String[][] FALLEN = {{"AUREL", "THE SWIFT", "412 - 38", "lost below"}, {"BRENNA", "IRONHAND", "377 - 51", "lost below"},
+		{"DORN OF", "EMBERS", "290 - 12", "lost below"}, {"ILSA", "MOONWARD", "515 - 60", "lost below"}, {"KAEL", "TWO-BLADES", "333 - 41", "lost below"},
+		{"MIRA THE", "BRIGHT", "268 - 9", "lost below"}, {"OLD MARR", "", "701 - 140", "lost below"}, {"SABLE", "NIGHT", "199 - 3", "lost below"},
+		{"TOBIN", "FARSHOT", "251 - 30", "lost below"}, {"YSOLDE", "OF THE ROSE", "450 - 22", "lost below"}};
+
+	/** The Hall of the Fallen: plaques down both walls, banners, soul light, a runner to the arch, the Roll on a lectern, the champions' plaque. */
+	private static void hall(BlockState[] c, int dx, int dz, int fa, double p, double lat, Direction toLine, Direction up) {
+		int top = FEET + 7;
+		if (p > 5.5) {
+			return;
+		}
+		if (p > 4.5) {
+			deep(c, FLOOR - 1, top + 1, BRICKS);
+			if (Math.floorMod(fa, 3) == 0) {
+				deep(c, FEET, top, Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+			}
+			return;
+		}
+		deep(c, FEET, top, AIR);
+		put(c, FLOOR, p < 1 ? PURPUR : Math.floorMod(fa, 2) == 0 ? BLACK_BRICKS : POLISHED);
+		put(c, FLOOR - 1, BRICKS);
+		put(c, top + 1, p < 0.5 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : Math.floorMod(fa, 3) == 0 ? BLACK_BRICKS : TILES);
+		if (p < 1) {
+			put(c, FEET, Blocks.CARPET.purple().defaultBlockState());
+		}
+		if (p < 0.5 && Math.floorMod(fa, 4) == 1) {
+			put(c, top, CHAIN);
+			put(c, top - 1, HANGING_SOUL);
+		}
+		if (fa == HALL && p < 0.5) {
+			// The name over the arch, on its crown.
+			ColosseumInterior.wallSign(c, dx, FEET + 6, dz, up, DyeColor.PURPLE, true, "THE HEARTWELL", "", "Vaelor the", "Unbroken");
+		}
+		if (p <= 3.5) {
+			return;
+		}
+		int i = fa - HALL;
+		if (fa == STAIR_FOOT - 2 && lat < 0) {
+			ColosseumLore.lectern(c, dx, FEET, dz, Blocks.LECTERN.defaultBlockState().setValue(LecternBlock.FACING, toLine)
+				.setValue(LecternBlock.HAS_BOOK, true), ColosseumLore.FALLEN);
+		} else if (fa == STAIR_FOOT - 2 && lat > 0) {
+			// Across from the Roll: the champions who came back up (none yet, until someone does).
+			ColosseumLore.champions(c, dx, FEET + 2, dz, Blocks.DARK_OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, toLine));
+			put(c, FEET + 4, Blocks.WALL_BANNER.yellow().defaultBlockState().setValue(WallBannerBlock.FACING, toLine));
+		} else if (Math.floorMod(i, 3) == 1) {
+			int n = Math.floorMod(i / 3 * 2 + (lat > 0 ? 1 : 0), FALLEN.length);
+			ColosseumInterior.wallSign(c, dx, FEET + 2, dz, toLine, DyeColor.WHITE, true, FALLEN[n]);
+			put(c, FEET + 4, Blocks.WALL_BANNER.white().defaultBlockState().setValue(WallBannerBlock.FACING, toLine));
+		} else if (Math.floorMod(i, 3) == 2) {
+			put(c, FEET, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
+			put(c, FEET + 1, Blocks.SOUL_LANTERN.defaultBlockState());
+		}
+	}
+
+	/** The great arch at the end of the hall: braziers either side, gold in its crown. */
+	private static void arch(BlockState[] c, int fa, double p) {
+		if (p > 5.5) {
+			return;
+		}
+		int top = FEET + 7;
+		if (p < 2.5) {
+			deep(c, FEET, FEET + 5, AIR);
+			put(c, FLOOR, p < 1 ? PURPUR : GILDED);
+			put(c, FLOOR - 1, BRICKS);
+			deep(c, FEET + 6, top + 1, p < 0.5 ? Blocks.GOLD_BLOCK.defaultBlockState() : Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
+			return;
+		}
+		boolean brazier = fa == HALL - 1 && p < 4.5;
+		deep(c, FLOOR - 1, top + 1, BLACK_BRICKS);
+		if (brazier) {
+			put(c, FEET, Blocks.SOUL_CAMPFIRE.defaultBlockState().setValue(CampfireBlock.LIT, true).setValue(CampfireBlock.SIGNAL_FIRE, false));
+			deep(c, FEET + 1, top, AIR);
+		} else if (fa == HALL - 1) {
+			put(c, FEET + 3, AMETHYST);
+		}
+	}
+
+	/**
+	 * The arena: a patterned floor round a raised seal, eight pillars to fight round, the throne on its dais,
+	 * walls with pilasters, banners and lights, and a ribbed dome with the heart of the star hung in the middle.
+	 */
+	private static void arena(BlockState[] c, int dx, int dz, double d, double deg, double a, double lat) {
+		if (d > RADIUS) {
+			// The wall: lights set in its face between pilasters.
+			deep(c, FLOOR - 1, dome(RADIUS) + 2, BRICKS);
+			if (d <= RADIUS + 1) {
+				boolean pilaster = offStep(deg, 15, d) < 0.7;
+				boolean light = offStep(deg + 7.5, 15, d) < 0.6;
+				if (pilaster) {
+					deep(c, FEET, dome(RADIUS), PURPUR);
+					put(c, FEET + 5, Blocks.PURPUR_PILLAR.defaultBlockState());
+				} else if (light) {
+					put(c, FEET + 3, Blocks.OCHRE_FROGLIGHT.defaultBlockState());
+					put(c, FEET + 8, SEA_LANTERN);
+				}
+			}
+			return;
+		}
+		int top = dome(d);
+		deep(c, FEET, top, AIR);
+		deep(c, FLOOR - 2, FLOOR - 1, BRICKS);
+		deep(c, top + 1, top + 2, TILES);
+		// The dome: ribs of amethyst, set with lights and crystals.
+		boolean rib = offStep(deg, 30, d) < 0.6 && d > 3;
+		int roll = PracticeLayout.scatter(dx, dz, 61) % 100;
+		put(c, top + 1, rib ? AMETHYST : roll < 5 ? SEA_LANTERN : TILES);
+		if (!rib && roll >= 5 && roll < 8 && d > 4) {
+			put(c, top, Blocks.AMETHYST_CLUSTER.defaultBlockState().setValue(AmethystClusterBlock.FACING, Direction.DOWN));
+		}
+		// The floor: the seal, a gold ring, rays, bands, a ring of lights, and a dark walk round the edge.
+		BlockState floor = d < 1.5 ? CRYING : d < 2.5 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : d < 3.5 ? Blocks.GOLD_BLOCK.defaultBlockState()
+			: offStep(deg, 45, d) < 0.6 && d < 18 ? GILDED : Math.abs(d - 12) < 0.5 ? PURPUR
+			: Math.abs(d - 18.5) < 0.5 && offStep(deg, 15, d) < 0.6 ? SEA_LANTERN : d >= 19 ? BLACK_BRICKS
+			: Math.floorMod((int) Math.floor(d / 3), 2) == 0 ? POLISHED : TILES;
+		put(c, FLOOR, floor);
+		// The seal, raised a step, and the heart of the star hung over it.
+		if (d < 2.5) {
+			put(c, FEET, d < 1.5 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : Blocks.POLISHED_BLACKSTONE_SLAB.defaultBlockState());
+			if (d < 0.6) {
+				put(c, FEET + 1, Blocks.END_ROD.defaultBlockState());
+				deep(c, FEET + 11, top, CHAIN);
+				put(c, FEET + 10, AMETHYST);
+				put(c, FEET + 9, Blocks.BUDDING_AMETHYST.defaultBlockState());
+				put(c, FEET + 8, Blocks.AMETHYST_CLUSTER.defaultBlockState().setValue(AmethystClusterBlock.FACING, Direction.DOWN));
+			} else if (d < 1.6) {
+				put(c, FEET + 9, Blocks.STAINED_GLASS.purple().defaultBlockState());
+			}
+		}
+		// Eight pillars round the middle (none in the way from the arch to the throne).
+		for (int i = 0; i < 8; i++) {
+			double ang = BEARING + Math.toRadians(22.5 + 45 * i);
+			double r = Math.hypot(dx - Math.cos(ang) * 13, dz - Math.sin(ang) * 13);
+			if (r < 1.6) {
+				deep(c, FEET, top, r < 0.8 ? Blocks.POLISHED_DEEPSLATE.defaultBlockState() : TILES);
+				put(c, FEET, Blocks.CHISELED_DEEPSLATE.defaultBlockState());
+				if (r >= 0.8) {
+					put(c, FEET + 4, Blocks.OCHRE_FROGLIGHT.defaultBlockState());
+					put(c, FEET + 8, Blocks.PEARLESCENT_FROGLIGHT.defaultBlockState());
+				}
+				return;
+			}
+		}
+		// The throne's dais, across from the arch: two steps up, the throne, gold and lanterns behind it.
+		double ta = -a;
+		double tl = Math.abs(lat);
+		if (ta > 14.5 && tl < 4.5) {
+			Direction toThrone = outward(-COS, -SIN);
+			if (ta < 15.5) {
+				put(c, FEET, stair(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, toThrone));
+			} else if (ta < 16.5) {
+				put(c, FEET, BLACK_BRICKS);
+				put(c, FEET + 1, stair(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, toThrone));
 			} else {
-				fill(c, feet, feet + 3, AIR);
-				fill(c, feet + 4, S - 1, TILES);
-			}
-			if (stair) {
-				put(c, feet - 1, Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS.defaultBlockState().setValue(StairBlock.FACING, outward(COS, SIN)));
-			} else {
-				put(c, feet - 1, Math.floorMod(fa, 3) == 0 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : BLACK_BRICKS);
-				if (p < 0.5 && Math.floorMod(fa, 6) == 0) {
-					put(c, feet + 3, HANGING_SOUL);
+				put(c, FEET, BLACK_BRICKS);
+				put(c, FEET + 1, tl < 1 ? PURPUR : GILDED);
+				if (ta >= THRONE - 0.5 && ta < THRONE + 0.5 && tl < 0.5) {
+					put(c, FEET + 2, stair(Blocks.POLISHED_BLACKSTONE_STAIRS, toThrone));
+				} else if (ta >= THRONE + 0.5 && tl < 1.5) {
+					deep(c, FEET + 2, FEET + 4, Blocks.GOLD_BLOCK.defaultBlockState());
+					put(c, FEET + 5, tl < 0.5 ? CRYING : AMETHYST);
+				} else if (ta >= THRONE - 0.5 && tl >= 1.5 && tl < 2.5) {
+					put(c, FEET + 2, Blocks.SOUL_LANTERN.defaultBlockState());
 				}
-				if (p > 0.5 && Math.floorMod(fa + (lat > 0 ? 0 : 4), 9) == 4) {
-					put(c, feet + 3, Blocks.COBWEB.defaultBlockState());
-				}
-				if (p > 0.5 && lat > 0) {
-					String[] say = fa == 57 ? new String[] {"THE LOWER", "DOOR", "", "mind the dark"} : fa == 35 ? new String[] {"TURN BACK", "OR", "FIGHT ON", ""}
-						: fa == 16 ? new String[] {"THE", "HEARTWELL", "", "speak softly"} : null;
-					if (say != null) {
-						ColosseumInterior.wallSign(c, dx, feet + 1, dz, toLine, DyeColor.WHITE, true, say);
-					}
-				}
-			}
-			if (!open && fa == STAIR_TOP - 5) {
-				// A rail across the head of the drop, where the floor above ends.
-				put(c, S + 1, BLACK_WALL);
-			}
-		} else {
-			fill(c, feet - 1, open ? S - 1 : feet + 4, BRICKS);
-			if (open) {
-				put(c, S + 1, BLACK_WALL);
 			}
 		}
 	}
 
-	/** The vault: rings and rays in the floor, a lit well in the ceiling, windows round the wall, the seal, the wards and the throne. */
-	private static void vault(BlockState[] c, int dx, int dz, double d, double deg) {
-		int floor = DEEP - 1;
-		int ceiling = DEEP + 6;
-		if (d > 12.5) {
-			fill(c, floor, ceiling, Blocks.CALCITE.defaultBlockState());
-			boolean pilaster = offStep(deg, 30, d) < 0.7;
-			boolean window = offStep(deg + 15, 30, d) < 1.3;
-			if (pilaster) {
-				fill(c, DEEP, ceiling - 1, AMETHYST);
-			} else if (window) {
-				fill(c, DEEP + 1, DEEP + 4, d < 13.5 ? PURPLE_GLASS : SEA_LANTERN);
-			}
-			return;
-		}
-		fill(c, DEEP, ceiling - 1, AIR);
-		BlockState floorBlock = d < 1.5 ? CRYING : d < 3 ? AMETHYST : offStep(deg, 45, d) < 0.6 ? GILDED
-			: Math.floorMod((int) Math.floor(d / 2), 2) == 0 ? BLACK_BRICKS : Blocks.CALCITE.defaultBlockState();
-		put(c, floor, floorBlock);
-		put(c, ceiling, d < 1.5 ? SEA_LANTERN : Math.abs(d - 6) < 0.5 ? AMETHYST : offStep(deg, 45, d) < 0.6 ? POLISHED : TILES);
-		if (d < 1.5) {
-			// The seal, and a beam of light from it to the star.
-			put(c, DEEP, CRYING);
-			put(c, DEEP + 1, Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState());
-			put(c, DEEP + 2, AMETHYST);
-			fill(c, DEEP + 3, ceiling - 1, Blocks.END_ROD.defaultBlockState());
-			return;
-		}
-		String[] plaque = dx == 0 && dz == -2 ? new String[] {"HERE SLEEPS", "VAELOR", "THE", "UNBROKEN"}
-			: dx == 2 && dz == 0 ? new String[] {"BLADE TO", "SHIELD,", "BLOW FOR", "BLOW"}
-			: dx == 0 && dz == 2 ? new String[] {"THE CROWD", "IS THE", "KEEPER", ""}
-			: dx == -2 && dz == 0 ? new String[] {"YOU ARE", "THE KEY", "", ""} : null;
-		if (plaque != null) {
-			ColosseumInterior.wallSign(c, dx, DEEP + 1, dz, outward(dx, dz), DyeColor.WHITE, true, plaque);
-			return;
-		}
-		if (Math.abs(d - 6) < 0.5 && offStep(deg, 45, d) < 0.5) {
-			// The eight wards round the seal, eyes set.
-			put(c, DEEP, Blocks.END_PORTAL_FRAME.defaultBlockState().setValue(EndPortalFrameBlock.FACING, outward(-dx, -dz))
-				.setValue(EndPortalFrameBlock.HAS_EYE, true));
-		} else if (Math.abs(d - 9.5) < 0.5 && offStep(deg + 15, 30, d) < 0.5) {
-			put(c, DEEP, candles(4));
-		} else if (Math.abs(d - 8) < 0.5 && offStep(deg + 22.5, 45, d) < 0.5) {
-			put(c, ceiling - 1, CHAIN);
-			put(c, ceiling - 2, HANGING_SOUL);
-		}
-		// The empty throne, south, facing the seal; the confession before it.
-		if (dx == 0 && dz == 10) {
-			put(c, DEEP, Blocks.POLISHED_BLACKSTONE_STAIRS.defaultBlockState().setValue(StairBlock.FACING, Direction.SOUTH));
-		} else if (dx == 0 && dz == 11) {
-			fill(c, DEEP, DEEP + 2, Blocks.GOLD_BLOCK.defaultBlockState());
-			put(c, DEEP + 3, CRYING);
-		} else if (Math.abs(dx) == 1 && dz == 10) {
-			put(c, DEEP, Blocks.POLISHED_BLACKSTONE_WALL.defaultBlockState());
-		} else if (Math.abs(dx) == 1 && dz == 11) {
-			fill(c, DEEP, DEEP + 1, Blocks.GOLD_BLOCK.defaultBlockState());
-		} else if (dx == 0 && dz == 8) {
-			ColosseumLore.lectern(c, dx, DEEP, dz, Blocks.LECTERN.defaultBlockState().setValue(LecternBlock.FACING, Direction.NORTH)
-				.setValue(LecternBlock.HAS_BOOK, true), ColosseumLore.FALLEN);
-		}
+	/** Where Vaelor stands at the start (blueprint dx, feet y, dz): on his dais before the throne. */
+	static double[] throne() {
+		double t = THRONE - 2.5;
+		return new double[] {-COS * t, FEET + 2, -SIN * t};
+	}
+
+	/** Where a challenger stands when the way in is sealed behind them. */
+	static double[] gate() {
+		double t = RADIUS - 3;
+		return new double[] {COS * t, FEET, SIN * t};
 	}
 }

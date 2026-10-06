@@ -1,0 +1,11 @@
+{
+  "music.vaelor": {
+    "subtitle": "subtitles.sparbot.music.vaelor",
+    "sounds": [
+      {
+        "name": "sparbot:music/vaelor",
+        "stream": true
+      }
+    ]
+  }
+}

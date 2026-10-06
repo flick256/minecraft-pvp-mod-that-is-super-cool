@@ -274,8 +274,9 @@ public final class ColosseumWorks {
 		}
 		// Above both the blueprint's top block and the world's, there is nothing to do.
 		int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
+		// (Below the blueprint's own ground only the dug-out parts are set: the rest of a column is null there.)
 		for (int i = col.length - 1; i >= 0; i--) {
-			if (!col[i].isAir()) {
+			if (col[i] != null && !col[i].isAir()) {
 				top = Math.max(top, CelestialColosseum.Y0 + i);
 				break;
 			}
@@ -283,7 +284,7 @@ public final class ColosseumWorks {
 		int changed = 0;
 		for (int y = CelestialColosseum.Y0; y <= Math.min(top, CelestialColosseum.Y1); y++) {
 			BlockState want = col[y - CelestialColosseum.Y0];
-			if (CelestialColosseum.attached(want) != attachedPass) {
+			if (want == null || CelestialColosseum.attached(want) != attachedPass) {
 				continue;
 			}
 			pos.set(x, y, z);

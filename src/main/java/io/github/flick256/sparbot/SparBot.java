@@ -57,6 +57,7 @@ public final class SparBot implements ModInitializer {
 			reloadKits(server);
 			MATCHES.reload(server, configDir().resolve("sparbot"));
 			DRILLS.load(configDir().resolve("sparbot"));
+			io.github.flick256.sparbot.practice.colosseum.HollowCrown.load(configDir().resolve("sparbot"));
 			PRACTICE.onServerStarted(server);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(BOTS::tick);

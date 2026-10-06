@@ -1,6 +1,7 @@
 package io.github.flick256.sparbot.gametest;
 
 import io.github.flick256.sparbot.SparBot;
+import io.github.flick256.sparbot.practice.colosseum.ColosseumSurvey;
 import io.github.flick256.sparbot.client.SparBotMenuScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -134,17 +135,77 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			view(context, world, "colosseum-warden", cx + 11.7, 65.6, cz + -58.8, -168.8F, 15.0F);
 			view(context, world, "colosseum-chapel", cx + -89.3, 65.6, cz + -17.8, 101.3F, 15.0F);
 			view(context, world, "colosseum-cells", cx + -23.8, 65.6, cz + -70.1, -18.8F, 30.0F);
-			view(context, world, "colosseum-tunnel-down", cx + -12.9, 55.6, cz + -37.9, -18.8F, 0.0F);
-			view(context, world, "colosseum-heartwell", cx + 0.5, 55.6, cz + 7.5, 180.0F, -5.0F);
-			view(context, world, "colosseum-heartwell-throne", cx + 0.5, 55.6, cz - 5.5, 0.0F, 0.0F);
 			view(context, world, "colosseum-treasury", cx + 24.6, 65.6, cz + 123.6, -11.3F, 15.0F);
 			view(context, world, "colosseum-champions", cx + 123.6, 65.6, cz + -24.6, -101.3F, 15.0F);
-			view(context, world, "colosseum-hall-0", cx + 40.9, 65.6, cz + 46.6, -41.2F, 15.0F);
-			view(context, world, "colosseum-hall-1", cx + -30.5, 73.6, cz + 90.0, 18.8F, 15.0F);
-			view(context, world, "colosseum-hall-2", cx + -116.6, 65.6, cz + 57.5, 63.8F, 15.0F);
-			view(context, world, "colosseum-hall-3", cx + -75.2, 65.6, cz + -65.9, 131.2F, 15.0F);
-			view(context, world, "colosseum-stair", cx + 73.0, 66.0, cz + 40.5, -154.2F, -35.0F);
 			view(context, world, "colosseum-concourse", cx + -42.0, 108.6, cz + 72.7, -150.0F, 20.0F);
+			// The stair halls, halls of a dozen kinds, and the way down to the Heartwell.
+			for (ColosseumSurvey.View v : ColosseumSurvey.stairs()) {
+				view(context, world, v.name(), cx + v.x(), v.y(), cz + v.z(), v.yaw(), v.pitch());
+			}
+			for (ColosseumSurvey.View v : ColosseumSurvey.halls(12)) {
+				view(context, world, v.name(), cx + v.x(), v.y(), cz + v.z(), v.yaw(), v.pitch());
+			}
+			for (ColosseumSurvey.View v : ColosseumSurvey.heartwell()) {
+				view(context, world, v.name(), cx + v.x(), v.y(), cz + v.z(), v.yaw(), v.pitch());
+			}
+			// A vault: crouch at its cracked wall until it gives way, then look inside.
+			int[] door = ColosseumSurvey.vaultEntrance(0);
+			world.getServer().runOnServer(server -> {
+				var player = human(server);
+				player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				double back = 1.6;
+				double a = Math.atan2(door[2], door[0]);
+				player.teleportTo((net.minecraft.server.level.ServerLevel) player.level(), cx + door[0] + 0.5 - Math.cos(a) * back, door[1],
+					cz + door[2] + 0.5 - Math.sin(a) * back, java.util.Set.of(), 0, 0, true);
+			});
+			context.waitTicks(20);
+			context.getInput().holdKey(GLFW.GLFW_KEY_LEFT_SHIFT);
+			world.getServer().waitFor(server -> human(server).level().getBlockState(new net.minecraft.core.BlockPos(cx + door[0], door[1], cz + door[2])).isAir(),
+				400);
+			context.getInput().releaseKey(GLFW.GLFW_KEY_LEFT_SHIFT);
+			ColosseumSurvey.View inside = ColosseumSurvey.vault(0);
+			world.getServer().runOnServer(server -> human(server).teleportTo((net.minecraft.server.level.ServerLevel) human(server).level(),
+				cx + inside.x(), Math.floor(inside.y()), cz + inside.z(), java.util.Set.of(), inside.yaw(), 0, true));
+			context.waitTicks(30);
+			view(context, world, inside.name(), cx + inside.x(), inside.y(), cz + inside.z(), inside.yaw(), inside.pitch());
+			// The fight: step into the Heartwell, see Vaelor rise, fight a moment, then he falls; the champion's rewards and plaque.
+			double[] step = ColosseumSurvey.arenaStep();
+			world.getServer().runOnServer(server -> {
+				var player = human(server);
+				player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				player.teleportTo((net.minecraft.server.level.ServerLevel) player.level(), cx + step[0], step[1], cz + step[2], java.util.Set.of(), 0, 0, true);
+			});
+			world.getServer().waitFor(server -> SparBot.practice().crown().fight().running(), 200);
+			context.waitTicks(105);
+			world.getConnection().waitForChunksRender(false, 600);
+			context.takeScreenshot("heartwell-vaelor-rises");
+			world.getServer().waitFor(server -> SparBot.bots().get("Vaelor").map(b -> !b.brainPaused()).orElse(false), 300);
+			context.waitTicks(30);
+			context.takeScreenshot("heartwell-fight");
+			world.getServer().runCommand("kill Vaelor");
+			context.waitTicks(30);
+			context.takeScreenshot("heartwell-victory");
+			world.getServer().waitFor(server -> !SparBot.practice().crown().fight().running(), 600);
+			world.getServer().runOnServer(server -> {
+				var player = human(server);
+				boolean sword = false;
+				for (net.minecraft.world.item.ItemStack stack : player.getInventory()) {
+					sword |= stack.is(net.minecraft.world.item.Items.NETHERITE_SWORD) && stack.getHoverName().getString().equals("Oathkeeper");
+				}
+				if (!sword) {
+					throw new AssertionError("the champion should have Vaelor's blade, Oathkeeper");
+				}
+				var champion = server.getAdvancements().get(net.minecraft.resources.Identifier.fromNamespaceAndPath("sparbot", "hollow_crown/champion"));
+				if (champion == null || !player.getAdvancements().getOrStartProgress(champion).isDone()) {
+					throw new AssertionError("the champion should have the advancement Unbroken No More");
+				}
+				var vault = server.getAdvancements().get(net.minecraft.resources.Identifier.fromNamespaceAndPath("sparbot", "hollow_crown/vault_study"));
+				if (vault == null || !player.getAdvancements().getOrStartProgress(vault).isDone()) {
+					throw new AssertionError("finding Tell's hidden study should be a discovery");
+				}
+			});
+			ColosseumSurvey.View plaque = ColosseumSurvey.plaque();
+			view(context, world, plaque.name(), cx + plaque.x(), plaque.y(), cz + plaque.z(), plaque.yaw(), plaque.pitch());
 			view(context, world, "colosseum-crystal", cx + 0.5, 70, cz + 40.5, 180, -40);
 			view(context, world, "colosseum-crystal-far", cx + 0.5, 215, cz + 110, 180, 0);
 			world.getServer().runCommand("time set midnight");

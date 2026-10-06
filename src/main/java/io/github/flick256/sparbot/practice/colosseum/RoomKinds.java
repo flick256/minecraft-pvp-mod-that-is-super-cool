@@ -1,6 +1,5 @@
 package io.github.flick256.sparbot.practice.colosseum;
 
-import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.beam;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.candles;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.face;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.hanging;
@@ -8,7 +7,6 @@ import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.mix;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.slab;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.st;
 import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.stair;
-import static io.github.flick256.sparbot.practice.colosseum.RoomStyles.stairTop;
 
 import io.github.flick256.sparbot.practice.colosseum.RoomStyles.Style;
 import io.github.flick256.sparbot.practice.colosseum.RoomStyles.X;
@@ -25,7 +23,6 @@ import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.MultifaceBlock;
-import net.minecraft.world.level.block.RedstoneLampBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -1555,15 +1552,5 @@ final class RoomKinds {
 			x.put(0, chair(x, x.r.towardSide));
 		}
 		return false;
-	}
-
-	@SuppressWarnings("unused")
-	private static BlockState log(X x) {
-		return beam(x.s.wood.log(), x.r.in);
-	}
-
-	@SuppressWarnings("unused")
-	private static BlockState trapdoorTop(X x, Direction f) {
-		return stairTop(x.s.wood.stairs(), f);
 	}
 }

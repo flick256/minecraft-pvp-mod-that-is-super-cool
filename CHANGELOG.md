@@ -2,6 +2,46 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 1.0.3
+
+- **The Heartwell: a boss fight under the field.** The Lower Door in the Cells is now a wide stair down, lit and
+  bannered, with words for whoever goes down. At the bottom is the Hall of the Fallen, with plaques for those who
+  went down and lost, the Roll of the Fallen, and the champions' plaque across from it. Through its great arch is
+  the Heartwell: a domed arena forty-four blocks across, with eight pillars to fight round, the heart of the star
+  hung over its seal, and Vaelor's throne. Step in and the way is barred behind you, a war horn sounds, **Vaelor's
+  Theme** starts (an original track made for SparBot, 96 seconds, looping), and Vaelor the Unbroken rises with his
+  name on the screen and a boss bar. You both get the same kit (netherite, sword, axe, shield, bow, pearls, golden
+  apples, two totems; your own inventory is kept safe and given back), and he is the strongest bot there is. He is
+  mortal, with nothing you don't have. He talks as the fight goes. Beat him and he thanks you: his blade
+  *Oathkeeper*, the *Champion's Laurel*, thirty levels, your name on the plaques in the Hall of Champions and the Hall
+  of the Fallen, and the news to everyone online. Lose and he sends you back up to train.
+- **Discoveries with rewards.** The Hollow Crown has its own advancement tab: stepping under the stands, the six
+  landmark halls, the Lower Door, the Hall of the Fallen, four secret vaults, 25 and 100 different halls walked,
+  beating Vaelor, and finding every secret. Each one comes with a fanfare, experience and a relic of the story
+  (Tell's Quill, Corvin's Lantern, Imre's Candle, the Lower Key, a Champion's Coin, the Fragments of Aster...), and
+  is remembered for you.
+- **Four secret vaults**, sealed behind cracked walls on landings of the Third Gallery's stair halls: crouch before
+  the stone to open one. Tell's Hidden Study, the Masons' Vault (with their model of the bowl), the Seventh Seat
+  and Vaelor's Armoury, each with a page of the story.
+- **A simpler story with an ending.** Vaelor held the star's heart shut himself and swore to stay below until a
+  champion could beat him; two hundred tried. The books are shorter and lead straight on: the Guide, the Archive,
+  the Warden, the Cells (and the Chapel for a blessing), then down.
+- **Every hall its own.** Twenty-eight kinds of hall instead of sixteen (new: observatories with an orrery,
+  forges with a crucible, beast pens, looms, ledger rooms, a ward, trophy halls, apiaries, betting halls, engine
+  rooms with a great clock, mushroom cellars, council chambers, salons, conservatories...), each in one of twelve
+  woods and fourteen stones, two colours and six kinds of light, with its own floor pattern, wall treatment,
+  ceiling, chandeliers, a head (altar, hearth, stage, forge, throne...) and a unique name and inscription. A few
+  are long abandoned. Neighbours are never the same kind.
+- **Stair halls instead of spiral stairs.** The spirals that blocked the corridors are gone: every Gallery has
+  four stair halls at the diagonals, each with a lobby and a switchback stair to the top level. Halls open only
+  onto corridors (no doors between halls), and levels no corridor reaches are solid.
+- **Water stays put.** Water is set after everything else, every pool and fountain is walled in all round, and
+  the floating islands have springs instead of waterfalls.
+- Two steps down into each concourse at the aisles, so the seats below are a step away instead of two.
+- A GameTest walks the colosseum's plans like a player: every hall and stair level reachable, the way down to
+  the Heartwell, and no water that could leak.
+- Worlds with an older colosseum rebuild it on the next visit.
+
 ## 1.0.2
 
 - **The Hollow Crown: a mystery inside the Celestial Colosseum.** The colosseum has a story now, told in books

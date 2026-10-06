@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:compass"
+    },
+    "title": {
+      "text": "Seeker of the Hollow Crown"
+    },
+    "description": {
+      "text": "Find all six landmarks and all four secret vaults"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

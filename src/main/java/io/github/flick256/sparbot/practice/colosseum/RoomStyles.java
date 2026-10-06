@@ -605,7 +605,7 @@ final class RoomStyles {
 		if (x.fs < 1.5 && x.flat && x.roll(31) % 4 == 0 && x.air(x.top - x.feet)) {
 			x.r.put(x.top, st(Blocks.COBWEB));
 		}
-		if (x.roll(37) % 7 == 0 && !x.keep && x.air(0)) {
+		if (x.roll(37) % 23 == 0 && x.fs < 2.5 && !x.keep && x.air(0)) {
 			x.put(0, st(Blocks.COBWEB));
 		}
 		if (x.roll(41) % 5 == 0) {

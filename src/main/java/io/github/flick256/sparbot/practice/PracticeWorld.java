@@ -186,6 +186,12 @@ public final class PracticeWorld {
 	}
 
 	private final io.github.flick256.sparbot.practice.colosseum.ColosseumGames games = new io.github.flick256.sparbot.practice.colosseum.ColosseumGames();
+	/** The colosseum's secrets and the fight in the Heartwell. */
+	private final io.github.flick256.sparbot.practice.colosseum.HollowCrown crown = new io.github.flick256.sparbot.practice.colosseum.HollowCrown();
+
+	public io.github.flick256.sparbot.practice.colosseum.HollowCrown crown() {
+		return crown;
+	}
 
 	/** Waves and king of the hill in the Grand Bowl. */
 	public io.github.flick256.sparbot.practice.colosseum.ColosseumGames games() {
@@ -267,6 +273,9 @@ public final class PracticeWorld {
 		ColosseumWorks w = colosseum(level);
 		w.tick();
 		games.tick(server);
+		if (w.ready()) {
+			crown.tick(server, level);
+		}
 		if (w.ready() && server.getTickCount() % 100 == 0) {
 			PracticeLabels.clear(level, OLD_LABELS);
 		}

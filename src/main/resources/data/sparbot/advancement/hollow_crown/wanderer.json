@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:map"
+    },
+    "title": {
+      "text": "Wanderer of the Galleries"
+    },
+    "description": {
+      "text": "Walk through 25 different halls under the stands"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

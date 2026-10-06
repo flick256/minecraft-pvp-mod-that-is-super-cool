@@ -159,6 +159,10 @@ final class StairHall {
 			for (int k = 0; k < top; k++) {
 				if (iw == 2) {
 					put(c, F + STOREY * k + 5, SEA_LANTERN);
+				} else if (iw == 1) {
+					put(c, F + STOREY * k + 1, SEA_LANTERN);
+				} else if (iw == 3) {
+					put(c, F + STOREY * k + 3, Blocks.GILDED_BLACKSTONE.defaultBlockState());
 				}
 			}
 			if (iw == 0) {
@@ -175,6 +179,10 @@ final class StairHall {
 				int f = F + STOREY * k;
 				fill(c, f - 1, f + iw - 1, BRICKS);
 				put(c, f + iw, step(av < 1.75 ? Blocks.PURPUR_STAIRS : flight, away));
+				if (iw == 2 && Math.abs(av - 2.25) < 0.5) {
+					// A lantern hung under the flight above.
+					put(c, f + 6, LANTERN.setValue(LanternBlock.HANGING, true));
+				}
 			}
 			put(c, topFeet - 1, POLISHED);
 			return;
@@ -188,6 +196,9 @@ final class StairHall {
 			} else {
 				put(c, f + 3 + j, BRICKS);
 				put(c, f + 4 + j, step(av < 1.75 ? Blocks.PURPUR_STAIRS : flight, toward));
+				if (j == 2 && k + 1 < top && Math.abs(av - 2.25) < 0.5) {
+					put(c, f + 12, LANTERN.setValue(LanternBlock.HANGING, true));
+				}
 			}
 		}
 		if (j < 3 && av > 1.75) {
@@ -219,7 +230,7 @@ final class StairHall {
 		}
 		Direction toLobby = lobbyInner(band) ? r.in : r.out;
 		int top = top(band);
-		if (w >= -1 && r.av <= 0.75) {
+		if (w >= -1 && r.av < 0.5) {
 			// On the wall between the flights: which floor this is.
 			String here = "LEVEL " + (r.k + 1);
 			String up = r.k < top ? "up: level " + (r.k + 2) : "the top";
@@ -229,8 +240,13 @@ final class StairHall {
 			r.put(r.feet + 3, colours[quarter].setValue(WallBannerBlock.FACING, r.awayFromSide));
 		} else if (r.side && Math.floorMod(r.iu, 2) == 0) {
 			r.put(r.feet, step(Blocks.DARK_OAK_STAIRS, r.towardSide));
+			r.put(r.feet + 2, Blocks.WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.WallTorchBlock.FACING, r.awayFromSide));
 		} else if (r.side) {
 			r.put(r.feet, Blocks.POTTED_FERN.defaultBlockState());
+		} else if (r.av >= 0.5 && r.av < 1.5 && w >= -1) {
+			// Lamp posts either side of the way up.
+			r.put(r.feet, Blocks.POLISHED_BLACKSTONE_WALL.defaultBlockState());
+			r.put(r.feet + 1, LANTERN);
 		}
 		if (band == 2 && r.k == Vaults.LEVEL[quarter] && r.side && r.v > 0 && w >= -3 && w < -2) {
 			// The rumour that leads to the vault on the landing above.

@@ -273,6 +273,10 @@ final class Landmarks {
 			r.put(r.feet, Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS.defaultBlockState());
 		} else if (r.outer && r.iv == 0) {
 			r.sign(r.feet + 2, r.in, DyeColor.PURPLE, true, "VAELOR THE", "UNBROKEN", "1000 - 0", "(still below)");
+		} else if (r.outer && r.iv == -2) {
+			// The newest plaque: whoever beats Vaelor (see HollowCrown).
+			ColosseumLore.champions(r.c, r.dx, r.feet + 2, r.dz, Blocks.DARK_OAK_WALL_SIGN.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.WallSignBlock.FACING, r.in));
 		} else if (r.outer && r.iv % 2 == 1) {
 			r.put(r.feet + 3, (r.iv > 0 ? Blocks.WALL_BANNER.yellow() : Blocks.WALL_BANNER.black()).defaultBlockState()
 				.setValue(WallBannerBlock.FACING, r.in));

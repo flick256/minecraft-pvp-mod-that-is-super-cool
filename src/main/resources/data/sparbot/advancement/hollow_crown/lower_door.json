@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/cells",
+  "display": {
+    "icon": {
+      "id": "minecraft:purpur_stairs"
+    },
+    "title": {
+      "text": "The Lower Door"
+    },
+    "description": {
+      "text": "Take the stair down under the field"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

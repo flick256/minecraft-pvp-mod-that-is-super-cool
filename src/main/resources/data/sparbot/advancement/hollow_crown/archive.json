@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:feather"
+    },
+    "title": {
+      "text": "The Archive of the Founders"
+    },
+    "description": {
+      "text": "Find the Archive and read Tell's Chronicle (Second Gallery, sector 3)"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

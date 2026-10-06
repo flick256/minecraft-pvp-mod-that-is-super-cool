@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:amethyst_shard"
+    },
+    "title": {
+      "text": "The Masons' Vault"
+    },
+    "description": {
+      "text": "Find the secret vault behind the south-west stair"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": true
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}

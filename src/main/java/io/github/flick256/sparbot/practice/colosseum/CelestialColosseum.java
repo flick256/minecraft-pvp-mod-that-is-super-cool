@@ -33,7 +33,13 @@ public final class CelestialColosseum {
 	public static final int REACH = PracticeLayout.GRAND_REACH;
 	static final int S = PracticeLayout.SURFACE;
 	static final int F = PracticeLayout.FLOOR;
-	public static final int Y0 = S - 12;
+	/** The lowest block of the blueprint: deep enough for the Heartwell under the field. */
+	public static final int Y0 = S - 40;
+	/**
+	 * Where the blueprint's own ground starts. Below it a column holds nulls ("leave the world's stone as it is"),
+	 * except where the Heartwell is dug out (see {@link #deep}).
+	 */
+	static final int BASE = S - 12;
 	public static final int Y1 = 316;
 	static final int H = Y1 - Y0 + 1;
 
@@ -121,7 +127,8 @@ public final class CelestialColosseum {
 
 	/**
 	 * Every block of the column at (dx, dz) from the centre, from {@link #Y0} to {@link #Y1}, or null where
-	 * nothing is built (the desert is left as it is).
+	 * nothing is built (the desert is left as it is). Below {@link #BASE} a column holds nulls (left as it is)
+	 * except where the Heartwell is dug out.
 	 */
 	public static BlockState[] column(int dx, int dz) {
 		double d = Math.sqrt(dx * dx + dz * dz);
@@ -134,7 +141,7 @@ public final class CelestialColosseum {
 			return null;
 		}
 		BlockState[] c = new BlockState[H];
-		Arrays.fill(c, AIR);
+		Arrays.fill(c, BASE - Y0, H, AIR);
 		ground(c);
 		double ang = Math.atan2(dz, dx);
 		double deg = Math.toDegrees(ang);
@@ -200,14 +207,27 @@ public final class CelestialColosseum {
 		}
 	}
 
+	/** Fills from {@code y0} to {@code y1}, never below {@link #BASE} (the world's own stone is left alone down there). */
 	static void fill(BlockState[] c, int y0, int y1, BlockState state) {
+		for (int y = Math.max(y0, BASE); y <= Math.min(y1, Y1); y++) {
+			c[y - Y0] = state;
+		}
+	}
+
+	/** Fills from {@code y0} to {@code y1}, below {@link #BASE} too: for what is dug out under the field. */
+	static void deep(BlockState[] c, int y0, int y1, BlockState state) {
 		for (int y = Math.max(y0, Y0); y <= Math.min(y1, Y1); y++) {
 			c[y - Y0] = state;
 		}
 	}
 
+	/** The block at {@code y} (the world's stone where the blueprint leaves the deep ground alone). */
 	static BlockState at(BlockState[] c, int y) {
-		return y >= Y0 && y <= Y1 ? c[y - Y0] : AIR;
+		if (y < Y0 || y > Y1) {
+			return AIR;
+		}
+		BlockState s = c[y - Y0];
+		return s == null ? STONE : s;
 	}
 
 	/** The flat desert's own layers. */

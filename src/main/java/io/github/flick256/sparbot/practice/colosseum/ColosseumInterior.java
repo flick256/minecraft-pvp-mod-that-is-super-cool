@@ -216,8 +216,9 @@ final class ColosseumInterior {
 		if (StairHall.is(band, sector)) {
 			return StairHall.door(band, k, innerSide);
 		}
-		// (The Inner Ring has only a ground floor: above it, a sliver of ledge at most.)
-		return !(band == 0 && innerSide && k > 0);
+		// (The Inner Ring has only a ground floor: above it, a sliver of ledge at most. And the Cells open only
+		// onto the Middle Ring, so you come in facing the stair down, not hemmed in behind its well.)
+		return !(band == 0 && innerSide && (k > 0 || Landmarks.at(band, sector, k) == Landmarks.CELLS));
 	}
 
 	// --- Gate passages and the Grand Stairs ---
@@ -406,6 +407,27 @@ final class ColosseumInterior {
 			String[] name = name(beyond, sector, k, outerEdge);
 			wallSign(c, dx, feet + 3, dz, away, DyeColor.YELLOW, true, "Sector " + (sector + 1), name[0], name[1],
 				"Gallery " + ColosseumLore.ROMAN[beyond] + ", L" + (k + 1));
+		}
+		// Halfway between doors in the Middle and Outer Rings: the way to the nearest stair hall.
+		double halfW = SECTOR / 2 * Math.PI / 180 * d;
+		if (ring > 0 && outerEdge && v > 0 && halfW - v < 0.6 && halfW - v >= 0 && ceiling - feet > 3) {
+			int best = 0;
+			int sunwise = 0;
+			for (int s : StairHall.SECTORS) {
+				int ahead = Math.floorMod(s - sector, 48);
+				int behind = Math.floorMod(sector - s, 48);
+				if (best == 0 || Math.min(ahead, behind) < best) {
+					best = Math.max(1, Math.min(ahead, behind));
+					sunwise = ahead <= behind ? s : -s - 1;
+				}
+			}
+			int target = sunwise >= 0 ? sunwise : -sunwise - 1;
+			// Read facing the outer wall, sunwise is to the right.
+			String arrow = sunwise >= 0 ? "STAIRS \u2192" : "\u2190 STAIRS";
+			if (target == sector) {
+				arrow = "STAIRS HERE";
+			}
+			wallSign(c, dx, feet + 2, dz, away, DyeColor.WHITE, true, arrow, StairHall.name(target)[0], best <= 1 ? "next sector" : best + " sectors", "");
 		}
 	}
 

@@ -156,17 +156,23 @@ down to bedrock) with a hub and an arena for each kind of fight.
   run (see below).
 - **The Celestial Colosseum** (south of the hub, through the purple gateway): six hundred blocks across. The
   Grand Bowl (a field round a compass rose, three tiers of seats over a hundred blocks high, an imperial box,
-  storeys of rooms and corridors under the seats, the Grand Stairs and spiral stairs up to the concourses, a crown wall of
+  storeys of halls and corridors under the seats, the Grand Stairs up to the first concourse, a crown wall of
   glowing arches and sixteen spired towers, and the Great Crystal floating overhead), a plaza, a lit moat and
   cherry gardens; four satellite stadiums (Fire, Frost, Grove and Void) to fight in too; seventy-block knights
   guarding the bridges; and in the sky a dragon, a phoenix, a sky whale, jellyfish, a halo, a citadel and
-  waterfall islands. It is built in the background the first time (a few minutes; progress shows on your
+  floating islands. It is built in the background the first time (a few minutes; progress shows on your
   action bar and its pad opens when it is done), and once every player has left, the parts anyone was in
   are put back. In its Grand Bowl: **waves** (two beginners, three intermediates, a pro and two advanced, a
   Demon and two pros) and **king of the hill** (hold the heart of the compass rose for sixty seconds).
-  Under its stands lies a whole hidden world to explore: three rings of corridors, 144 sectors of named halls of
-  sixteen kinds, six landmark halls, and a mystery, the Hollow Crown, told in books and inscriptions. Start with
-  the Visitor's Guide on the lectern in any gate passage; the trail ends somewhere beneath the field.
+  Under its stands lies a whole hidden world to explore: three rings of corridors, stair halls at the four
+  diagonals of each Gallery, and a thousand halls of twenty-eight kinds (feast halls, observatories, forges,
+  beast pens, apiaries, betting halls, engine rooms, conservatories...), no two alike, each with its own name
+  and inscription. Six landmark halls and four secret vaults (crouch at a cracked wall in a stair hall) tell
+  the story of the Hollow Crown; start with the Visitor's Guide on the lectern in any gate passage. Every
+  secret you find is an advancement (its own tab) with a relic, and the trail ends beneath the field, in the
+  **Heartwell**: step into it and Vaelor the Unbroken rises from his throne, to his own theme, for a boss fight
+  in a kit you both get. He is a bot like any other: mortal, finite items, human limits. Beat him and you are
+  the Champion of the Crown: his blade, the laurel, and your name on the wall.
 
 Use it in any world: `/sparbot practice` (or the menu's Practice tab) takes you there, and the first visit
 builds it (a few seconds). To make a world that *is* the practice world, pick the **SparBot Practice**

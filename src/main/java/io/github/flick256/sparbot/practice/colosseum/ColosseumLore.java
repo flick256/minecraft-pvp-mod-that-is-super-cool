@@ -2,6 +2,7 @@ package io.github.flick256.sparbot.practice.colosseum;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -71,6 +72,66 @@ final class ColosseumLore {
 		LORE.put(key(dx, y, dz), book);
 	}
 
+	/** The plaques that list the champions who beat Vaelor (their text comes from {@link HollowCrown}). */
+	private static final Object CHAMPIONS = new Object();
+	static final Set<Long> CHAMPION_PLAQUES = ConcurrentHashMap.newKeySet();
+
+	/** Puts a champions' plaque in the blueprint. */
+	static void champions(BlockState[] c, int dx, int y, int dz, BlockState state) {
+		CelestialColosseum.put(c, y, state);
+		LORE.put(key(dx, y, dz), CHAMPIONS);
+		CHAMPION_PLAQUES.add(key(dx, y, dz));
+	}
+
+	/**
+	 * Works out the columns that hold the champions' plaques (the back wall of the Hall of Champions and the Hall
+	 * of the Fallen), so they are known even when the colosseum was built before the server last started.
+	 */
+	static void findChampionPlaques() {
+		double[] champions = {(46 + 0.5) * ColosseumInterior.SECTOR, ColosseumInterior.ROOMS[2][1]};
+		double a = Math.toRadians(champions[0]);
+		int cx = (int) Math.round(Math.cos(a) * champions[1]);
+		int cz = (int) Math.round(Math.sin(a) * champions[1]);
+		for (int dx = cx - 12; dx <= cx + 12; dx++) {
+			for (int dz = cz - 12; dz <= cz + 12; dz++) {
+				double d = Math.hypot(dx, dz);
+				if (d > champions[1] - 1.5 && d <= champions[1] && ColosseumInterior.sector(Math.toDegrees(Math.atan2(dz, dx))) == 46) {
+					CelestialColosseum.column(dx, dz);
+				}
+			}
+		}
+		double along = Heartwell.STAIR_FOOT - 2 + 0.5;
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				int x = (int) Math.round(Heartwell.COS * along - Heartwell.SIN * 4) + dx;
+				int z = (int) Math.round(Heartwell.SIN * along + Heartwell.COS * 4) + dz;
+				CelestialColosseum.column(x, z);
+			}
+		}
+	}
+
+	/** Writes the champions' plaques again (after someone new beats Vaelor). */
+	static void rewriteChampions(ServerLevel level) {
+		for (long k : CHAMPION_PLAQUES) {
+			int dx = (int) (k >> 42) - 1024;
+			int dz = (int) (k >> 21 & 0x1fffff) - 1024;
+			int y = (int) (k & 0x1fffff) - 1024;
+			apply(level, new BlockPos(CelestialColosseum.CX + dx, y, CelestialColosseum.CZ + dz), dx, y, dz);
+		}
+	}
+
+	private static void write(SignBlockEntity sign, String[] lines, DyeColor color, boolean glow) {
+		Component[] msg = new Component[4];
+		for (int i = 0; i < 4; i++) {
+			msg[i] = Component.literal(i < lines.length ? lines[i] : "");
+		}
+		SignText text = new SignText(msg, msg, color, glow);
+		sign.setText(text, true);
+		sign.setText(text, false);
+		sign.setWaxed(true);
+		sign.setChanged();
+	}
+
 	/** Writes the sign's text or puts the book on the lectern just placed at {@code pos} (blueprint coordinates dx, y, dz). */
 	static void apply(ServerLevel level, BlockPos pos, int dx, int y, int dz) {
 		Object lore = LORE.get(key(dx, y, dz));
@@ -78,16 +139,10 @@ final class ColosseumLore {
 			return;
 		}
 		BlockEntity be = level.getBlockEntity(pos);
-		if (lore instanceof SignLore s && be instanceof SignBlockEntity sign) {
-			Component[] msg = new Component[4];
-			for (int i = 0; i < 4; i++) {
-				msg[i] = Component.literal(s.lines()[i]);
-			}
-			SignText text = new SignText(msg, msg, s.color(), s.glow());
-			sign.setText(text, true);
-			sign.setText(text, false);
-			sign.setWaxed(true);
-			sign.setChanged();
+		if (lore == CHAMPIONS && be instanceof SignBlockEntity sign) {
+			write(sign, HollowCrown.plaque(), DyeColor.YELLOW, true);
+		} else if (lore instanceof SignLore s && be instanceof SignBlockEntity sign) {
+			write(sign, s.lines(), s.color(), s.glow());
 		} else if (lore instanceof Book b && be instanceof LecternBlockEntity lectern) {
 			ItemStack stack = new ItemStack(Items.WRITTEN_BOOK);
 			stack.set(DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(Filterable.passThrough(b.title()), b.author(), 0,

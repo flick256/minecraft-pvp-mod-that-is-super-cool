@@ -1,0 +1,28 @@
+{
+  "parent": "sparbot:hollow_crown/fallen",
+  "display": {
+    "icon": {
+      "id": "minecraft:netherite_sword"
+    },
+    "title": {
+      "text": "Unbroken No More"
+    },
+    "description": {
+      "text": "Beat Vaelor the Unbroken in the Heartwell"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "found"
+    ]
+  ]
+}
