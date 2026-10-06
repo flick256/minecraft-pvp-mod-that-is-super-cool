@@ -62,6 +62,11 @@ public final class CartTactic implements Tactic {
 	private static final double FIRE_NEAR_CART = 1.6;
 	/** Steadier than the bow's short draw: the bolt has to go through one block of fire. */
 	private static final float CROSSBOW_TOLERANCE = 2.5F;
+	/**
+	 * How far a practised player backs off from their own cart before setting it off when it would kill them
+	 * from where they stand (a crossbow cart's blast does at four blocks, even through netherite).
+	 */
+	static final double IGNITE_FROM = 8.0;
 	private static final Ballistics.Projectile ARROW = new Ballistics.Projectile("arrow (short draw)", ARROW_SPEED, 0.05, 0.99,
 		Ballistics.Order.MOVE_DRAG_GRAVITY, Ballistics.LOOK_VECTOR);
 
@@ -189,11 +194,16 @@ public final class CartTactic implements Tactic {
 
 		Optional<Vec3> cart = c.world.tntCarts().stream()
 			.filter(p -> horizontal(p, t.position()) <= BlockPlay.NEAR_TARGET + 0.5 && p.distanceTo(eye) <= SHOOT_RANGE
-				&& !opponentInTheWay(c, p) && BlockPlay.worth(c, p, power, skill))
+				&& !opponentInTheWay(c, p) && (own(c, p) || horizontal(p, self.position()) > horizontal(p, t.position()))
+				&& BlockPlay.worth(c, p, power, skill, IGNITE_FROM))
 			.min(Comparator.comparingDouble(p -> horizontal(p, t.position())));
 		if (cart.isPresent()) {
 			if (how == Igniter.CROSSBOW_FIRE) {
-				return throughFire(c, cart.get());
+				return throughFire(c, cart.get(), power, skill);
+			}
+			if (tooClose(c, cart.get(), power, skill)) {
+				step = "back off";
+				return Movement.awayFrom(c, cart.get(), cart.get());
 			}
 			step = "shoot";
 			return shoot(c, cart.get().add(new Vec3(0, CART_MID, 0)));
@@ -207,7 +217,7 @@ public final class CartTactic implements Tactic {
 		int cartSlot = inv.hotbarSlot(ItemKind.TNT_MINECART);
 		Optional<BlockSpot> rail = cartSlot < 0 ? Optional.empty() : c.world.rails().stream()
 			.filter(r -> r.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && r.y() + BlockPlay.RAIL_HEIGHT < eye.y()
-				&& BlockPlay.worth(c, center(r, 0), power, skill))
+				&& BlockPlay.worth(c, center(r, 0), power, skill, IGNITE_FROM))
 			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(ahead)));
 		if (rail.isPresent()) {
 			step = "place cart";
@@ -221,7 +231,7 @@ public final class CartTactic implements Tactic {
 			.filter(s -> {
 				// Where they are going, but not under them now (they would ride the cart away).
 				return s.horizontalDistanceTo(ahead) <= BlockPlay.NEAR_TARGET && s.horizontalDistanceTo(t.position()) >= 0.9 && s.y() + 1 < eye.y()
-					&& BlockPlay.worth(c, center(s, 1), power, skill);
+					&& BlockPlay.worth(c, center(s, 1), power, skill, IGNITE_FROM);
 			})
 			.min(Comparator.comparingDouble(s -> s.horizontalDistanceTo(ahead)));
 		if (spot.isPresent()) {
@@ -258,7 +268,17 @@ public final class CartTactic implements Tactic {
 	 * The crossbow way with a cart down: fire on the ground between the bot and the cart (one flint and
 	 * steel click), then a loaded crossbow fired through the flames at the bottom of the cart.
 	 */
-	private Inputs throughFire(BrainContext c, Vec3 cart) {
+	/** The bot's own cart, put down a moment ago (an enemy's cart nearer the bot than its opponent is knocked out instead, see DefuseTactic). */
+	static boolean own(BrainContext c, Vec3 cart) {
+		return c.memory.ownCart != null && c.observation.tick() - c.memory.ownCartAt < 200 && horizontal(cart, c.memory.ownCart) < 1.2;
+	}
+
+	/** Whether setting the cart off from here would pop or kill the bot (and it knows better than to). */
+	static boolean tooClose(BrainContext c, Vec3 cart, double power, double skill) {
+		return skill >= 0.4 && BlockPlay.selfDamage(c, cart, power) >= c.self.health() + c.self.absorption();
+	}
+
+	private Inputs throughFire(BrainContext c, Vec3 cart, double power, double skill) {
 		SelfState self = c.self;
 		InventoryState inv = self.inventory();
 		Vec3 eye = self.eyePosition();
@@ -276,6 +296,11 @@ public final class CartTactic implements Tactic {
 			}
 			step = "light";
 			return BlockPlay.clickTop(c, ground.get(), 1.0, flintSlot(inv));
+		}
+		if (tooClose(c, cart, power, skill)) {
+			// Fire lit: back away along the line, so the shot still goes through it, until the blast is survivable.
+			step = "back off";
+			return Movement.awayFrom(c, cart, point);
 		}
 		int loaded = loadedCrossbow(inv);
 		if (loaded < 0) {

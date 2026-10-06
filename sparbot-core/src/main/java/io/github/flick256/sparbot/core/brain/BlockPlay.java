@@ -184,15 +184,39 @@ final class BlockPlay {
 	 * themselves up.
 	 */
 	static boolean worth(BrainContext c, Vec3 center, double power, double skill) {
+		return worth(c, center, power, skill, 0);
+	}
+
+	/**
+	 * {@link #worth}, for a blast the bot sets off from range: it backs off to at least {@code from} blocks
+	 * (along the line from the blast to where it stands) before setting it off, so that is where its own
+	 * share is judged.
+	 */
+	static boolean worth(BrainContext c, Vec3 center, double power, double skill, double from) {
+		Vec3 self = backedOff(c.self.position(), center, from);
 		double toTarget = Explosions.rawDamage(center, c.seen().position(), power);
-		double toSelf = Explosions.rawDamage(center, c.self.position(), power);
+		double toSelf = Explosions.rawDamage(center, self, power);
 		double maxSelfShare = 1.25 - 0.35 * skill;
 		if (toTarget < 12.0 || toSelf > toTarget * maxSelfShare) {
 			return false;
 		}
 		// A practised player never sets off the blast that would pop or kill them (they read their health
 		// and armor); a beginner does.
-		return skill < 0.4 || selfDamage(c, center, power) < c.self.health() + c.self.absorption();
+		return skill < 0.4 || Explosions.afterArmor(toSelf, c.self.inventory().armor()) < c.self.health() + c.self.absorption();
+	}
+
+	/** Where {@code self} ends up after backing away from {@code center} to at least {@code from} blocks (level with it). */
+	static Vec3 backedOff(Vec3 self, Vec3 center, double from) {
+		double dx = self.x() - center.x();
+		double dz = self.z() - center.z();
+		double d = Math.sqrt(dx * dx + dz * dz);
+		if (d >= from) {
+			return self;
+		}
+		if (d < 1e-6) {
+			return new Vec3(center.x() + from, self.y(), center.z());
+		}
+		return new Vec3(center.x() + dx / d * from, self.y(), center.z() + dz / d * from);
 	}
 
 	/** What a blast of {@code power} at {@code center} would take off the bot, through its armor. */

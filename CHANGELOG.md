@@ -37,6 +37,10 @@ The version is in the jar's name, the menu's title and the server log ("SparBot 
 - Bots scoop up your water and lava at a human pace: a source lying around has to be noticed first (reaction
   time plus a moment: about 0.45 s for a Demon, 0.7 s for an advanced bot) and each scoop is followed by a
   pause (0.5 s for a Demon, about 1 s for an advanced bot). Lava at their own feet still goes at once.
+- Crossbow carts: a cart whose blast would kill the bot from where it stands (a crossbow cart's does at four
+  blocks, even through netherite) is still placed: the bot lights the fire, backs off along the line and
+  shoots from where it survives. An enemy's cart nearer the bot than its opponent is knocked out, not used.
+- The whole GameTest suite (134 tests) and the client GameTest pass.
 - Worlds built by 0.8 are rebuilt on the next visit (the old colosseum's ground is cleared back to desert).
 
 ## 0.8.1

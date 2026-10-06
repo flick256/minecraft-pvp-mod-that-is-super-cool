@@ -34,6 +34,7 @@ public class CartGameTests {
 			helper.assertTrue(seen[1], "a TNT minecart was placed\n" + watch.report());
 			helper.assertTrue(seen[2], "an arrow was shot\n" + watch.report());
 			helper.assertTrue(bot.stats().blastHits() > 0, "the cart's blast hurt the opponent\n" + watch.report());
+			helper.assertTrue(body.isAlive(), "the bot backed off far enough to live through its own blast\n" + watch.report());
 			SparBot.LOGGER.info("Cart test: {}", bot.stats().summary());
 			TestSupport.remove(bot, target);
 		});
@@ -71,13 +72,26 @@ public class CartGameTests {
 		}));
 	}
 
-	/** PvPHQ's high tier way: rail, cart, fire lit next to it with flint and steel, a loaded crossbow shot through the fire. */
-	@GameTest(maxTicks = 500, padding = 24)
+	/**
+	 * PvPHQ's high tier way: rail, cart, fire lit next to it with flint and steel, then (the blast would kill
+	 * it at four blocks) back off along the line and shoot a loaded crossbow through the fire. A long lane, so
+	 * there is room to back off.
+	 */
+	@GameTest(maxTicks = 600, padding = 32)
 	public void botSetsACartOffWithACrossbowThroughFire(GameTestHelper helper) {
-		TestSupport.arena(helper);
-		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "XbowCarter", 1.5, 1, 3.5, -90, "pro", "pvphq_cart_high"));
+		for (int x = 0; x < 20; x++) {
+			for (int z = 0; z < 8; z++) {
+				helper.setBlock(x, 0, z, net.minecraft.world.level.block.Blocks.STONE);
+				if (x == 0 || z == 0 || x == 19 || z == 7) {
+					for (int y = 1; y <= 3; y++) {
+						helper.setBlock(x, y, z, net.minecraft.world.level.block.Blocks.GLASS);
+					}
+				}
+			}
+		}
+		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "XbowCarter", 12.5, 1, 3.5, -90, "pro", "pvphq_cart_high"));
 		BotPlayer body = TestSupport.body(bot);
-		Bot target = TestSupport.dummy(helper, "Victim", 5.5, 1, 3.5, 90, "pvphq_cart_high");
+		Bot target = TestSupport.dummy(helper, "Victim", 16.5, 1, 3.5, 90, "pvphq_cart_high");
 		bot.setAssignedTarget(TestSupport.body(target).getUUID());
 		int cartsBefore = body.getInventory().countItem(Items.TNT_MINECART);
 		boolean[] seen = new boolean[3];
@@ -97,6 +111,7 @@ public class CartGameTests {
 			helper.assertTrue(seen[1], "fire was lit\n" + watch.report());
 			helper.assertTrue(seen[2], "a crossbow bolt was shot\n" + watch.report());
 			helper.assertTrue(bot.stats().blastHits() > 0, "the cart's blast hurt the opponent\n" + watch.report());
+			helper.assertTrue(body.isAlive(), "the bot backed off far enough to live through its own blast\n" + watch.report());
 			SparBot.LOGGER.info("Crossbow cart test: {}", bot.stats().summary());
 			TestSupport.remove(bot, target);
 		});
