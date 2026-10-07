@@ -33,11 +33,11 @@ public final class CelestialColosseum {
 	public static final int REACH = PracticeLayout.GRAND_REACH;
 	static final int S = PracticeLayout.SURFACE;
 	static final int F = PracticeLayout.FLOOR;
-	/** The lowest block of the blueprint: deep enough for the Heartwell under the field. */
-	public static final int Y0 = S - 40;
+	/** The lowest block of the blueprint: deep enough for the Deep, Vaelor's cavern under the field (see {@link TheDeep}). */
+	public static final int Y0 = -60;
 	/**
 	 * Where the blueprint's own ground starts. Below it a column holds nulls ("leave the world's stone as it is"),
-	 * except where the Heartwell is dug out (see {@link #deep}).
+	 * except where the Deep is dug out (see {@link #deep}).
 	 */
 	static final int BASE = S - 12;
 	public static final int Y1 = 316;
@@ -183,6 +183,9 @@ public final class CelestialColosseum {
 		}
 		if (sat == null && d > PODIUM && d <= TIER3) {
 			ColosseumInterior.build(c, dx, dz, d, deg);
+		}
+		if (sat == null && TheDeep.near(d)) {
+			TheDeep.build(c, dx, dz, d, deg);
 		}
 		if (sat == null && Heartwell.near(d)) {
 			Heartwell.build(c, dx, dz, d, deg);
@@ -1121,7 +1124,9 @@ public final class CelestialColosseum {
 		return b instanceof WallBannerBlock || b instanceof LanternBlock || b == Blocks.PINK_PETALS || b == Blocks.END_ROD
 			|| b == Blocks.AMETHYST_CLUSTER || b == Blocks.IRON_CHAIN || b == Blocks.SHORT_GRASS || b == Blocks.ALLIUM
 			|| b == Blocks.LILY_OF_THE_VALLEY || b == Blocks.PINK_TULIP || b == Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE || b == Blocks.SOUL_FIRE
-			|| b == Blocks.FERN || b == Blocks.WATER || ColosseumInterior.attached(b);
+			|| b == Blocks.FERN || b == Blocks.WATER || b == Blocks.LAVA || b instanceof net.minecraft.world.level.block.PointedDripstoneBlock
+			|| b instanceof net.minecraft.world.level.block.CandleBlock || b instanceof net.minecraft.world.level.block.AbstractBannerBlock
+			|| ColosseumInterior.attached(b);
 	}
 
 	/** Where the hub pad lands you (south of the centre): on the south causeway, looking up at the great gate. */

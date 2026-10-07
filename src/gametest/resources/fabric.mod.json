@@ -8,6 +8,7 @@
 		"fabric-gametest": [
 			"io.github.flick256.sparbot.gametest.SparBotGameTests",
 			"io.github.flick256.sparbot.gametest.ColosseumGameTests",
+			"io.github.flick256.sparbot.gametest.DeepGameTests",
 			"io.github.flick256.sparbot.gametest.ItemGameTests",
 			"io.github.flick256.sparbot.gametest.CombatGameTests",
 			"io.github.flick256.sparbot.gametest.StyleGameTests",

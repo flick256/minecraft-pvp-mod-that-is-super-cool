@@ -51,8 +51,8 @@ import net.minecraft.resources.ResourceKey;
  * <li>stepping under the stands for the first time (the tab's root);</li>
  * <li>each of the six landmark halls, the Lower Door and the Hall of the Fallen;</li>
  * <li>each of the four secret vaults (crouch at the cracked wall to open one);</li>
- * <li>25 and 100 different halls walked through;</li>
- * <li>beating Vaelor (see {@link VaelorFight}), and finding every secret.</li>
+ * <li>twelve of the great halls walked through, and all twenty-four;</li>
+ * <li>beating Vaelor (see {@link DeepEncounter}), and finding every secret.</li>
  * </ul>
  * Champions who beat Vaelor go up on the plaques in the Hall of Champions and the Hall of the Fallen.
  */
@@ -72,9 +72,9 @@ public final class HollowCrown {
 		MASONS("vault_masons", "The Masons' Vault", "Every stone carries their mark", Items.AMETHYST_SHARD),
 		SEAT("vault_seat", "The Seventh Seat", "Vaelor was the seventh of the Seven", Items.AMETHYST_SHARD),
 		ARMOURY("vault_armoury", "Vaelor's Armoury", "He will not go easy", Items.AMETHYST_SHARD),
-		WANDERER("wanderer", "Wanderer of the Galleries", "Walk through 25 different halls", Items.MAP),
-		CARTOGRAPHER("cartographer", "Cartographer of the Crown", "Walk through 100 different halls", Items.SPYGLASS),
-		CHAMPION("champion", "Unbroken No More", "Beat Vaelor the Unbroken in the Heartwell", null),
+		WANDERER("wanderer", "Wanderer of the Galleries", "Walk through twelve of the great halls", Items.MAP),
+		CARTOGRAPHER("cartographer", "Cartographer of the Crown", "Walk through all twenty-four great halls", Items.SPYGLASS),
+		CHAMPION("champion", "Unbroken No More", "Beat Vaelor, the Unbroken, in the Deep", null),
 		SEEKER("seeker", "Seeker of the Hollow Crown", "Find every landmark and every vault", Items.COMPASS);
 
 		final String id;
@@ -98,6 +98,8 @@ public final class HollowCrown {
 		Map<String, Set<String>> found = new HashMap<>();
 		Map<String, Set<Integer>> halls = new HashMap<>();
 		List<String> champions = new ArrayList<>();
+		/** Vaelor's things a champion hasn't taken yet (item ids), kept for them. */
+		Map<String, List<String>> owed = new HashMap<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -105,15 +107,15 @@ public final class HollowCrown {
 	private static Record record = new Record();
 	private static boolean loaded;
 
-	private final VaelorFight fight = new VaelorFight(this);
+	private final DeepEncounter deep = new DeepEncounter(this);
 	/** How long each player has been crouched at a vault's cracked wall. */
 	private final Map<UUID, Integer> kneeling = new HashMap<>();
 
 	public HollowCrown() {
 	}
 
-	public VaelorFight fight() {
-		return fight;
+	public DeepEncounter deep() {
+		return deep;
 	}
 
 	/** Uses {@code dir} for the record (the server's config folder), reading it if it is there. */
@@ -163,6 +165,43 @@ public final class HollowCrown {
 		return new String[] {"CHAMPIONS OF", "THE CROWN", c.get(0), c.size() > 1 ? c.size() > 2 ? c.get(1) + " +" + (c.size() - 2) : c.get(1) : ""};
 	}
 
+	/** Notes that the player is owed these items (Vaelor's, until they take them). */
+	static synchronized void owe(UUID player, List<String> items) {
+		if (!loaded) {
+			load(Path.of("config", "sparbot"));
+		}
+		if (record.owed == null) {
+			record.owed = new HashMap<>();
+		}
+		List<String> mine = record.owed.computeIfAbsent(player.toString(), k -> new ArrayList<>());
+		mine.addAll(items);
+		save();
+	}
+
+	/** What the player is still owed. */
+	static synchronized List<String> owed(UUID player) {
+		if (record.owed == null) {
+			return List.of();
+		}
+		return List.copyOf(record.owed.getOrDefault(player.toString(), List.of()));
+	}
+
+	/** Takes one item off what the player is owed; false if it wasn't owed. */
+	static synchronized boolean unowe(UUID player, String item) {
+		if (record.owed == null) {
+			return false;
+		}
+		List<String> mine = record.owed.get(player.toString());
+		if (mine == null || !mine.remove(item)) {
+			return false;
+		}
+		if (mine.isEmpty()) {
+			record.owed.remove(player.toString());
+		}
+		save();
+		return true;
+	}
+
 	/** Puts a new champion's name up (once). */
 	static synchronized void crown(ServerLevel level, String name) {
 		record.champions.remove(name);
@@ -175,7 +214,7 @@ public final class HollowCrown {
 	// --- Each second: where everyone is ---
 
 	public void tick(MinecraftServer server, ServerLevel level) {
-		fight.tick(server, level);
+		deep.tick(server, level);
 		long now = server.getTickCount();
 		if (now % 5 == 0) {
 			vaults(level);
@@ -202,16 +241,18 @@ public final class HollowCrown {
 			&& ColosseumInterior.underside(d) > 0;
 		if (under) {
 			discover(p, level, Find.ROOT);
-			int band = ColosseumInterior.band(ColosseumInterior.ROOMS, d);
-			int k = Math.floorDiv(y - CelestialColosseum.F, ColosseumInterior.STOREY);
-			int sector = ColosseumInterior.sector(deg);
-			if (band >= 0 && k >= 0) {
-				int landmark = Landmarks.at(band, sector, k);
+			int hall = GrandHalls.at(dx, y, dz);
+			if (hall >= 0) {
+				int landmark = -1;
+				for (int i = 0; i < GrandHalls.LANDMARKS.length; i++) {
+					if (GrandHalls.LANDMARKS[i] == hall) {
+						landmark = i;
+					}
+				}
 				if (landmark >= 0) {
 					discover(p, level, LANDMARKS[landmark]);
-				} else if (!StairHall.is(band, sector)) {
-					walked(p, level, RoomStyles.index(band, sector, k, false));
 				}
+				walked(p, level, hall);
 			}
 		}
 		double a = dx * Heartwell.COS + dz * Heartwell.SIN;
@@ -230,7 +271,7 @@ public final class HollowCrown {
 		}
 	}
 
-	/** Counts a hall walked through, and rewards 25 and 100 of them. */
+	/** Counts a hall walked through, and rewards twelve of them and all of them. */
 	private void walked(ServerPlayer p, ServerLevel level, int hall) {
 		int n;
 		synchronized (HollowCrown.class) {
@@ -243,10 +284,10 @@ public final class HollowCrown {
 				save();
 			}
 		}
-		if (n >= 25) {
+		if (n >= 12) {
 			discover(p, level, Find.WANDERER);
 		}
-		if (n >= 100) {
+		if (n >= GrandHalls.HALLS.length) {
 			discover(p, level, Find.CARTOGRAPHER);
 		}
 	}
@@ -382,9 +423,9 @@ public final class HollowCrown {
 		{"Fragment of Aster", "A shard of the fallen star,", "from the Masons' Vault. (2 of 4)"},
 		{"Fragment of Aster", "A shard of the fallen star,", "from the Seventh Seat. (3 of 4)"},
 		{"Fragment of Aster", "A shard of the fallen star,", "from Vaelor's Armoury. (4 of 4)"},
-		{"Wanderer's Map", "Twenty-five halls walked.", "There are a thousand more."},
-		{"The Cartographer's Glass", "A hundred halls walked.", "You know the stands now."},
-		{}, {"Aster's Compass", "Every secret of the Hollow Crown found.", "It points to what's left: the Heartwell."}};
+		{"Wanderer's Map", "Twelve great halls walked.", "There are twelve more."},
+		{"The Cartographer's Glass", "Every great hall walked.", "You know the stands now."},
+		{}, {"Aster's Compass", "Every secret of the Hollow Crown found.", "It points to what's left: the Well, and him."}};
 
 	/** The discovery's relic: named, with its story, shining. */
 	static ItemStack relic(ServerPlayer p, Find find) {
@@ -405,35 +446,4 @@ public final class HollowCrown {
 		return stack;
 	}
 
-	/** Vaelor's blade, for whoever beats him. */
-	static ItemStack oathkeeper(ServerPlayer p) {
-		ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
-		enchant(p, sword, Enchantments.SHARPNESS, 5);
-		enchant(p, sword, Enchantments.UNBREAKING, 3);
-		enchant(p, sword, Enchantments.MENDING, 1);
-		sword.set(DataComponents.CUSTOM_NAME, Component.literal("Oathkeeper").withStyle(st -> st.withItalic(false).withColor(0xC77DFF).withBold(true)));
-		sword.set(DataComponents.LORE, new ItemLore(List.of(
-			Component.literal("Vaelor's blade. He held the heart of the").withStyle(st -> st.withItalic(true).withColor(ChatFormatting.GRAY)),
-			Component.literal("star shut with it for a hundred years.").withStyle(st -> st.withItalic(true).withColor(ChatFormatting.GRAY)),
-			Component.literal("Given to " + p.getPlainTextName() + ", Champion of the Crown").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GOLD)))));
-		sword.set(DataComponents.RARITY, Rarity.EPIC);
-		return sword;
-	}
-
-	/** The laurel crown of a champion. */
-	static ItemStack laurel(ServerPlayer p) {
-		ItemStack crown = new ItemStack(Items.GOLDEN_HELMET);
-		enchant(p, crown, Enchantments.PROTECTION, 4);
-		enchant(p, crown, Enchantments.UNBREAKING, 3);
-		crown.set(DataComponents.CUSTOM_NAME, Component.literal("The Champion's Laurel").withStyle(st -> st.withItalic(false).withColor(ChatFormatting.GOLD).withBold(true)));
-		crown.set(DataComponents.LORE, new ItemLore(List.of(
-			Component.literal("Worn by the one who beat Vaelor the Unbroken.").withStyle(st -> st.withItalic(true).withColor(ChatFormatting.GRAY)))));
-		crown.set(DataComponents.RARITY, Rarity.EPIC);
-		return crown;
-	}
-
-	private static void enchant(ServerPlayer p, ItemStack stack, ResourceKey<Enchantment> key, int level) {
-		Holder<Enchantment> holder = p.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
-		stack.enchant(holder, level);
-	}
 }

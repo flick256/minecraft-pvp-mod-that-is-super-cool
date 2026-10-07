@@ -7,5 +7,23 @@
         "stream": true
       }
     ]
+  },
+  "music.triumph": {
+    "subtitle": "subtitles.sparbot.music.triumph",
+    "sounds": [
+      {
+        "name": "sparbot:music/triumph",
+        "stream": true
+      }
+    ]
+  },
+  "crowd.roar": {
+    "subtitle": "subtitles.sparbot.crowd.roar",
+    "sounds": [
+      {
+        "name": "sparbot:crowd/roar",
+        "stream": false
+      }
+    ]
   }
 }

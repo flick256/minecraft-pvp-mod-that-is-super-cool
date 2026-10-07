@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "sparbot:unbroken"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "sparbot:unbroken"
+      }
+    ]
+  }
+}

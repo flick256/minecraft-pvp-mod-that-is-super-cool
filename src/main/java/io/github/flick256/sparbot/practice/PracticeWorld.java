@@ -281,6 +281,14 @@ public final class PracticeWorld {
 		}
 	}
 
+	/** Ends a fight with Vaelor (or the walk after one) at once: the server is stopping. */
+	public void stopDeep(MinecraftServer server) {
+		ServerLevel practice = isPracticeWorld(server) ? server.overworld() : server.getLevel(DIMENSION);
+		if (practice != null) {
+			crown.deep().stop(server, practice);
+		}
+	}
+
 	/** Pads: standing on one for half a second takes you to its arena (or from an arena's lobby back to the hub). */
 	public void tick(MinecraftServer server) {
 		ServerLevel practice = isPracticeWorld(server) ? server.overworld() : server.getLevel(DIMENSION);

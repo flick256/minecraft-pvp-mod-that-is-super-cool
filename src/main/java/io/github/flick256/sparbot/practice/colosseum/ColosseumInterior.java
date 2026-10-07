@@ -45,18 +45,16 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * The inside of the Grand Bowl's stands, under the seats: what visitors walk through to reach them, and
  * where the colosseum's story is hidden (see {@link ColosseumLore}).
  *
- * <p>The space under each tier is split into storeys every {@value #STOREY} blocks. Three ring corridors run
- * all the way round (the Inner Ring behind the podium, the Middle and Outer Rings under the concourses), and
- * between them lie the three Galleries, forty-eight sectors each, numbered sunwise from the east gate. Every
- * hall is one of sixteen kinds, named on a plaque over its door, with beams, sconces and its own furnishings;
- * six are landmarks of the story. Each gate's passage opens, under the first two tiers, into a great atrium
- * where the Grand Stairs climb in two flights and a bridge to the first concourse; spiral stairs in the Middle
- * and Outer Rings climb to both concourses.
+ * <p>Three ring corridors run all the way round at ground level (the Inner Ring behind the podium, the Middle and
+ * Outer Rings under the concourses), and between them lie the three Galleries, each of eight great halls (see
+ * {@link GrandHalls}): twenty-four rooms in all, each a single great space with its own story. Each gate's passage
+ * opens, under the first two tiers, into a great atrium where the Grand Stairs climb in two flights and a bridge to
+ * the first concourse.
  */
 final class ColosseumInterior {
-	/** Storey height: floor to floor. */
+	/** Old storey height (still used to size the space under the seats). */
 	static final int STOREY = 8;
-	/** Room sectors, in degrees (48 of them). */
+	/** Sectors, in degrees (48 of them), for whatever still counts in them. */
 	static final double SECTOR = 7.5;
 	/** The ring corridors and the room bands (the Galleries), by distance from the centre (between them, one-block walls). */
 	static final double[][] CORRIDORS = {{50.5, 56.5}, {80.5, 86.5}, {116.5, 122.5}};
@@ -130,95 +128,98 @@ final class ColosseumInterior {
 				return;
 			}
 		}
-		double sectorDeg = ((deg % SECTOR) + SECTOR) % SECTOR;
-		double v = (sectorDeg - SECTOR / 2) * Math.PI / 180 * d;
-		double halfW = SECTOR / 2 * Math.PI / 180 * d;
-		int corridor = band(CORRIDORS, d);
-		int rooms = band(ROOMS, d);
-		int sector = sector(deg);
-		boolean radialWall = rooms >= 0 && halfW - Math.abs(v) < 0.5;
-		boolean stair = rooms >= 0 && StairHall.is(rooms, sector);
-		double ru = rooms >= 0 ? d - ROOMS[rooms][0] : 0;
-		StairHall.Part part = stair ? StairHall.part(rooms, ru) : null;
-		for (int k = 0; storey(d, k); k++) {
-			int feet = F + STOREY * k;
-			int ceiling = storey(d, k + 1) ? feet + STOREY - 1 : u;
-			if (rooms >= 0 && k > TOP[rooms]) {
-				// Above the last level the corridors reach: solid, so no hall is ever shut in.
-				fill(c, feet - 1, u - 1, TILES);
-				break;
-			}
-			boolean inStair = stair && !radialWall && k <= StairHall.top(rooms);
-			if (inStair && part == StairHall.Part.CORE) {
-				if (k == 0) {
-					StairHall.core(c, dx, dz, rooms, sector, ru, v);
-				}
-				continue;
-			}
-			if (inStair && part == StairHall.Part.BEYOND && rooms != 1) {
-				if (k == 0) {
-					// Solid stone behind the stair (with the secret vaults in it).
-					fill(c, F, F + STOREY * (StairHall.top(rooms) + 1) - 2, BRICKS);
-					Vaults.build(c, dx, dz, rooms, sector, ru, v, halfW - 0.5);
-				}
-				continue;
-			}
-			if (k > 0) {
-				put(c, feet - 1, k % 2 == 0 ? TILES : POLISHED);
-			}
-			if (corridor < 0 && rooms < 0) {
-				// A ring wall: a door at the middle of each sector where there is floor on both sides (and the hall
-				// beyond wants one), windows either side of it.
-				fill(c, feet, ceiling - 1, BRICKS);
-				int outside = band(ROOMS, d + 1);
-				int inside = band(ROOMS, d - 1);
-				boolean open = storey(d - 1, k) && storey(d + 1, k) && (outside < 0 || door(outside, sector, k, true))
-					&& (inside < 0 || door(inside, sector, k, false));
-				if (Math.abs(v) <= 1.0 && open) {
-					fill(c, feet, feet + 2, AIR);
-					put(c, feet + 3, CHISELED);
-				} else if (open && Math.abs(v) >= 2.2 && Math.abs(v) <= 3.2 && ceiling - feet > 4) {
-					fill(c, feet + 1, feet + 3, PURPLE_GLASS);
-				}
-			} else if (radialWall) {
-				// The walls between halls: solid, so each hall opens only onto its corridors.
-				fill(c, feet, ceiling - 1, BRICKS);
-			} else if (corridor >= 0) {
-				corridor(c, dx, dz, d, deg, corridor, feet, ceiling, k, sector, v);
-			} else if (inStair && part == StairHall.Part.LOBBY) {
-				StairHall.lobby(new Room(c, dx, dz, ru, ROOMS[rooms][1] - ROOMS[rooms][0], v, halfW - 0.5, feet, ceiling, sector, rooms, k), rooms);
-			} else if (inStair && part == StairHall.Part.END) {
-				StairHall.end(c, feet, ceiling);
-				Vaults.door(c, rooms, sector, k, v);
-			} else if (inStair) {
-				// The annex behind the Second Gallery's stair, opening onto the Outer Ring.
-				double depth = ROOMS[rooms][1] - ROOMS[rooms][0] - ANNEX;
-				RoomStyles.room(new Room(c, dx, dz, ru - ANNEX, depth, v, halfW - 0.5, feet, ceiling, sector, rooms, k), true);
-			} else {
-				Room r = new Room(c, dx, dz, ru, ROOMS[rooms][1] - ROOMS[rooms][0], v, halfW - 0.5, feet, ceiling, sector, rooms, k);
-				int landmark = Landmarks.at(rooms, sector, k);
-				if (landmark >= 0) {
-					Landmarks.room(r, landmark);
-				} else {
-					RoomStyles.room(r, false);
-				}
-			}
+		if (band(ROOMS, d) >= 0) {
+			GrandHalls.build(c, dx, dz, d, deg, u);
+			return;
+		}
+		int ring = band(CORRIDORS, d);
+		if (ring >= 0) {
+			corridor(c, dx, dz, d, deg, ring, u);
+			return;
+		}
+		ringWall(c, dx, dz, d, deg, u);
+	}
+
+	/** The corridors' ceiling (above it, solid up to the seats). */
+	static final int CORRIDOR_TOP = F + 12;
+
+	/**
+	 * A ring wall between a corridor and a Gallery: solid, with each hall's two great doors in it (a third and two thirds
+	 * along the hall), purple windows between them.
+	 */
+	private static void ringWall(BlockState[] c, int dx, int dz, double d, double deg, int u) {
+		fill(c, F, u - 1, BRICKS);
+		int hall = GrandHalls.at(band(ROOMS, d + 1) >= 0 ? d + 1 : d - 1, deg);
+		boolean corridorBeyond = band(CORRIDORS, d + 1) >= 0 || band(CORRIDORS, d - 1) >= 0;
+		if (hall < 0 || !corridorBeyond) {
+			return;
+		}
+		double off = GrandHalls.doorOffset(hall, d, deg);
+		int top = Math.min(u - 2, F + 5);
+		if (off <= 1.6) {
+			fill(c, F, top - 1, AIR);
+			put(c, top, CHISELED);
+			put(c, top + 1, GILDED);
+		} else if (off >= 3.5 && off <= 5.5 && u - F > 7) {
+			fill(c, F + 1, F + 4, PURPLE_GLASS);
 		}
 	}
 
-	/** The top level of each Gallery: the last one its corridors reach (the Outer Ring stops at level 9). */
-	static final int[] TOP = {3, 8, 8};
-	/** Where the annex behind the Second Gallery's stair begins, from the Gallery's inner wall. */
-	static final double ANNEX = 12;
-
-	/** Whether the hall in that Gallery, sector and storey has a door on its inner (or outer) side. */
-	static boolean door(int band, int sector, int k, boolean innerSide) {
-		if (StairHall.is(band, sector)) {
-			return StairHall.door(band, k, innerSide);
+	/**
+	 * A ring corridor: one grand promenade at ground level all the way round (twelve high under the outer stands, as high
+	 * as the seats allow under the first), lit down the middle, with benches, banners and torches along its walls and
+	 * the name of the hall beyond over each of its doors.
+	 */
+	private static void corridor(BlockState[] c, int dx, int dz, double d, double deg, int ring, int u) {
+		double[] band = CORRIDORS[ring];
+		double mid = (band[0] + band[1]) / 2;
+		int top = Math.min(u - 1, CORRIDOR_TOP);
+		if (top < u - 1) {
+			fill(c, top + 1, u - 1, TILES);
 		}
-		// (The Inner Ring has only a ground floor: above it, a sliver of ledge at most. And the Cells open only
-		// onto the Middle Ring, so you come in facing the stair down, not hemmed in behind its well.)
-		return !(band == 0 && innerSide && (k > 0 || Landmarks.at(band, sector, k) == Landmarks.CELLS));
+		long arc = Math.round(Math.toRadians(deg) * d);
+		boolean centre = Math.abs(d - mid) < 0.5;
+		put(c, F - 1, centre && Math.floorMod(arc, 4) == 0 ? CHISELED : Math.floorMod(arc, 2) == 0 ? POLISHED : TILES);
+		put(c, top + 1, Math.abs(d - mid) < 1.5 && Math.floorMod(arc, 3) == 0 ? Blocks.CHISELED_DEEPSLATE.defaultBlockState() : TILES);
+		if (centre && Math.floorMod(arc, 8) == 0) {
+			if (top - F > 8) {
+				fill(c, F + 7, top, CHAIN);
+				put(c, F + 6, LANTERN.setValue(LanternBlock.HANGING, true));
+			} else {
+				put(c, top, LANTERN.setValue(LanternBlock.HANGING, true));
+			}
+		}
+		if (centre && Math.floorMod(arc, 8) == 4) {
+			put(c, F - 1, SEA_LANTERN);
+		}
+		boolean innerEdge = d - band[0] < 1.0;
+		boolean outerEdge = band[1] - d < 1.0;
+		if (!innerEdge && !outerEdge) {
+			return;
+		}
+		Direction away = innerEdge ? outward(dx, dz) : outward(-dx, -dz);
+		double beyond = innerEdge ? band[0] - 2 : band[1] + 2;
+		int hall = GrandHalls.at(beyond, deg);
+		double off = hall >= 0 ? GrandHalls.doorOffset(hall, beyond, deg) : 99;
+		if (hall >= 0 && off < 0.5) {
+			String[] name = GrandHalls.name(hall);
+			wallSign(c, dx, Math.min(top - 1, F + 6), dz, away, DyeColor.YELLOW, true, name[0], name[1], "Gallery " + ColosseumLore.ROMAN[hall / 8], "");
+			return;
+		}
+		if (off < 2.5) {
+			return;
+		}
+		int m = Math.floorMod((int) arc, 12);
+		if (m == 6) {
+			Block banner = Math.floorMod(arc / 12, 2) == 0 ? Blocks.WALL_BANNER.purple() : Blocks.WALL_BANNER.cyan();
+			put(c, F + 4, banner.defaultBlockState().setValue(WallBannerBlock.FACING, away));
+		} else if (m >= 9 && m <= 10) {
+			put(c, F, Blocks.DARK_OAK_STAIRS.defaultBlockState().setValue(StairBlock.FACING, away.getOpposite()));
+		} else if (m == 2) {
+			put(c, F + 2, Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, away));
+		} else if (m == 0 && top - F > 6) {
+			put(c, F + 5, SEA_LANTERN);
+		}
 	}
 
 	// --- Gate passages and the Grand Stairs ---
@@ -367,70 +368,6 @@ final class ColosseumInterior {
 		}
 	}
 
-	// --- Corridors ---
-
-	private static void corridor(BlockState[] c, int dx, int dz, double d, double deg, int ring, int feet, int ceiling, int k, int sector, double v) {
-		double[] band = CORRIDORS[ring];
-		double mid = (band[0] + band[1]) / 2;
-		long arc = Math.round(Math.toRadians(deg) * d);
-		boolean centre = Math.abs(d - mid) < 0.5;
-		int floor = feet - 1;
-		put(c, floor, centre && Math.floorMod(arc, 4) == 0 ? CHISELED : Math.floorMod(arc, 2) == 0 ? POLISHED : TILES);
-		if (centre && Math.floorMod(arc, 6) == 0) {
-			hang(c, feet, ceiling, LANTERN.setValue(LanternBlock.HANGING, true));
-		}
-		if (centre && Math.floorMod(arc, 6) == 3) {
-			put(c, floor, SEA_LANTERN);
-		}
-		boolean innerEdge = d - band[0] < 1.0;
-		boolean outerEdge = band[1] - d < 1.0;
-		if (!innerEdge && !outerEdge) {
-			return;
-		}
-		Direction away = innerEdge ? outward(dx, dz) : outward(-dx, -dz);
-		boolean byDoor = Math.abs(v) < 1.6;
-		if (byDoor) {
-			// (keep the way to the door clear)
-		} else if (Math.floorMod(arc, 12) == 6) {
-			// Banners on the walls, purple and cyan in turn.
-			Block banner = Math.floorMod(arc / 12, 2) == 0 ? Blocks.WALL_BANNER.purple() : Blocks.WALL_BANNER.cyan();
-			put(c, feet + 3, banner.defaultBlockState().setValue(WallBannerBlock.FACING, away));
-		} else if (k == 0 && Math.floorMod(arc, 12) >= 9 && Math.floorMod(arc, 12) <= 10) {
-			put(c, feet, Blocks.DARK_OAK_STAIRS.defaultBlockState().setValue(StairBlock.FACING, away.getOpposite()));
-		} else if (Math.floorMod(arc, 12) == 2 && ceiling - feet > 3) {
-			put(c, feet + 2, Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, away));
-		}
-		// The plaque over each door: which hall lies beyond.
-		int beyond = outerEdge ? ring : ring - 1;
-		double there = outerEdge ? band[1] + 2 : band[0] - 2;
-		if (Math.abs(v) < 0.5 && beyond >= 0 && storey(there, k) && storey(d, k) && k <= TOP[beyond] && door(beyond, sector, k, outerEdge)) {
-			String[] name = name(beyond, sector, k, outerEdge);
-			wallSign(c, dx, feet + 3, dz, away, DyeColor.YELLOW, true, "Sector " + (sector + 1), name[0], name[1],
-				"Gallery " + ColosseumLore.ROMAN[beyond] + ", L" + (k + 1));
-		}
-		// Halfway between doors in the Middle and Outer Rings: the way to the nearest stair hall.
-		double halfW = SECTOR / 2 * Math.PI / 180 * d;
-		if (ring > 0 && outerEdge && v > 0 && halfW - v < 0.6 && halfW - v >= 0 && ceiling - feet > 3) {
-			int best = 0;
-			int sunwise = 0;
-			for (int s : StairHall.SECTORS) {
-				int ahead = Math.floorMod(s - sector, 48);
-				int behind = Math.floorMod(sector - s, 48);
-				if (best == 0 || Math.min(ahead, behind) < best) {
-					best = Math.max(1, Math.min(ahead, behind));
-					sunwise = ahead <= behind ? s : -s - 1;
-				}
-			}
-			int target = sunwise >= 0 ? sunwise : -sunwise - 1;
-			// Read facing the outer wall, sunwise is to the right.
-			String arrow = sunwise >= 0 ? "STAIRS \u2192" : "\u2190 STAIRS";
-			if (target == sector) {
-				arrow = "STAIRS HERE";
-			}
-			wallSign(c, dx, feet + 2, dz, away, DyeColor.WHITE, true, arrow, StairHall.name(target)[0], best <= 1 ? "next sector" : best + " sectors", "");
-		}
-	}
-
 	/** A lantern hung from the ceiling: straight under it, or on a chain where the room is tall. */
 	static void hang(BlockState[] c, int feet, int ceiling, BlockState lantern) {
 		if (ceiling - feet > STOREY) {
@@ -444,112 +381,6 @@ final class ColosseumInterior {
 	/** A dark oak sign on the wall behind it, facing {@code facing}. */
 	static void wallSign(BlockState[] c, int dx, int y, int dz, Direction facing, DyeColor color, boolean glow, String... lines) {
 		ColosseumLore.sign(c, dx, y, dz, Blocks.DARK_OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, facing), color, glow, lines);
-	}
-
-	// --- Rooms ---
-
-	/** One column of a room, and where it is in the room. */
-	static final class Room {
-		final BlockState[] c;
-		final int dx;
-		final int dz;
-		/** From the inner wall (0) to the outer ({@link #depth}). */
-		final double u;
-		final double depth;
-		/** Across, from the middle; {@link #halfW} to each side wall. */
-		final double v;
-		final double halfW;
-		final int feet;
-		final int ceiling;
-		final int sector;
-		final int band;
-		final int k;
-		final int iu;
-		final int iv;
-		final double av;
-		final boolean outer;
-		final boolean inner;
-		final boolean side;
-		/** Where the doors are: kept clear. */
-		final boolean doorway;
-		final Direction in;
-		final Direction out;
-		final Direction towardSide;
-		final Direction awayFromSide;
-
-		Room(BlockState[] c, int dx, int dz, double u, double depth, double v, double halfW, int feet, int ceiling, int sector, int band, int k) {
-			this.c = c;
-			this.dx = dx;
-			this.dz = dz;
-			this.u = u;
-			this.depth = depth;
-			this.v = v;
-			this.halfW = halfW;
-			this.feet = feet;
-			this.ceiling = ceiling;
-			this.sector = sector;
-			this.band = band;
-			this.k = k;
-			this.iu = (int) Math.floor(u);
-			this.iv = (int) Math.round(v);
-			this.av = Math.abs(v);
-			this.outer = depth - u < 1.0;
-			this.inner = u < 1.0;
-			this.side = halfW - av < 1.0;
-			this.doorway = av <= 1.6 && (u < 2.0 || depth - u < 2.0);
-			this.in = outward(-dx, -dz);
-			this.out = outward(dx, dz);
-			Direction plus = outward(-dz, dx);
-			Direction minus = outward(dz, -dx);
-			this.towardSide = v > 0 ? plus : minus;
-			this.awayFromSide = v > 0 ? minus : plus;
-		}
-
-		int floor() {
-			return feet - 1;
-		}
-
-		boolean flatCeiling() {
-			return ceiling - feet == STOREY - 1;
-		}
-
-		boolean mid(double tolerance) {
-			return Math.abs(u - depth / 2) < tolerance;
-		}
-
-		int roll(int salt) {
-			return PracticeLayout.scatter(sector * 31 + iu, iv * 17 + k * 5 + band, salt);
-		}
-
-		void put(int y, BlockState s) {
-			CelestialColosseum.put(c, y, s);
-		}
-
-		void fill(int y0, int y1, BlockState s) {
-			CelestialColosseum.fill(c, y0, y1, s);
-		}
-
-		void sign(int y, Direction facing, DyeColor color, boolean glow, String... lines) {
-			wallSign(c, dx, y, dz, facing, color, glow, lines);
-		}
-
-		void lectern(Direction facing, ColosseumLore.Book book) {
-			ColosseumLore.lectern(c, dx, feet, dz, Blocks.LECTERN.defaultBlockState().setValue(LecternBlock.FACING, facing)
-				.setValue(LecternBlock.HAS_BOOK, true), book);
-		}
-	}
-
-	/** A hall's name on two lines, as on the plaque over its door on that side (a landmark's or a stair's own name). */
-	static String[] name(int band, int sector, int k, boolean innerSide) {
-		int landmark = Landmarks.at(band, sector, k);
-		if (landmark >= 0) {
-			return Landmarks.NAMES[landmark];
-		}
-		boolean stair = StairHall.is(band, sector) && k <= StairHall.top(band);
-		if (stair && (band != 1 || innerSide)) {
-			return StairHall.name(sector);
-		}
-		return RoomStyles.name(band, sector, k, stair);
 	}
 
 	/** Blocks that need their neighbours (placed after everything solid). */

@@ -35,7 +35,7 @@ import net.minecraft.world.phys.AABB;
  */
 public final class ColosseumWorks {
 	/** Bumped when the blueprint changes, so worlds with an older colosseum get it built again. */
-	public static final int VERSION = 4;
+	public static final int VERSION = 5;
 	/** At most this much building per tick. */
 	private static final long BUDGET_NANOS = 25_000_000L;
 	/** Chunks round each player or bot that count as visited (two each way: blasts, lava and water spread). */
@@ -307,14 +307,25 @@ public final class ColosseumWorks {
 		return changed;
 	}
 
-	/** Cherry grove over the whole thing, so the grass and gardens are green (the desert tints them olive). */
+	/**
+	 * Cherry grove over the whole thing, so the grass and gardens are green (the desert tints them olive); dripstone
+	 * caves down in the Deep, for its dripping and its sounds.
+	 */
 	private void biome(int chunkX, int chunkZ) {
 		Holder<Biome> holder = level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.CHERRY_GROVE);
 		int x0 = Math.max(chunkX << 4, CelestialColosseum.CX - CelestialColosseum.REACH);
 		int z0 = Math.max(chunkZ << 4, CelestialColosseum.CZ - CelestialColosseum.REACH);
 		int x1 = Math.min((chunkX << 4) + 15, CelestialColosseum.CX + CelestialColosseum.REACH);
 		int z1 = Math.min((chunkZ << 4) + 15, CelestialColosseum.CZ + CelestialColosseum.REACH);
-		FillBiomeCommand.fill(level, new BlockPos(x0, CelestialColosseum.Y0, z0), new BlockPos(x1, CelestialColosseum.Y1, z1), holder);
+		double cx = (x0 + x1) / 2.0 - CelestialColosseum.CX;
+		double cz = (z0 + z1) / 2.0 - CelestialColosseum.CZ;
+		int split = CelestialColosseum.Y0;
+		if (Math.hypot(cx, cz) < TheDeep.REACH + 12) {
+			split = 31;
+			FillBiomeCommand.fill(level, new BlockPos(x0, CelestialColosseum.Y0, z0), new BlockPos(x1, split - 1, z1),
+				level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.DRIPSTONE_CAVES));
+		}
+		FillBiomeCommand.fill(level, new BlockPos(x0, split, z0), new BlockPos(x1, CelestialColosseum.Y1, z1), holder);
 	}
 
 	private void finish(Job j) {

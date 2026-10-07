@@ -73,6 +73,13 @@ jar {
 	}
 }
 
+// The client test's tour of the Deep alone (much quicker): ./gradlew runClientGameTest -PdeepOnly
+if (project.hasProperty('deepOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs "-Dsparbot.deepOnly=true"
+	}
+}
+
 // Run only some GameTests: ./gradlew runGameTest -PgametestFilter=learned
 if (project.hasProperty('gametestFilter')) {
 	tasks.named('runGameTest') {

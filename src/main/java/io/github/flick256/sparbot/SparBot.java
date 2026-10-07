@@ -24,8 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * SparBot: server-side PvP sparring bots that behave like real, mortal players. Works in singleplayer
- * (the integrated server) and on dedicated servers; no client install is required.
+ * SparBot: PvP sparring bots that behave like real, mortal players, and the Celestial Colosseum with Vaelor
+ * under it. Works in singleplayer (the integrated server) and on dedicated servers; since 1.2 it adds items and
+ * an entity of its own, so players need it on their client too.
  */
 public final class SparBot implements ModInitializer {
 	public static final String MOD_ID = "sparbot";
@@ -48,6 +49,7 @@ public final class SparBot implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		io.github.flick256.sparbot.content.SparBotContent.register();
 		reloadConfigAndProfiles();
 		StatsTracker.register();
 		MenuSync.register();
@@ -71,6 +73,7 @@ public final class SparBot implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			DRILLS.stopAll(server);
 			PRACTICE.games().stop(server, "the server is stopping");
+			PRACTICE.stopDeep(server);
 			MATCHES.stopAll(server);
 			RECORDER.stopAll();
 			REPLAYS.stopAll();

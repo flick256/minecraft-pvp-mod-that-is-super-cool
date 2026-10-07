@@ -40,14 +40,12 @@ import net.minecraft.world.level.block.state.BlockState;
  * podium. It is lit and bannered all the way, with words on the walls for whoever goes down.</li>
  * <li><b>The Hall of the Fallen</b>: a long hall with plaques for those who went down and lost, the Roll of the
  * Fallen on a lectern, the champions' plaque across from it, and braziers either side of the great arch.</li>
- * <li><b>The Heartwell</b>: a round arena forty-four across under a dome, right under the compass rose. It has a
- * ring of eight pillars to fight round, the heart of the star hung over a seal in the middle, and Vaelor's
- * throne on a dais across from the arch. Stepping in starts the fight (see {@link VaelorFight}).</li>
+ * <li>Through the great arch: the Brink, over the Deep (see {@link TheDeep}).</li>
  * </ul>
  */
 final class Heartwell {
-	/** The way down runs along this bearing, from the middle of the Cells. */
-	static final double BEARING = Math.toRadians(Landmarks.centre(Landmarks.CELLS));
+	/** The way down runs along this bearing, through the Cells (see {@link GrandHalls}). */
+	static final double BEARING = Math.toRadians(251.25);
 	static final double COS = Math.cos(BEARING);
 	static final double SIN = Math.sin(BEARING);
 	/** The arena's floor block, and the height people stand at down there. */
@@ -88,9 +86,6 @@ final class Heartwell {
 	static void build(BlockState[] c, int dx, int dz, double d, double deg) {
 		double a = dx * COS + dz * SIN;
 		double lat = -dx * SIN + dz * COS;
-		if (d <= SHELL) {
-			arena(c, dx, dz, d, deg, a, lat);
-		}
 		if (a > RADIUS - 1 && a < STAIR_TOP + 1 && Math.abs(lat) <= 5.5) {
 			way(c, dx, dz, a, lat);
 		}
@@ -101,7 +96,7 @@ final class Heartwell {
 	}
 
 	private static final String[][] WALL_WORDS = {{"THE LOWER", "DOOR", "to the", "Heartwell"}, {"TWO HUNDRED", "WENT DOWN", "THIS STAIR.", ""},
-		{"CHECK YOUR", "GEAR. EAT.", "BREATHE.", ""}, {"HE FIGHTS", "FAIR. SO", "DO YOU.", ""}, {"THE HALL OF", "THE FALLEN", "is ahead", ""}};
+		{"CHECK YOUR", "GEAR. EAT.", "BREATHE.", ""}, {"HE IS NOT A", "MAN ANY MORE.", "WATCH HIS", "BLADE."}, {"THE HALL OF", "THE FALLEN", "is ahead", ""}};
 
 	/** The stair down, the Hall of the Fallen, the arch and the way through the arena's wall. */
 	private static void way(BlockState[] c, int dx, int dz, double a, double lat) {
@@ -196,7 +191,7 @@ final class Heartwell {
 		}
 		if (fa == HALL && p < 0.5) {
 			// The name over the arch, on its crown.
-			ColosseumInterior.wallSign(c, dx, FEET + 6, dz, up, DyeColor.PURPLE, true, "THE HEARTWELL", "", "Vaelor the", "Unbroken");
+			ColosseumInterior.wallSign(c, dx, FEET + 6, dz, up, DyeColor.PURPLE, true, "THE BRINK", "", "leap into the", "Well");
 		}
 		if (p <= 3.5) {
 			return;
@@ -240,107 +235,5 @@ final class Heartwell {
 		} else if (fa == HALL - 1) {
 			put(c, FEET + 3, AMETHYST);
 		}
-	}
-
-	/**
-	 * The arena: a patterned floor round a raised seal, eight pillars to fight round, the throne on its dais,
-	 * walls with pilasters, banners and lights, and a ribbed dome with the heart of the star hung in the middle.
-	 */
-	private static void arena(BlockState[] c, int dx, int dz, double d, double deg, double a, double lat) {
-		if (d > RADIUS) {
-			// The wall: lights set in its face between pilasters.
-			deep(c, FLOOR - 1, dome(RADIUS) + 2, BRICKS);
-			if (d <= RADIUS + 1) {
-				boolean pilaster = offStep(deg, 15, d) < 0.7;
-				boolean light = offStep(deg + 7.5, 15, d) < 0.6;
-				if (pilaster) {
-					deep(c, FEET, dome(RADIUS), PURPUR);
-					put(c, FEET + 5, Blocks.PURPUR_PILLAR.defaultBlockState());
-				} else if (light) {
-					put(c, FEET + 3, Blocks.OCHRE_FROGLIGHT.defaultBlockState());
-					put(c, FEET + 8, SEA_LANTERN);
-				}
-			}
-			return;
-		}
-		int top = dome(d);
-		deep(c, FEET, top, AIR);
-		deep(c, FLOOR - 2, FLOOR - 1, BRICKS);
-		deep(c, top + 1, top + 2, TILES);
-		// The dome: ribs of amethyst, set with lights and crystals.
-		boolean rib = offStep(deg, 30, d) < 0.6 && d > 3;
-		int roll = PracticeLayout.scatter(dx, dz, 61) % 100;
-		put(c, top + 1, rib ? AMETHYST : roll < 5 ? SEA_LANTERN : TILES);
-		if (!rib && roll >= 5 && roll < 8 && d > 4) {
-			put(c, top, Blocks.AMETHYST_CLUSTER.defaultBlockState().setValue(AmethystClusterBlock.FACING, Direction.DOWN));
-		}
-		// The floor: the seal, a gold ring, rays, bands, a ring of lights, and a dark walk round the edge.
-		BlockState floor = d < 1.5 ? CRYING : d < 2.5 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : d < 3.5 ? Blocks.GOLD_BLOCK.defaultBlockState()
-			: offStep(deg, 45, d) < 0.6 && d < 18 ? GILDED : Math.abs(d - 12) < 0.5 ? PURPUR
-			: Math.abs(d - 18.5) < 0.5 && offStep(deg, 15, d) < 0.6 ? SEA_LANTERN : d >= 19 ? BLACK_BRICKS
-			: Math.floorMod((int) Math.floor(d / 3), 2) == 0 ? POLISHED : TILES;
-		put(c, FLOOR, floor);
-		// The seal, raised a step, and the heart of the star hung over it.
-		if (d < 2.5) {
-			put(c, FEET, d < 1.5 ? Blocks.CHISELED_POLISHED_BLACKSTONE.defaultBlockState() : Blocks.POLISHED_BLACKSTONE_SLAB.defaultBlockState());
-			if (d < 0.6) {
-				put(c, FEET + 1, Blocks.END_ROD.defaultBlockState());
-				deep(c, FEET + 11, top, CHAIN);
-				put(c, FEET + 10, AMETHYST);
-				put(c, FEET + 9, Blocks.BUDDING_AMETHYST.defaultBlockState());
-				put(c, FEET + 8, Blocks.AMETHYST_CLUSTER.defaultBlockState().setValue(AmethystClusterBlock.FACING, Direction.DOWN));
-			} else if (d < 1.6) {
-				put(c, FEET + 9, Blocks.STAINED_GLASS.purple().defaultBlockState());
-			}
-		}
-		// Eight pillars round the middle (none in the way from the arch to the throne).
-		for (int i = 0; i < 8; i++) {
-			double ang = BEARING + Math.toRadians(22.5 + 45 * i);
-			double r = Math.hypot(dx - Math.cos(ang) * 13, dz - Math.sin(ang) * 13);
-			if (r < 1.6) {
-				deep(c, FEET, top, r < 0.8 ? Blocks.POLISHED_DEEPSLATE.defaultBlockState() : TILES);
-				put(c, FEET, Blocks.CHISELED_DEEPSLATE.defaultBlockState());
-				if (r >= 0.8) {
-					put(c, FEET + 4, Blocks.OCHRE_FROGLIGHT.defaultBlockState());
-					put(c, FEET + 8, Blocks.PEARLESCENT_FROGLIGHT.defaultBlockState());
-				}
-				return;
-			}
-		}
-		// The throne's dais, across from the arch: two steps up, the throne, gold and lanterns behind it.
-		double ta = -a;
-		double tl = Math.abs(lat);
-		if (ta > 14.5 && tl < 4.5) {
-			Direction toThrone = outward(-COS, -SIN);
-			if (ta < 15.5) {
-				put(c, FEET, stair(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, toThrone));
-			} else if (ta < 16.5) {
-				put(c, FEET, BLACK_BRICKS);
-				put(c, FEET + 1, stair(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, toThrone));
-			} else {
-				put(c, FEET, BLACK_BRICKS);
-				put(c, FEET + 1, tl < 1 ? PURPUR : GILDED);
-				if (ta >= THRONE - 0.5 && ta < THRONE + 0.5 && tl < 0.5) {
-					put(c, FEET + 2, stair(Blocks.POLISHED_BLACKSTONE_STAIRS, toThrone));
-				} else if (ta >= THRONE + 0.5 && tl < 1.5) {
-					deep(c, FEET + 2, FEET + 4, Blocks.GOLD_BLOCK.defaultBlockState());
-					put(c, FEET + 5, tl < 0.5 ? CRYING : AMETHYST);
-				} else if (ta >= THRONE - 0.5 && tl >= 1.5 && tl < 2.5) {
-					put(c, FEET + 2, Blocks.SOUL_LANTERN.defaultBlockState());
-				}
-			}
-		}
-	}
-
-	/** Where Vaelor stands at the start (blueprint dx, feet y, dz): on his dais before the throne. */
-	static double[] throne() {
-		double t = THRONE - 2.5;
-		return new double[] {-COS * t, FEET + 2, -SIN * t};
-	}
-
-	/** Where a challenger stands when the way in is sealed behind them. */
-	static double[] gate() {
-		double t = RADIUS - 3;
-		return new double[] {COS * t, FEET, SIN * t};
 	}
 }

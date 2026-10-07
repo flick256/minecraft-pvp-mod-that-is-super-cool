@@ -1,6 +1,6 @@
 {
   "id": "sparbot_vaelor",
-  "displayName": "Vaelor's Challenge",
+  "displayName": "The Challenger's Kit",
   "mode": "combat",
   "provenance": {
     "source": "sparbot-original",
@@ -10,7 +10,7 @@
     "confidence": "high",
     "verified": true,
     "reference": null,
-    "notes": "SparBot's own kit for the fight with Vaelor in the Heartwell under the Celestial Colosseum. Both fighters get it: netherite, a shield, sword and axe, a bow, pearls, golden apples and two totems.",
+    "notes": "SparBot's own kit for whoever leaps into the Deep under the Celestial Colosseum to face Vaelor, the Unbroken (a boss, not a bot): netherite, a shield, sword and axe, a bow, pearls, golden apples and two totems. The challenger's own things are kept safe and given back.",
     "deviations": []
   },
   "armor": {

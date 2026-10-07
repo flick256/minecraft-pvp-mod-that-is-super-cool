@@ -22,9 +22,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * from the east gate to the south gate): standing on solid blocks, stepping or jumping up one block where there is
  * headroom, dropping up to three, climbing ladders. Then it checks what a player can reach:
  * <ul>
- * <li>every hall in the quarter, on every level, and every level of the stair halls;</li>
+ * <li>each of the six great halls in the quarter, its floor and its balconies;</li>
+ * <li>the ways into the three secret vaults in the quarter;</li>
  * <li>the second concourse (from the seats);</li>
- * <li>no water anywhere with an open side it could run out of.</li>
+ * <li>and, all the way round, no water anywhere with an open side it could run out of.</li>
  * </ul>
  */
 public final class ColosseumSurvey {
@@ -40,15 +41,9 @@ public final class ColosseumSurvey {
 		this.region = region;
 	}
 
+	/** The south-east quarter, and both sides of its two gates' passages (the Grand Stairs climb on both sides). */
 	private static boolean quarter(int dx, int dz) {
-		return dx >= -2 && dz >= -2 && dx * dx + dz * dz <= R * R;
-	}
-
-	/** The way down: a strip along the Heartwell's bearing, and the arena. */
-	private static boolean descent(int dx, int dz) {
-		double a = dx * Heartwell.COS + dz * Heartwell.SIN;
-		double lat = -dx * Heartwell.SIN + dz * Heartwell.COS;
-		return Math.abs(lat) <= 9 && a >= -26 && a <= 82 || Math.hypot(dx, dz) <= Heartwell.SHELL + 1;
+		return (dx >= -2 && dz >= -2 || dx > 0 && Math.abs(dz) <= 14 || dz > 0 && Math.abs(dx) <= 14) && dx * dx + dz * dz <= R * R;
 	}
 
 	private static long col(int dx, int dz) {
@@ -60,7 +55,8 @@ public final class ColosseumSurvey {
 	}
 
 	private BlockState at(int dx, int y, int dz) {
-		BlockState[] c = columns.computeIfAbsent(col(dx, dz), k -> region.test(dx, dz) ? CelestialColosseum.column(dx, dz) : null);
+		BlockState[] c = columns.computeIfAbsent(col(dx, dz), k -> region.test(dx, dz) || Math.abs(dx) <= R && Math.abs(dz) <= R ? CelestialColosseum.column(dx, dz)
+			: null);
 		if (c == null) {
 			return Blocks.STONE.defaultBlockState();
 		}
@@ -85,44 +81,7 @@ public final class ColosseumSurvey {
 
 	/** What a survey found wrong (empty if nothing). */
 	public static List<String> run() {
-		List<String> problems = new ColosseumSurvey(ColosseumSurvey::quarter).survey();
-		problems.addAll(new ColosseumSurvey(ColosseumSurvey::descent).down());
-		return problems;
-	}
-
-	/** From the Cells, down the Lower Door's stair, through the Hall of the Fallen, into the arena and up onto the throne's dais. */
-	private List<String> down() {
-		List<String> problems = new ArrayList<>();
-		int sx = (int) Math.round(Heartwell.COS * 75);
-		int sz = (int) Math.round(Heartwell.SIN * 75);
-		if (!stand(sx, CelestialColosseum.F, sz)) {
-			problems.add("can't stand in the Cells at " + sx + ", " + sz);
-			return problems;
-		}
-		LongOpenHashSet seen = walk(sx, CelestialColosseum.F, sz, ColosseumSurvey::descent);
-		boolean hall = false;
-		boolean arena = false;
-		boolean dais = false;
-		for (long k : seen) {
-			int dx = (int) (k >>> 40) - 2048;
-			int dz = (int) (k >>> 20 & 0xfffff) - 2048;
-			int y = (int) (k & 0xfffff) - 2048;
-			double a = dx * Heartwell.COS + dz * Heartwell.SIN;
-			double d = Math.hypot(dx, dz);
-			hall |= y == Heartwell.FEET && a >= Heartwell.HALL && a < Heartwell.STAIR_FOOT;
-			arena |= y == Heartwell.FEET && d < 10;
-			dais |= y == Heartwell.FEET + 2 && -a > 16.5 && d < Heartwell.RADIUS;
-		}
-		if (!hall) {
-			problems.add("the Hall of the Fallen can't be reached down the Lower Door's stair");
-		}
-		if (!arena) {
-			problems.add("the arena can't be reached from the Hall of the Fallen");
-		}
-		if (!dais) {
-			problems.add("the throne's dais can't be climbed");
-		}
-		return problems;
+		return new ColosseumSurvey(ColosseumSurvey::quarter).survey();
 	}
 
 	private List<String> survey() {
@@ -152,6 +111,19 @@ public final class ColosseumSurvey {
 			expected().size());
 		if (!concourse2) {
 			problems.add("the second concourse can't be reached from the seats");
+		}
+		for (int q : new int[] {0, 1, 3}) {
+			int[] e = Vaults.entrance(q);
+			boolean near = false;
+			for (long k : seen) {
+				int dx = (int) (k >>> 40) - 2048;
+				int dz = (int) (k >>> 20 & 0xfffff) - 2048;
+				int y = (int) (k & 0xfffff) - 2048;
+				near |= y == e[1] && Math.hypot(dx - e[0], dz - e[2]) < 2.6;
+			}
+			if (!near) {
+				problems.add("the way into vault " + q + " (" + Vaults.NAMES[q][0] + " " + Vaults.NAMES[q][1] + ") can't be reached");
+			}
 		}
 		for (String want : expected()) {
 			if (!reached.contains(want)) {
@@ -220,49 +192,50 @@ public final class ColosseumSurvey {
 		}
 	}
 
-	/** Which hall a standing place is in ("gallery/sector/level", the annex behind a stair marked "+annex"), or null. */
+	/** Which hall and level a standing place is in ("hall/floor", "hall/balcony", "hall/upper"), or null. */
 	private static String room(int dx, int y, int dz, double d) {
-		int band = ColosseumInterior.band(ColosseumInterior.ROOMS, d);
-		if (band < 0 || (y - CelestialColosseum.F) % ColosseumInterior.STOREY != 0) {
+		int hall = GrandHalls.at(d, Math.toDegrees(Math.atan2(dz, dx)));
+		if (hall < 0) {
 			return null;
 		}
-		int k = (y - CelestialColosseum.F) / ColosseumInterior.STOREY;
-		double deg = Math.toDegrees(Math.atan2(dz, dx));
-		int sector = ColosseumInterior.sector(deg);
-		double u = d - ColosseumInterior.ROOMS[band][0];
-		boolean annex = band == 1 && StairHall.is(band, sector) && k <= StairHall.top(band) && u >= ColosseumInterior.ANNEX;
-		return (band + 1) + "/" + (sector + 1) + "/" + (k + 1) + (annex ? "+annex" : "");
+		String name = GrandHalls.name(hall)[0] + " " + GrandHalls.name(hall)[1];
+		if (y == CelestialColosseum.F) {
+			return name + "/floor";
+		}
+		if (y == CelestialColosseum.F + GrandHalls.B1) {
+			return name + "/balcony";
+		}
+		if (y == CelestialColosseum.F + GrandHalls.B2) {
+			return name + "/upper";
+		}
+		return null;
 	}
 
-	/** Every hall in the quarter (sectors 2 to 11, clear of the gates' passages), on every level a corridor reaches. */
+	/** The six halls in the quarter: each one's floor, its balcony, and (in the outer Galleries) its upper balcony. */
 	private static List<String> expected() {
 		List<String> out = new ArrayList<>();
-		for (int band = 0; band < 3; band++) {
-			for (int sector = 1; sector <= 10; sector++) {
-				for (int k = 0; k <= ColosseumInterior.TOP[band]; k++) {
-					double outer = ColosseumInterior.ROOMS[band][1] - 0.5;
-					if (!ColosseumInterior.storey(outer, k)) {
-						continue;
-					}
-					boolean stair = StairHall.is(band, sector);
-					if (stair && k > StairHall.top(band) && band != 1) {
-						continue;
-					}
-					out.add((band + 1) + "/" + (sector + 1) + "/" + (k + 1));
-					if (stair && band == 1 && k <= StairHall.top(band)) {
-						out.add((band + 1) + "/" + (sector + 1) + "/" + (k + 1) + "+annex");
-					}
+		for (int g = 0; g < 3; g++) {
+			for (int h = 0; h < 2; h++) {
+				int hall = g * 8 + h;
+				String name = GrandHalls.name(hall)[0] + " " + GrandHalls.name(hall)[1];
+				out.add(name + "/floor");
+				out.add(name + "/balcony");
+				if (g > 0) {
+					out.add(name + "/upper");
 				}
 			}
 		}
 		return out;
 	}
 
-	/** Every water block in the quarter, and in the floating islands' springs, closed in on every side but the top. */
+	/**
+	 * Every water block in the quarter (and in the floating islands' springs), and in the halls' floors all the way
+	 * round, closed in on every side but the top.
+	 */
 	private void water(List<String> problems) {
 		List<int[]> cols = new ArrayList<>();
-		for (int dx = 0; dx <= R - 2; dx++) {
-			for (int dz = 0; dz <= R - 2; dz++) {
+		for (int dx = -(R - 2); dx <= R - 2; dx++) {
+			for (int dz = -(R - 2); dz <= R - 2; dz++) {
 				if (dx * dx + dz * dz <= (R - 2) * (R - 2)) {
 					cols.add(new int[] {dx, dz});
 				}
@@ -270,7 +243,8 @@ public final class ColosseumSurvey {
 		}
 		int leaks = 0;
 		for (int[] c : cols) {
-			for (int y = CelestialColosseum.S - 30; y <= YHI; y++) {
+			boolean quarter = c[0] >= 0 && c[1] >= 0;
+			for (int y = CelestialColosseum.S - (quarter ? 30 : 3); y <= (quarter ? YHI : CelestialColosseum.F + 1); y++) {
 				if (!at(c[0], y, c[1]).is(Blocks.WATER)) {
 					continue;
 				}
@@ -308,41 +282,31 @@ public final class ColosseumSurvey {
 		return new View(name, cx * d + 0.5, CelestialColosseum.F + ColosseumInterior.STOREY * k + h, cz * d + 0.5, outward ? yaw(cx, cz) : yaw(-cx, -cz), pitch);
 	}
 
-	/** Halls of {@code n} different kinds, each seen from just inside its door. */
-	public static List<View> halls(int n) {
+	/** Every great hall, seen from inside its first door on the inner corridor, looking across and along it. */
+	public static List<View> halls() {
 		List<View> out = new ArrayList<>();
-		Set<Integer> kinds = new HashSet<>();
-		int[][] levels = {{2, 0}, {1, 0}, {2, 3}, {0, 0}, {1, 2}, {2, 6}, {0, 2}, {1, 4}, {2, 8}, {1, 6}, {0, 3}, {2, 1}, {1, 1}, {2, 5}};
-		for (int[] bk : levels) {
-			int band = bk[0];
-			int k = bk[1];
-			for (int sector = 2; sector < 46 && out.size() < n; sector += 3) {
-				if (StairHall.is(band, sector) || Landmarks.at(band, sector, k) >= 0 || sector % 12 == 0 || sector % 12 == 11) {
-					continue;
-				}
-				int kind = RoomStyles.kind(band, sector, k, false);
-				if (kinds.contains(kind)) {
-					continue;
-				}
-				boolean in = RoomStyles.doorIn(band, sector, k, false);
-				double depth = ColosseumInterior.ROOMS[band][1] - ColosseumInterior.ROOMS[band][0];
-				double u = in ? 1.2 : depth - 1.2;
-				double d = ColosseumInterior.ROOMS[band][0] + u;
-				if (!ColosseumInterior.storey(d, k)) {
-					continue;
-				}
-				kinds.add(kind);
-				String noun = RoomKinds.NOUNS[kind][0].toLowerCase(java.util.Locale.ROOT);
-				out.add(polar("colosseum-hall-" + noun, d, (sector + 0.5) * ColosseumInterior.SECTOR, k, 1.4, in, 12));
-			}
+		for (int hall = 0; hall < GrandHalls.HALLS.length; hall++) {
+			int g = hall / 8;
+			int q = hall / 2 % 4;
+			int h = hall % 2;
+			double[] band = ColosseumInterior.ROOMS[g];
+			double d = band[0] + 2.5;
+			double gw = GrandHalls.gateHalf(g);
+			double len = Math.toRadians(45) * d - gw - GrandHalls.PIER;
+			double arc = gw + len / 6;
+			double phi = Math.toDegrees(arc / d);
+			double deg = q * 90 + (h == 0 ? phi : 90 - phi);
+			double a = Math.toRadians(deg);
+			// Look along the hall toward its far end, a little outward.
+			double ta = Math.toRadians(q * 90 + (h == 0 ? 45 : 45));
+			double tx = Math.cos(ta) * (band[0] + band[1]) / 2 - Math.cos(a) * d;
+			double tz = Math.sin(ta) * (band[0] + band[1]) / 2 - Math.sin(a) * d;
+			String name = (GrandHalls.name(hall)[0] + " " + GrandHalls.name(hall)[1]).trim().toLowerCase(java.util.Locale.ROOT).replace("'", "")
+				.replace(' ', '-');
+			out.add(new View("hall-" + (hall + 1) + "-" + name, Math.cos(a) * d + 0.5, CelestialColosseum.F + 3.2, Math.sin(a) * d + 0.5, yaw(tx, tz),
+				8));
 		}
 		return out;
-	}
-
-	/** The stair halls: the ground floor of one, looking up its flights, and a high landing of another. */
-	public static List<View> stairs() {
-		return List.of(polar("colosseum-stairhall", ColosseumInterior.ROOMS[1][0] + 1.0, 6.5 * ColosseumInterior.SECTOR, 0, 1.4, true, -12),
-			polar("colosseum-stairhall-high", ColosseumInterior.ROOMS[2][0] + 1.5, 30.5 * ColosseumInterior.SECTOR, 5, 1.4, true, -8));
 	}
 
 	/** The way in to vault {@code q} (blueprint dx, lower block's y, dz), and a look inside it. */
@@ -351,29 +315,20 @@ public final class ColosseumSurvey {
 	}
 
 	public static View vault(int q) {
-		double deg = Math.toDegrees(Vaults.angle(q));
-		double d = ColosseumInterior.ROOMS[2][0] + Vaults.START + 0.8;
-		double a = Math.toRadians(deg);
-		return new View("colosseum-vault-" + q, Math.cos(a) * d + 0.5, Vaults.floorY(q) + 1.6, Math.sin(a) * d + 0.5, yaw(Math.cos(a), Math.sin(a)), 12);
+		double[] c = Vaults.centre(q);
+		int[] e = Vaults.entrance(q);
+		return new View("colosseum-vault-" + q, e[0] + 0.5, c[1] + 1.6, e[2] + 0.5, yaw(c[0] - e[0], c[2] - e[2]), 10);
 	}
 
-	/** Along the way down: the stairwell in the Cells, the stair, the Hall of the Fallen, the arena and its dome. */
-	public static List<View> heartwell() {
+	/** Along the way down: the stairwell in the Cells, the stair, the Hall of the Fallen. */
+	public static List<View> descent() {
 		double c = Heartwell.COS;
 		double s = Heartwell.SIN;
 		List<View> out = new ArrayList<>();
 		out.add(new View("colosseum-lower-door", c * 76 + 0.5, CelestialColosseum.F + 2.5, s * 76 + 0.5, yaw(-c, -s), 30));
 		out.add(new View("colosseum-descent", c * 60 + 0.5, Heartwell.stairFeet(60) + 1.2, s * 60 + 0.5, yaw(-c, -s), 18));
 		out.add(new View("colosseum-hall-of-the-fallen", c * 41 + 0.5, Heartwell.FEET + 1.2, s * 41 + 0.5, yaw(-c, -s), 2));
-		out.add(new View("colosseum-heartwell", c * 21 + 0.5, Heartwell.FEET + 3.5, s * 21 + 0.5, yaw(-c, -s), 4));
-		out.add(new View("colosseum-heartwell-dome", -c * 8 + 0.5, Heartwell.FEET + 2, -s * 8 + 0.5, yaw(c, s), -40));
-		out.add(new View("colosseum-heartwell-throne", -c * 10 + 0.5, Heartwell.FEET + 3, -s * 10 + 0.5, yaw(-c, -s), 6));
 		return out;
-	}
-
-	/** Where a challenger steps into the arena (blueprint x, feet y, z), and the plaque in the Hall of the Fallen. */
-	public static double[] arenaStep() {
-		return new double[] {Heartwell.COS * (Heartwell.RADIUS - 4) + 0.5, Heartwell.FEET, Heartwell.SIN * (Heartwell.RADIUS - 4) + 0.5};
 	}
 
 	public static View plaque() {

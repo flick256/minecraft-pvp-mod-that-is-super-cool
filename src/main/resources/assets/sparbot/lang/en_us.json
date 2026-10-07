@@ -1,5 +1,19 @@
 {
   "key.sparbot.menu": "Open the SparBot menu",
   "key.category.sparbot.sparbot": "SparBot",
-  "subtitles.sparbot.music.vaelor": "Vaelor's Theme plays"
+  "subtitles.sparbot.music.vaelor": "Vaelor's Theme plays",
+  "subtitles.sparbot.music.triumph": "The Triumph plays",
+  "subtitles.sparbot.crowd.roar": "The crowd roars",
+  "item.sparbot.oathkeeper": "Oathkeeper",
+  "item.sparbot.starfall": "Starfall",
+  "item.sparbot.unbroken_helm": "Unbroken Helm",
+  "item.sparbot.unbroken_plate": "Unbroken Plate",
+  "item.sparbot.unbroken_greaves": "Unbroken Greaves",
+  "item.sparbot.unbroken_sabatons": "Unbroken Sabatons",
+  "item.sparbot.heart_of_aster": "Heart of Aster",
+  "entity.sparbot.vaelor": "Vaelor, the Unbroken",
+  "death.attack.sparbot.vaelor_blade": "%1$s was cut down by %2$s",
+  "death.attack.sparbot.vaelor_blade.player": "%1$s was cut down by %2$s",
+  "death.attack.sparbot.vaelor_star": "%1$s was struck by a falling star",
+  "death.attack.sparbot.vaelor_star.player": "%1$s was struck by %2$s's falling star"
 }

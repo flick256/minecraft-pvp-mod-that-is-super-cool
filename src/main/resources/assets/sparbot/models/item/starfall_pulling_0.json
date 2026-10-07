@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/bow",
+  "textures": {
+    "layer0": "sparbot:item/starfall_pulling_0"
+  }
+}
