@@ -376,7 +376,7 @@ final class GrandHalls {
 		} else {
 			s.put(s.top + 1, Math.floorMod(s.iw, 7) == 0 ? p.trim : p.ceiling);
 		}
-		if (Math.abs(s.cu) < 0.6 && Math.floorMod(s.iw, 14) == 7 && !s.doorway()) {
+		if (Math.abs(s.cu) < 0.6 && Math.floorMod(s.iw, 7) == 3 && !s.doorway()) {
 			int chain = Math.max(F + 7, s.top - (s.gallery == 0 ? 6 : 12));
 			s.fill(chain, s.top, CelestialColosseum.CHAIN);
 			s.put(chain - 1, Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true));
@@ -387,6 +387,9 @@ final class GrandHalls {
 			int m = Math.floorMod(s.iw, 7);
 			if (m == 0) {
 				s.put(F + 3, p.light);
+				if (s.top - F > B1 + 6) {
+					s.put(F + B1 + 3, p.light);
+				}
 			} else if (m == 4 && !(s.wallOut() && outerBalcony) && hall.banner != null) {
 				s.put(F + 4, hall.banner.defaultBlockState().setValue(WallBannerBlock.FACING, face));
 			}
