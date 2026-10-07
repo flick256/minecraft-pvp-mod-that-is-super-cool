@@ -1041,7 +1041,7 @@ final class TheDeep {
 			int span = HEART_R - m;
 			for (int y = HEART_Y - span; y <= HEART_Y + span; y++) {
 				int k = m + Math.abs(y - HEART_Y);
-				put(c, y, k <= 1 ? CRYING : k == 2 ? AMETHYST : Blocks.STAINED_GLASS.purple().defaultBlockState());
+				put(c, y, k == 0 ? SEA_LANTERN : k == 1 ? CRYING : k == 2 ? AMETHYST : Blocks.STAINED_GLASS.magenta().defaultBlockState());
 			}
 			if (m == HEART_R) {
 				put(c, HEART_Y - 1, Blocks.AMETHYST_CLUSTER.defaultBlockState().setValue(AmethystClusterBlock.FACING, Direction.DOWN));

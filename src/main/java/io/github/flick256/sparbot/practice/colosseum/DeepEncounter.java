@@ -195,6 +195,17 @@ public final class DeepEncounter {
 			payOwed(server, level);
 		}
 		keepBoss(server, level, now);
+		if (stage != Stage.IDLE) {
+			// One challenger at a time: anyone else who drops down the shaft is caught and put back on the Brink.
+			for (ServerPlayer p : level.players()) {
+				boolean fighter = p.getUUID().equals(challenger) && stage != Stage.VICTORY;
+				if (!(p instanceof BotPlayer) && !fighter && p.gameMode() != GameType.CREATIVE
+					&& p.gameMode() != GameType.SPECTATOR && TheDeep.leaping(dx(p), p.getY(), dz(p))) {
+					sendBack(level, p, stage == Stage.VICTORY && p.getUUID().equals(challenger) ? "You beat him. The way up is from the platform."
+						: "Someone else is facing Vaelor. One challenger at a time.");
+				}
+			}
+		}
 		switch (stage) {
 			case IDLE -> idle(server, level, now);
 			case LEAP -> leap(server, level, now);

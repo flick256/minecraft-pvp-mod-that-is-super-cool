@@ -260,7 +260,10 @@ final class GrandHalls {
 		int hall = g * 8 + q * 2 + h;
 		Spot s = new Spot(c, dx, dz, hall, g, u, depth, w, len, top, toGate);
 		skeleton(s);
-		HALLS[hall].dress.accept(s);
+		if (!stairOut(s) && !stairIn(s) && !column(s)) {
+			HALLS[hall].dress.accept(s);
+			balconies(s);
+		}
 		story(s);
 	}
 
@@ -390,13 +393,42 @@ final class GrandHalls {
 		}
 	}
 
+	/** Whatever a hall's furnishing put up there, its balconies stay whole and clear to walk on. */
+	private static void balconies(Spot s) {
+		Palette p = HALLS[s.hall].palette;
+		if (s.top - F > B1 + 4 && s.depth - s.u < BALCONY) {
+			s.put(F + B1 - 1, p.balcony);
+			s.put(F + B1 - 2, topSlab(p.slab));
+			if (s.depth - s.u >= 1) {
+				s.fill(F + B1, F + B1 + 2, AIR);
+			}
+			if (s.depth - s.u > BALCONY - 1 && !(s.w > 1 && s.w < 4.5)) {
+				s.put(F + B1, p.rail);
+				if (Math.floorMod(s.iw, 7) == 0) {
+					s.put(F + B1 + 1, Blocks.LANTERN.defaultBlockState());
+				}
+			}
+		}
+		if (s.gallery > 0 && s.top - F > B2 + 4 && s.u < BALCONY && s.w > 1 && s.len - s.w > 1) {
+			s.put(F + B2 - 1, p.balcony);
+			s.put(F + B2 - 2, topSlab(p.slab));
+			if (s.u >= 1) {
+				s.fill(F + B2, F + B2 + 2, AIR);
+			}
+			if (s.u > BALCONY - 1 && !(s.len - s.w > 1 && s.len - s.w < 4.5)) {
+				s.put(F + B2, p.rail);
+				if (Math.floorMod(s.iw, 7) == 0) {
+					s.put(F + B2 + 1, Blocks.LANTERN.defaultBlockState());
+				}
+			}
+		}
+	}
+
 	/** The hall's name: on its inner and outer walls (over the door's side of the middle) and at each end. */
 	private static void story(Spot s) {
 		Hall hall = HALLS[s.hall];
 		boolean middle = Math.abs(s.cw) < 0.5;
-		if (middle && s.wallIn() && s.gallery > 0) {
-			s.sign(F + 3, s.out, DyeColor.YELLOW, hall.name[0], hall.name[1], hall.words[0], hall.words[1]);
-		} else if (middle && s.wallIn()) {
+		if (middle && s.wallIn()) {
 			s.sign(F + 3, s.out, DyeColor.YELLOW, hall.name[0], hall.name[1], hall.words[0], hall.words[1]);
 		}
 		if (Math.abs(s.cu - 1) < 0.5 && s.endGate() && !stairOut(s)) {

@@ -2,6 +2,64 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 1.2.0
+
+A new version of the Celestial Colosseum's story, its boss, its rewards and its halls. **SparBot now adds its own
+items and an entity, so players need it on their client too** (before 1.2 it was server-side only).
+
+- **Vaelor, the Unbroken is a real boss now**, not a bot: a new creature, four blocks tall in star-iron plate with a
+  crowned great helm, a cape and a greatsword as long as he is tall, with his own model, texture and glowing eyes,
+  heart and runes (violet, then gold, then red). He fights in three phases, and shows every blow before it lands:
+  - *The Oath*: **Cleave** (a wide sweep; a shield takes it), **Overhead** (a blow down a line marked in red on the
+    floor, which knocks a shield aside), **Lunge** (he crouches, then charges where you are) and **Guard** (hit him
+    from the front and he ripostes; get behind him and he staggers).
+  - *Starfall*: he calls **falling stars** down on circles marked round you, and **leaps** to where you stand; the
+    landing sends a **shockwave** out along the ground that you have to jump.
+  - *The Unbroken*: faster, his cleaves chain, and the **Star Lance**: a beam he aims slowly, then fires and drags
+    after you. Hide behind the broken columns.
+  - He roars between phases (he can't be hurt then) with a line for each, and when he falls he kneels, the light
+    goes out of him and he's gone. His blows are his own damage types, the same on every difficulty.
+- **His rewards are new items**, stronger than anything in vanilla:
+  - **Oathkeeper**, his greatsword: 14 attack damage (a netherite sword does 8, an axe 10). Use it for
+    **Starbreak**, a shockwave along the ground in front of you (10 damage, every twelve seconds).
+  - **Starfall**, a bow: its arrows leave the string a fifth faster and do 3.5 base damage instead of 2.
+  - **The Unbroken Plate** (helm, plate, greaves, sabatons): 24 armour and 16 toughness for the set (netherite: 20
+    and 12) and more knockback resistance, with its own look when worn.
+  - **The Heart of Aster**: use it to heal three hearts and get Regeneration II, Absorption II and Resistance; it
+    rests for a minute and a half after.
+- **The Deep: his prison is a giant cavern now.** Through the Hall of the Fallen's arch is **the Brink**, a ledge round
+  a shaft, and the Oath Bridge out to the **Well** under the hanging Heart of the Star. Below: a cavern two hundred
+  blocks across and eighty high, its dome set with stars, stalactites, amethyst spires and lava falls, and in it **the
+  Deep Colosseum**: an arena seventy blocks across with six broken columns, his throne, the stands rising round it
+  full of the skulls of the crowd that watched, a four-storey arcade lit from within, and a lava moat.
+- **The Leap.** Drop down the Well (in survival) and you float eighty blocks down into the arena while **Vaelor's
+  Theme** starts; your own things are kept safe and you get the challenger's kit. One challenger at a time. **A
+  fight only ever starts from the Leap**, so walking out after a win can't start another (the 1.0.3 bug).
+- **The way back up, for whoever wins.** The Triumph plays (a new track: his theme in the major, a minute long) and
+  the dead in the stands roar. The **Gate of Triumph** opens across from his throne; braziers light ahead of you down
+  the **Avenue** and over the moat to the **Hall of Triumph**, where your own things are given back and his are on
+  seven pedestals for you to take. The **Gallery of Witness** climbs the cavern wall, with the story on its stones;
+  the **Stair of Stars** goes in over the dome with glass in its floor to look down through; the **Laurel Door**
+  opens onto the Brink; and on the platform the Heart breaks and **lifts you up through the field** into the
+  colosseum, into fireworks, the crowd and the title *Champion of the Crown*. Everyone online hears who won, your
+  name goes up on the champions' plaques, and anything you didn't take off the pedestals is kept for you.
+- **Twenty-four great halls instead of a thousand small ones.** Each Gallery under the stands is now eight great
+  halls (forty to a hundred blocks long), split at the gates and at four great piers, each one a single room built
+  in layers: a patterned floor with a runner and a medallion, colonnades holding up balconies (two in the outer
+  Galleries) with stairs up to them, a raked or vaulted ceiling with ribs and chandeliers, and its own furnishing and
+  story: the Armoury of the Seven, the Archive of the Founders, the Hall of Champions, the Chapel of the Fallen Star,
+  the Warden's Hall, the Cells, the Hall of Oaths, the Treasury, the Forge of Star-Iron, the Feast Hall, the Hanging
+  Gardens, the Baths, the Observatory (with a great armillary round the star), the Library of Bouts, the Theatre,
+  the Menagerie, the Barracks, the Training Grounds, the Map Room, the Infirmary, the Kitchens, the Crypt of the Six,
+  the Council of the Seven and the Wagering Hall. The ring corridors are single grand promenades with each hall's
+  name over its doors.
+- The four secret vaults are in the piers between the halls now; the books point the way by hall and compass.
+- Discoveries: walk twelve of the great halls, and all twenty-four (instead of 25 and 100 small ones).
+- GameTests walk the Deep (down to the Brink, the Leap, the arena shut in, and the whole way back up with the gates
+  open, no lava loose) and the halls (every floor and balcony and vault reachable), check his phases and his
+  kneeling, that his blows land, and that his rewards beat vanilla.
+- Worlds with an older colosseum rebuild it on the next visit (the Deep goes down to y -60).
+
 ## 1.0.3
 
 - **The Heartwell: a boss fight under the field.** The Lower Door in the Cells is now a wide stair down, lit and

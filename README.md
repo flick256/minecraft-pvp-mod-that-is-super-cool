@@ -4,8 +4,9 @@ A Fabric mod for **Minecraft Java Edition 26.2** that adds PvP sparring bots. A 
 player at a chosen skill level, from Beginner to Pro, and it is **fully mortal**: it takes damage, knockback
 and fall damage through the same vanilla code as a human, uses up totems, drops its items and dies for real.
 
-The mod is server-side only. It works in singleplayer (the integrated server), on LAN and on dedicated
-servers, and players don't need to install anything.
+It works in singleplayer (the integrated server), on LAN and on dedicated servers. Since 1.2 it adds items
+and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
+their client too** to join a server that has it.
 
 > Status: milestones 1-7 (sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches,
 > Elo, recording and replay, an in-game menu) plus a duel simulator and **learned melee**: a network
@@ -164,15 +165,25 @@ down to bedrock) with a hub and an arena for each kind of fight.
   action bar and its pad opens when it is done), and once every player has left, the parts anyone was in
   are put back. In its Grand Bowl: **waves** (two beginners, three intermediates, a pro and two advanced, a
   Demon and two pros) and **king of the hill** (hold the heart of the compass rose for sixty seconds).
-  Under its stands lies a whole hidden world to explore: three rings of corridors, stair halls at the four
-  diagonals of each Gallery, and a thousand halls of twenty-eight kinds (feast halls, observatories, forges,
-  beast pens, apiaries, betting halls, engine rooms, conservatories...), no two alike, each with its own name
-  and inscription. Six landmark halls and four secret vaults (crouch at a cracked wall in a stair hall) tell
-  the story of the Hollow Crown; start with the Visitor's Guide on the lectern in any gate passage. Every
-  secret you find is an advancement (its own tab) with a relic, and the trail ends beneath the field, in the
-  **Heartwell**: step into it and Vaelor the Unbroken rises from his throne, to his own theme, for a boss fight
-  in a kit you both get. He is a bot like any other: mortal, finite items, human limits. Beat him and you are
-  the Champion of the Crown: his blade, the laurel, and your name on the wall.
+  Under its stands lie **twenty-four great halls**, eight to each of three Galleries between three ring
+  corridors: single vast rooms forty to a hundred blocks long, each built in layers (a patterned floor, a
+  colonnade holding up balconies, a stair up to them, a vaulted or raked ceiling hung with chandeliers) and
+  each with its own story and furnishings: the Archive, the Hall of Champions, the Chapel of the Fallen Star,
+  the Cells, the Feast Hall, the Forge of Star-Iron, the Hanging Gardens, the Baths, the Observatory with its
+  great armillary, the Theatre, the Crypt of the Six, the Council of the Seven and more. Six of them and four
+  secret vaults (crouch at a cracked pier) tell the story of the Hollow Crown; start with the Visitor's Guide
+  on the lectern in any gate passage. Every secret you find is an advancement (its own tab) with a relic.
+
+  The trail ends beneath the field, down the stair in the Cells and through the Hall of the Fallen to **the
+  Brink**: a ledge round a shaft over **the Deep**, a cavern two hundred blocks across and eighty high, its
+  dome full of stars, with a second, older colosseum at the bottom. Leap down the Well and you float into its
+  arena in the challenger's kit (your own things are kept safe) while **Vaelor's Theme** plays, and **Vaelor,
+  the Unbroken** rises from his throne: a four-block knight in star-iron, a real boss (not a bot) with three
+  phases, and every blow shown before it lands. Beat him and the way back up opens: the Gate of Triumph, the
+  Avenue of braziers, the Hall of Triumph where his things wait on pedestals (**Oathkeeper**, a greatsword
+  that does 14; **Starfall**, a bow with faster, harder arrows; **the Unbroken Plate**, better than netherite;
+  and **the Heart of Aster**), the Gallery of Witness up the cavern wall, the Stair of Stars over the dome and
+  the Laurel Door, and then you rise through the field into the colosseum to fireworks and the crowd.
 
 Use it in any world: `/sparbot practice` (or the menu's Practice tab) takes you there, and the first visit
 builds it (a few seconds). To make a world that *is* the practice world, pick the **SparBot Practice**

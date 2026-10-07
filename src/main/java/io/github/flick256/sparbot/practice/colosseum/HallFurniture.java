@@ -417,7 +417,7 @@ final class HallFurniture {
 	/** Two long tables down the hall with benches, candles and cakes on them, barrels of ale, a great hearth at the pier end. */
 	static void feast(Spot s) {
 		double fromEnd = s.len - s.w;
-		if (fromEnd < 2 && Math.abs(s.cu) < 2.5) {
+		if (fromEnd < 1 && Math.abs(s.cu) < 2.5) {
 			s.put(F, lit(Blocks.CAMPFIRE));
 			s.fill(F + 3, Math.min(s.top, F + 12), b(Blocks.BRICKS));
 			return;
@@ -581,7 +581,7 @@ final class HallFurniture {
 		if (fromEnd < 10 && Math.abs(s.cu) < s.depth / 2 - 3) {
 			s.fill(F, F + 1, b(Blocks.DARK_OAK_PLANKS));
 			if (fromEnd < 1.5 || Math.abs(s.cu) > s.depth / 2 - 4) {
-				s.fill(F + 2, Math.min(s.top - 1, F + 10), b(Blocks.WOOL.red()));
+				s.fill(F + 2, Math.min(s.top - 1, F + GrandHalls.B1 - 3), b(Blocks.WOOL.red()));
 			} else if (fromEnd > 9) {
 				s.put(F + 2, b(Blocks.DARK_OAK_SLAB));
 			}

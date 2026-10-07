@@ -90,6 +90,12 @@ public final class SparBotContent {
 	/** Called once from the mod's initialiser, so the static registrations above run in time. */
 	public static void register() {
 		FabricDefaultAttributeRegistry.register(VAELOR, VaelorBoss.createAttributes());
+		// In the creative inventory too, with the combat things.
+		net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.modifyOutputEvent(net.minecraft.world.item.CreativeModeTabs.COMBAT).register(out -> {
+			for (Item item : REWARDS) {
+				out.accept(item);
+			}
+		});
 	}
 
 	public static Identifier id(String path) {
