@@ -318,7 +318,7 @@ public final class ClientEmulator {
 			listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
 			return;
 		}
-		HitResult hit = raycast(player);
+		HitResult hit = shownHit(player, bot, raycast(player));
 		switch (hit.getType()) {
 			case ENTITY -> {
 				Entity target = ((EntityHitResult) hit).getEntity();
@@ -338,6 +338,36 @@ public final class ClientEmulator {
 			case MISS -> missTime = MISS_TIME_TICKS;
 		}
 		listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
+	}
+
+	/**
+	 * What the click lands on as the bot's client shows the world: a real client raycasts against the other
+	 * players where it draws them (interpolated, a ping late) and the server accepts the hit. So when the
+	 * opponent's body as shown is under the crosshair, in reach and in front of any block, that is the hit.
+	 */
+	private static HitResult shownHit(BotPlayer player, Bot bot, HitResult hit) {
+		if (hit.getType() == HitResult.Type.ENTITY) {
+			return hit;
+		}
+		Perception.SeenBody shown = bot.clickableBody();
+		if (shown == null || !shown.entity().isAlive() || shown.entity().isRemoved() || shown.entity().level() != player.level()) {
+			return hit;
+		}
+		Vec3 from = player.getEyePosition(1.0F);
+		double reach = player.entityInteractionRange();
+		Vec3 to = from.add(player.getViewVector(1.0F).scale(reach));
+		java.util.Optional<Vec3> entry = shown.box().clip(from, to);
+		if (shown.box().contains(from)) {
+			entry = java.util.Optional.of(from);
+		}
+		if (entry.isEmpty()) {
+			return hit;
+		}
+		double distanceSq = entry.get().distanceToSqr(from);
+		if (hit.getType() == HitResult.Type.BLOCK && hit.getLocation().distanceToSqr(from) <= distanceSq) {
+			return hit;
+		}
+		return new EntityHitResult(shown.entity(), entry.get());
 	}
 
 	/** LocalPlayer#aiStep sprint rules (canStartSprinting / shouldStopRunSprinting / shouldStopSwimSprinting). */

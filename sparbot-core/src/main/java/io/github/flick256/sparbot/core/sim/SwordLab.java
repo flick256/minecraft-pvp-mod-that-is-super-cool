@@ -28,8 +28,10 @@ public final class SwordLab {
 	}
 
 	public static Summary run(SkillProfile a, SkillProfile b, Loadout loadout, int fights, long seed) {
-		Tournament.Entrant ea = Tournament.scripted(a);
-		Tournament.Entrant eb = Tournament.scripted(b);
+		return run(Tournament.scripted(a), Tournament.scripted(b), loadout, fights, seed);
+	}
+
+	public static Summary run(Tournament.Entrant ea, Tournament.Entrant eb, Loadout loadout, int fights, long seed) {
 		DuelSim.Result[] results = IntStream.range(0, fights).parallel().mapToObj(i -> {
 			long s = seed * 1_000_003L + i;
 			return DuelSim.fight(ea.side(s), eb.side(s ^ 0x9E3779B9L), loadout, SimArena.DUEL, s, Tournament.MAX_TICKS * 2, null);
@@ -72,9 +74,10 @@ public final class SwordLab {
 	public static void main(String[] args) {
 		int fights = args.length > 0 ? Integer.parseInt(args[0]) : 100;
 		Map<String, SkillProfile> presets = SkillProfiles.loadPresets();
-		SkillProfile a = presets.get(args.length > 1 ? args[1] : "pro");
-		SkillProfile b = presets.get(args.length > 2 ? args[2] : "pro");
+		// A name is a profile id, or <profile>-off:<technique>,<technique> (see UhcLab#entrant).
+		Tournament.Entrant a = UhcLab.entrant(args.length > 1 ? args[1] : "pro", presets);
+		Tournament.Entrant b = UhcLab.entrant(args.length > 2 ? args[2] : "pro", presets);
 		String kit = args.length > 3 ? args[3] : "pvphq_sword";
-		System.out.println(a.id() + " vs " + b.id() + " in " + kit + ": " + run(a, b, Loadout.ofKit(kit), fights, 1));
+		System.out.println(a.name() + " vs " + b.name() + " in " + kit + ": " + run(a, b, Loadout.ofKit(kit), fights, 1));
 	}
 }

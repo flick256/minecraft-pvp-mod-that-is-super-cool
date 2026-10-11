@@ -105,8 +105,8 @@ public final class SpearTactic implements Tactic {
 		boolean armed = inv.selectedSlot() == spear;
 
 		// Aim at the chest, leading by the skill's share of the motion during the tracking delay.
-		Vec3 lead = t.velocity().scale(c.profile.aim().trackingLead() * (c.trackingDelayTicks + 1));
-		Vec3 goal = t.chest().add(lead);
+		Vec3 lead = t.velocity().scale(c.profile.aim().trackingLead() * BrainContext.HAND_LEAD_TICKS);
+		Vec3 goal = c.wandered(t.chest().add(lead));
 		float[] look = c.lookAt(Angles.yawTowards(self.eyePosition(), goal), Angles.pitchTowards(self.eyePosition(), goal));
 		double distance = c.targetDistance();
 		double skill = c.profile.items().spearSkill();

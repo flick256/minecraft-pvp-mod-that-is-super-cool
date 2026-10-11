@@ -716,6 +716,37 @@ public final class SimFighter {
 		return new Vec3(x - HALF_WIDTH, y, z - HALF_WIDTH);
 	}
 
+	/** Where the body was, tick by tick (newest at {@code pastCount - 1}, a ring of {@link #PAST}). */
+	private static final int PAST = 32;
+	private final double[] pastX = new double[PAST];
+	private final double[] pastY = new double[PAST];
+	private final double[] pastZ = new double[PAST];
+	private int pastCount;
+	/**
+	 * How old (ticks) the opponent's body is in this fighter's eyes when its click arrives: a client clicks on
+	 * what it sees (interpolated, a ping late) and the server takes the hit. Set each tick by the duel.
+	 */
+	int hitLag;
+
+	private void remember() {
+		pastX[pastCount % PAST] = x;
+		pastY[pastCount % PAST] = y;
+		pastZ[pastCount % PAST] = z;
+		pastCount++;
+	}
+
+	/** The body's box {@code ticks} ago (or as far back as remembered): {min, max}. */
+	Vec3[] boxAgo(int ticks) {
+		if (pastCount == 0 || ticks <= 0) {
+			return new Vec3[] {boxMin(), boxMax()};
+		}
+		int i = Math.max(0, pastCount - 1 - Math.min(ticks - 1, Math.min(PAST - 1, pastCount - 1)));
+		double px = pastX[i % PAST];
+		double py = pastY[i % PAST];
+		double pz = pastZ[i % PAST];
+		return new Vec3[] {new Vec3(px - HALF_WIDTH, py, pz - HALF_WIDTH), new Vec3(px + HALF_WIDTH, py + HEIGHT, pz + HALF_WIDTH)};
+	}
+
 	Vec3 boxMax() {
 		return new Vec3(x + HALF_WIDTH, y + HEIGHT, z + HALF_WIDTH);
 	}
@@ -741,7 +772,8 @@ public final class SimFighter {
 		Vec3 dir = look();
 		SimWorld.Hit block = world.clip(eye, dir, BLOCK_REACH, SimWorld.Clip.OUTLINE);
 		double blockDistance = block == null ? Double.POSITIVE_INFINITY : block.distance();
-		double entry = rayEntry(eye, dir, other.boxMin(), other.boxMax(), Math.min(BLOCK_REACH, blockDistance));
+		Vec3[] seen = other.boxAgo(hitLag);
+		double entry = rayEntry(eye, dir, seen[0], seen[1], Math.min(BLOCK_REACH, blockDistance));
 		if (entry >= 0 && entry < blockDistance) {
 			if (entry <= REACH) {
 				attack(other, rng, entry);
@@ -900,6 +932,7 @@ public final class SimFighter {
 
 	/** One tick of the body: Entity#baseTick, sprinting, jumping, travel, blocks touched, timers. */
 	void move() {
+		remember();
 		Inputs in = inventoryOpen ? Inputs.IDLE : keys;
 		ticks++;
 		if (in.strafe() != 0) {

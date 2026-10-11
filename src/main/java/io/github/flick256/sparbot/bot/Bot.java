@@ -132,6 +132,14 @@ public final class Bot {
 		lastTactic = tactic;
 	}
 
+	/**
+	 * The opponent where this bot's client would show them when its click reaches the server: interpolated (two
+	 * ticks) and a ping late each way, as for any player. A click on that body lands, as a player's does.
+	 */
+	Perception.@Nullable SeenBody clickableBody() {
+		return perception.seen(io.github.flick256.sparbot.core.brain.DuelBrain.INTERPOLATION_TICKS + 2 * shaper.latencyTicks());
+	}
+
 	/** The inputs the bot's brain pressed this tick, after the human limits (what a recording stores). */
 	public Inputs lastInputs() {
 		return lastInputs;

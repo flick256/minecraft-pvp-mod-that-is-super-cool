@@ -65,6 +65,28 @@ public final class Perception {
 	private boolean wasSwinging;
 	private int lastSwingTime;
 
+	/** The opponent's hitbox, tick by tick (a ring), for clicks on where the bot's client shows them. */
+	private static final int TRAIL = 32;
+	private final net.minecraft.world.phys.AABB[] trail = new net.minecraft.world.phys.AABB[TRAIL];
+	private int trailCount;
+	private @Nullable LivingEntity trailEntity;
+
+	/**
+	 * The opponent as a client would show them {@code ticksAgo} ticks back (interpolation and ping), with
+	 * their hitbox then: a client's click hits what it shows, and the server takes the hit. Null with no
+	 * opponent.
+	 */
+	@Nullable SeenBody seen(int ticksAgo) {
+		if (trailEntity == null || trailCount == 0) {
+			return null;
+		}
+		int back = Math.min(Math.max(0, ticksAgo), Math.min(TRAIL, trailCount) - 1);
+		return new SeenBody(trailEntity, trail[(trailCount - 1 - back) % TRAIL]);
+	}
+
+	record SeenBody(LivingEntity entity, net.minecraft.world.phys.AABB box) {
+	}
+
 	Observation observe(Bot bot, BotPlayer self, long tick, double awarenessRadius, boolean autoTarget, boolean autoTargetBots) {
 		LivingEntity target = chooseTarget(bot, self, awarenessRadius, autoTarget, autoTargetBots);
 		return new Observation(tick, selfState(self, target), targetState(self, target, awarenessRadius, bot.assignedTarget() != null, tick),
@@ -72,6 +94,8 @@ public final class Perception {
 	}
 
 	void reset() {
+		trailCount = 0;
+		trailEntity = null;
 		lastSwingTick = Long.MIN_VALUE / 2;
 		wasSwinging = false;
 		trackedId = null;
@@ -124,6 +148,8 @@ public final class Perception {
 			reset();
 			trackedId = target.getUUID();
 		}
+		trail[trailCount++ % TRAIL] = target.getBoundingBox();
+		trailEntity = target;
 		boolean visible = target.distanceToSqr(self) <= radius * radius && self.hasLineOfSight(target);
 		if (visible) {
 			// The swing animation is visible: a new swing is a click (hit or miss), which resets their charge.

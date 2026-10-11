@@ -85,6 +85,13 @@ public final class DuelMemory {
 	int ticksSinceOwnClick = Integer.MAX_VALUE / 2;
 	int retreatTicks;
 	int retreatCooldown;
+	/**
+	 * Where on the opponent's body the bot's aim actually sits, relative to their chest (blocks: across,
+	 * up): a hand never holds a crosshair perfectly still on a moving target, so the aim point wanders over
+	 * the body, further for a shakier hand (see {@link #wanderAim}).
+	 */
+	double aimWanderAcross;
+	double aimWanderUp;
 	int reactionDelayTicks;
 	int trackingDelayTicks;
 	int ticksUntilReactionResample;
@@ -102,5 +109,18 @@ public final class DuelMemory {
 
 	public Mistake mistake() {
 		return mistake;
+	}
+
+	/**
+	 * One tick of the aim point's wander: a slow random walk pulled back to the chest (an Ornstein-Uhlenbeck
+	 * process), whose spread grows with the profile's hand jitter: about 0.17 blocks for a pro, 0.3 for an
+	 * intermediate player, 0.5 for a beginner (a player is 0.6 wide and 1.8 tall).
+	 */
+	void wanderAim(io.github.flick256.sparbot.core.math.Rng rng, io.github.flick256.sparbot.core.profile.SkillProfile.Aim aim) {
+		double sigma = 0.04 + 0.085 * aim.jitterDeg();
+		aimWanderAcross += -0.15 * aimWanderAcross + rng.nextGaussian() * sigma;
+		aimWanderUp += -0.15 * aimWanderUp + rng.nextGaussian() * sigma * 1.3;
+		aimWanderAcross = Math.max(-0.6, Math.min(0.6, aimWanderAcross));
+		aimWanderUp = Math.max(-0.9, Math.min(0.7, aimWanderUp));
 	}
 }

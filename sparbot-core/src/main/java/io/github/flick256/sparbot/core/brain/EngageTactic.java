@@ -57,11 +57,11 @@ public final class EngageTactic implements Tactic {
 		TargetState target = c.target;
 		DuelMemory m = c.memory;
 
-		// Aim at the chest of the opponent as currently tracked, leading by a skill-dependent fraction
-		// of how far it moves during the tracking delay (+1 tick for the time until the click lands).
+		// Aim at the chest of the opponent as the bot sees them. A click lands on the body as the bot's client shows
+		// it (see BrainContext#handLeadTicks), so the aim only leads by the hand's own lag, as much as skill manages.
 		TargetState aimAt = c.seen();
-		Vec3 lead = aimAt.velocity().scale(c.profile.aim().trackingLead() * (c.trackingDelayTicks + 1));
-		Vec3 goal = aimAt.chest().add(lead);
+		Vec3 lead = aimAt.velocity().scale(c.profile.aim().trackingLead() * BrainContext.HAND_LEAD_TICKS);
+		Vec3 goal = c.wandered(aimAt.chest().add(lead));
 		float goalYaw = Angles.yawTowards(self.eyePosition(), goal);
 		float goalPitch = Angles.pitchTowards(self.eyePosition(), goal);
 		float[] look = c.aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);
@@ -91,7 +91,8 @@ public final class EngageTactic implements Tactic {
 		}
 
 		// React to our own landed hit (perceived via the target's hurt animation starting).
-		boolean targetJustHurt = target.hurtTime() > m.lastTargetHurtTime && m.ticksSinceOwnClick < 6;
+		// (The red flash shows up a reaction time after the click, so that is how far back the click may be.)
+		boolean targetJustHurt = target.hurtTime() > m.lastTargetHurtTime && m.ticksSinceOwnClick < m.reactionDelayTicks + 4;
 		if (targetJustHurt) {
 			m.sinceOwnHit = 0;
 		}
@@ -136,9 +137,15 @@ public final class EngageTactic implements Tactic {
 		// Crit attempt: drop sprint, jump, and hit on the way down with a full charge.
 		updateCrit(c, distance, judgedReach);
 		if (m.critPhase == DuelMemory.CritPhase.WINDUP) {
-			forward = 0;
+			// Let go of W for a tick (that is what ends a sprint: a crit can't be a sprint hit), then jump walking
+			// forward, so the jump carries in to the hit instead of stopping dead.
 			sprint = false;
-			jump = true;
+			if (m.critTicks == 0) {
+				forward = 0;
+			} else {
+				forward = distance > judgedReach - 0.5 ? 1 : 0;
+				jump = true;
+			}
 		} else if (m.critPhase == DuelMemory.CritPhase.AIRBORNE) {
 			sprint = false;
 		}
@@ -261,7 +268,7 @@ public final class EngageTactic implements Tactic {
 			case WINDUP -> {
 				if (!self.onGround()) {
 					m.critPhase = DuelMemory.CritPhase.AIRBORNE;
-				} else if (++m.critTicks > 3) {
+				} else if (++m.critTicks > 4) {
 					m.critPhase = DuelMemory.CritPhase.NONE;
 				}
 			}

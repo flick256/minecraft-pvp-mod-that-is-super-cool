@@ -92,13 +92,29 @@ class SwordPlanTest {
 	}
 
 	@Test
-	void jumpsInForACritWhenCharged() {
-		BrainHarness h = new BrainHarness(pro(0, 0, 0, 1), TestFixtures.inventory(), opponent(new Vec3(0, 0, 4.2), TargetState.NO_SWING));
+	void doesNotJumpIntoAChargedOpponent() {
+		// A jump can't be steered or sprinted: jumping in on a charged opponent only hands them the first hit.
+		BrainHarness h = new BrainHarness(pro(1, 0, 0, 1), TestFixtures.inventory(), opponent(new Vec3(0, 0, 4.2), TargetState.NO_SWING));
+		for (int i = 0; i < 30; i++) {
+			h.tick();
+		}
+		assertFalse(h.any(in -> in.jump() && !in.sprint()), "walked in sprinting instead of jumping for a crit");
+	}
+
+	@Test
+	void jumpsForACritWhenTheyCantHitBack() {
+		BrainHarness h = new BrainHarness(pro(1, 0, 0, 1), TestFixtures.inventory(), eating(new Vec3(0, 0, 3.4)));
+		h.attackStrength = 0.55F; // charged again a few ticks into the jump
 		boolean jumped = false;
 		for (int i = 0; i < 30 && !jumped; i++) {
 			Inputs in = h.tick();
 			jumped = in.jump() && !in.sprint();
 		}
-		assertTrue(jumped, "jumped in unsprinted to land the hit as a crit");
+		assertTrue(jumped, "jumped unsprinted to come down charged on an opponent who is eating");
+	}
+
+	private static TargetState eating(Vec3 pos) {
+		return new TargetState(7, "Steve", pos, Vec3.ZERO, 180, 20, 20, true, 0, false, true, 0, 0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY,
+			ItemKind.GOLDEN_APPLE, 15, false, false, false, TargetState.NO_SWING);
 	}
 }

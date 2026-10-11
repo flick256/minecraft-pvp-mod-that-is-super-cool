@@ -24,6 +24,12 @@ public final class DuelBrain implements Policy {
 	private static final int REACTION_RESAMPLE_TICKS = 20;
 	/** Visual-motor latency of continuous tracking (about one tick on top of network delay). */
 	private static final int TRACKING_BASE_DELAY_TICKS = 1;
+	/**
+	 * A real client never shows an opponent where the server has them: it eases each other player towards
+	 * their latest position over three ticks (entity interpolation), so what a player sees, aims at and reacts
+	 * to is about two ticks old on top of their ping. The bot sees the world that late too.
+	 */
+	public static final int INTERPOLATION_TICKS = 2;
 
 	private final SkillProfile profile;
 	private final Playstyle style;
@@ -87,8 +93,8 @@ public final class DuelBrain implements Policy {
 		memory.lastSelfPosition = here;
 		if (--memory.ticksUntilReactionResample <= 0) {
 			double networkMs = profile.pingMs().sample(rng) / 2.0;
-			memory.reactionDelayTicks = (int) Math.round((profile.reactionTimeMs().sample(rng) + networkMs) / 50.0);
-			memory.trackingDelayTicks = TRACKING_BASE_DELAY_TICKS + (int) Math.round(networkMs / 50.0);
+			memory.reactionDelayTicks = INTERPOLATION_TICKS + (int) Math.round((profile.reactionTimeMs().sample(rng) + networkMs) / 50.0);
+			memory.trackingDelayTicks = INTERPOLATION_TICKS + TRACKING_BASE_DELAY_TICKS + (int) Math.round(networkMs / 50.0);
 			memory.ticksUntilReactionResample = REACTION_RESAMPLE_TICKS;
 		}
 		TargetState seen = perception.delayed(memory.reactionDelayTicks);
@@ -103,6 +109,7 @@ public final class DuelBrain implements Policy {
 			memory.mistake = rng.chance(profile.mistakeRate()) ? pickMistake() : Mistake.NONE;
 		}
 
+		memory.wanderAim(rng, profile.aim());
 		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory, disabled);
 		Map<String, Double> scores = new LinkedHashMap<>();
 		double[] tacticScores = new double[tactics.size()];

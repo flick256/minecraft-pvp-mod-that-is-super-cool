@@ -22,7 +22,13 @@ public final class BrainContext {
 	 * follow a moving target continuously; reaction time delays decisions, not tracking.
 	 */
 	public final TargetState tracked;
-	/** How many ticks old {@link #tracked} is, used to lead the aim. */
+	/**
+	 * How far ahead of what it sees a melee aim leads (ticks of the opponent's motion). A click lands on the
+	 * opponent as the clicker's client shows them (interpolated, a ping late: the server takes the hit), so
+	 * there is nothing to lead but the hand's own lag (a tick) and the click's (a tick).
+	 */
+	public static final int HAND_LEAD_TICKS = 2;
+	/** How many ticks old {@link #tracked} is. */
 	public final int trackingDelayTicks;
 	public final SkillProfile profile;
 	public final Rng rng;
@@ -147,6 +153,21 @@ public final class BrainContext {
 			t.position().z() - t.halfWidth()), new Vec3(t.position().x() + t.halfWidth(), t.position().y() + t.height(), t.position().z() + t.halfWidth()),
 			maxDistance);
 		return entry >= 0 && entry >= self.crosshairBlockDistance();
+	}
+
+	/**
+	 * Where the bot's hand actually puts its crosshair when it means to aim at {@code point} on the opponent:
+	 * shifted across and up by the aim point's wander (see {@link DuelMemory#wanderAim}).
+	 */
+	public Vec3 wandered(Vec3 point) {
+		Vec3 eye = self.eyePosition();
+		double dx = point.x() - eye.x();
+		double dz = point.z() - eye.z();
+		double h = Math.sqrt(dx * dx + dz * dz);
+		if (h < 1e-6) {
+			return point;
+		}
+		return point.add(new Vec3(-dz / h * memory.aimWanderAcross, memory.aimWanderUp, dx / h * memory.aimWanderAcross));
 	}
 
 	/** Mouse movement this tick towards looking at the given angles (smoothed, jittered by the aim model). */

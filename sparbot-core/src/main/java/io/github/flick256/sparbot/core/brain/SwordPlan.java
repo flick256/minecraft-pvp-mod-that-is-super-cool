@@ -67,7 +67,9 @@ final class SwordPlan {
 			return 1.0;
 		}
 		double chargeTicks = t.mainHand() == ItemKind.AXE ? 20.0 : t.mainHand() == ItemKind.MACE ? 33.3 : 12.5;
-		return Math.min(1.0, (t.ticksSinceSwing() + 0.5) / chargeTicks);
+		// The swing was seen a reaction time late: a practised reader knows it is older than it looks.
+		double elapsed = t.ticksSinceSwing() + 0.5 + c.memory.reactionDelayTicks * c.skill(Technique.READING);
+		return Math.min(1.0, elapsed / chargeTicks);
 	}
 
 	/** Called once per tick before {@link #plan}: what the bot learns this tick about charge and swings. */
@@ -171,24 +173,36 @@ final class SwordPlan {
 
 	/**
 	 * Whether now is a good moment to jump for a crit (vanilla crits need a full charge while falling and
-	 * not sprinting, and do 1.5x damage):
+	 * not sprinting, and do 1.5x damage). A jump costs the sprint and a few ticks in the air that can't be
+	 * steered, so a practised player only jumps when the opponent can't hit back in that time:
 	 * <ul>
-	 *   <li>charged and a jump away: jump in and land the hit on the way down, so a trade goes the bot's way;</li>
-	 *   <li>recharging up close: jump so the charge is full on the way down (about 6 ticks after the jump).</li>
+	 *   <li>mid-combo: they are flying from the bot's last hit and it is recharging, so it jumps to come down
+	 *       charged as they land back in reach;</li>
+	 *   <li>punishing: they are recharging (a missed swing, a hit just traded) and the bot will be charged on the
+	 *       way down;</li>
+	 *   <li>they can't swing at all (eating, stuck in a web out of reach).</li>
 	 * </ul>
-	 * A player reading the opponent only does the slow, unsprinted second kind when they can't punish it.
+	 * An unpractised player jumps whenever, and is hit for it.
 	 */
 	static boolean critOpportunity(BrainContext c, double distance, double reach) {
 		int ready = ticksToReady(c);
 		double skill = c.skill(Technique.CRITS);
-		boolean approach = ready == 0 && distance > reach + 0.4 && distance < reach + 2.0;
-		// A practised player times the jump; a novice jumps whenever.
-		boolean timed = skill >= 0.5 ? ready >= 3 && ready <= 7 : c.self.attackStrength() >= 0.3;
-		boolean safe = !c.memory.reading || opponentCharge(c) < 0.7 || c.target != null && c.target.hurtTime() > 0;
-		boolean upClose = timed && safe && distance <= reach + 1.3;
-		// How often a player goes for crits at all grows faster than linearly with practice: a novice jumps now and
-		// then, a pro on nearly every exchange.
-		return (approach || upClose) && c.memory.critDecision.get(c.rng, Math.pow(skill, 1.6), 20);
+		if (skill <= 0) {
+			return false;
+		}
+		DuelMemory m = c.memory;
+		TargetState t = c.target;
+		if (skill < 0.5) {
+			// Novice: jumps now and then once the charge is a third back, wherever the opponent is.
+			return c.self.attackStrength() >= 0.3 && distance <= reach + 1.3 && m.critDecision.get(c.rng, Math.pow(skill, 1.6), 20);
+		}
+		// A jump lands about 12 ticks later; the charge should be full on the way down (6-10 ticks in).
+		boolean timed = ready >= 3 && ready <= 8;
+		boolean flying = t != null && t.hurtTime() > 0 && m.sinceOwnHit < 10;
+		boolean combo = timed && flying && distance <= reach + 2.0;
+		boolean punish = timed && m.reading && opponentCharge(c) < 0.5 && distance <= reach + 1.0;
+		boolean helpless = timed && c.opponentHelpless() && distance <= reach + 1.5;
+		return (combo || punish || helpless) && m.critDecision.get(c.rng, Math.pow(skill, 1.6), 20);
 	}
 
 	private static void set(Move mv, int forward, int strafe, boolean sprint) {

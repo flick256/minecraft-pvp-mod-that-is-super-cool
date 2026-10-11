@@ -17,7 +17,8 @@ import java.util.OptionalDouble;
  */
 public final class RangedTactic implements Tactic {
 	static final double MIN_RANGE = 8.0;
-	static final double MAX_RANGE = 40.0;
+	/** Players rarely shoot from further than this in a duel: past it an arrow is mostly luck. */
+	static final double MAX_RANGE = 30.0;
 	private static final int BOW_FULL_DRAW_TICKS = 20;
 	/** Stop strafing this many ticks before a full draw, so the release comes from standing still. */
 	private static final int STOP_BEFORE_SHOT = 4;
@@ -35,6 +36,15 @@ public final class RangedTactic implements Tactic {
 	/** Closest a stationary opponent is shot from (closer, the sword is the better weapon). */
 	static final double PUNISH_RANGE = 4.5;
 	private boolean crossbowFiring;
+	/**
+	 * This shot's misjudgements, drawn when the draw starts: how far off the bot's sense of the distance is (a
+	 * factor on it), and how much of the opponent's motion it leads by (a factor on its usual lead). Nobody
+	 * works out an arrow's flight; they estimate, and the estimate is off by more for a less practised archer
+	 * and over a longer distance.
+	 */
+	private double rangeJudgement = 1.0;
+	private double leadJudgement = 1.0;
+	private boolean wasDrawing;
 
 	@Override
 	public String name() {
@@ -93,6 +103,9 @@ public final class RangedTactic implements Tactic {
 		wantsRanged.reset();
 		wantsPunish.reset();
 		crossbowFiring = false;
+		rangeJudgement = 1.0;
+		leadJudgement = 1.0;
+		wasDrawing = false;
 	}
 
 	@Override
@@ -105,7 +118,12 @@ public final class RangedTactic implements Tactic {
 		ItemInfo weapon = slot >= 0 ? inv.slot(slot) : ItemInfo.EMPTY;
 		boolean crossbow = weapon.is(ItemKind.CROSSBOW);
 
-		float[] goal = aim(c, crossbow ? Ballistics.ARROW_CROSSBOW : Ballistics.ARROW_FULL_BOW);
+		boolean drawingNow = inv.usingItem() && (inv.usingKind() == ItemKind.BOW || inv.usingKind() == ItemKind.CROSSBOW) || crossbow && weapon.charged();
+		if (drawingNow && !wasDrawing) {
+			judge(c);
+		}
+		wasDrawing = drawingNow;
+		float[] goal = aim(c, crossbow ? Ballistics.ARROW_CROSSBOW : Ballistics.ARROW_FULL_BOW, rangeJudgement, leadJudgement);
 		float[] look = c.lookAt(goal[0], goal[1]);
 		// Hand steadiness: a less skilled archer releases with a larger aim error.
 		float tolerance = (float) (0.8 + (1.0 - c.profile.items().bowSkill()) * 3.0);
@@ -151,16 +169,34 @@ public final class RangedTactic implements Tactic {
 	 * aims against it, as much as their tracking skill manages.
 	 */
 	static float[] aim(BrainContext c, Ballistics.Projectile projectile) {
+		return aim(c, projectile, 1.0, 1.0);
+	}
+
+	/**
+	 * Draws this shot's misjudgements (see {@link #rangeJudgement}): a pro misjudges a 20-block shot by about
+	 * a block and leads within a fifth either way; a beginner is off by three or four blocks and leads anything
+	 * from not at all to twice too much.
+	 */
+	private void judge(BrainContext c) {
+		double skill = c.profile.items().bowSkill();
+		double distance = Math.max(1, c.targetDistance());
+		double rangeSpread = (0.03 + 0.15 * (1 - skill)) * Math.min(1.5, distance / 20.0 + 0.5);
+		rangeJudgement = Math.max(0.6, Math.min(1.4, 1 + c.rng.nextGaussian() * rangeSpread));
+		leadJudgement = Math.max(0, Math.min(2, 1 + c.rng.nextGaussian() * (0.15 + 0.5 * (1 - skill))));
+	}
+
+	/** As {@link #aim(BrainContext, Ballistics.Projectile)}, with the distance and the lead misjudged by those factors. */
+	static float[] aim(BrainContext c, Ballistics.Projectile projectile, double rangeFactor, double leadFactor) {
 		TargetState t = c.seen();
 		Vec3 eye = c.self.eyePosition();
 		Vec3 point = t.chest();
-		double horizontal = point.horizontalDistanceTo(eye);
+		double horizontal = point.horizontalDistanceTo(eye) * rangeFactor;
 		OptionalDouble pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());
 		if (pitch.isPresent()) {
 			int flight = Ballistics.flightTicks(projectile, (float) pitch.getAsDouble(), horizontal);
 			Vec3 own = new Vec3(c.memory.selfMotion.x(), 0, c.memory.selfMotion.z());
-			point = point.add(t.velocity().subtract(own).scale(flight * c.profile.aim().trackingLead()));
-			horizontal = point.horizontalDistanceTo(eye);
+			point = point.add(t.velocity().subtract(own).scale(flight * c.profile.aim().trackingLead() * leadFactor));
+			horizontal = point.horizontalDistanceTo(eye) * rangeFactor;
 			pitch = Ballistics.solvePitch(projectile, horizontal, point.y() - eye.y());
 		}
 		float yaw = Angles.yawTowards(eye, point);

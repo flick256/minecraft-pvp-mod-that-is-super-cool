@@ -116,6 +116,8 @@ public final class DuelSim {
 			}
 			for (int i = 0; i < 2; i++) {
 				f[i].look(in[i]);
+				// What a click hits: the opponent as this side's client shows them (see SimFighter#hitLag).
+				f[i].hitLag = io.github.flick256.sparbot.core.brain.DuelBrain.INTERPOLATION_TICKS + 2 * shapers[i].latencyTicks();
 			}
 			// The server handles both players' clicks before moving anyone; whose packets come first varies.
 			int first = rng.chance(0.5) ? 0 : 1;
