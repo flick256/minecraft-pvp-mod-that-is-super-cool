@@ -316,6 +316,35 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		}
 		context.takeScreenshot("drill-punish");
 		stopDrill(context, world);
+
+		// A sword duel against an intermediate bot in the practice kit, with the live coach on: the client swings
+		// at half charge now and then, which the coach points out.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight sword_duel intermediate"));
+		world.getServer().waitFor(server -> SparBot.matches().inMatch(human(server).getUUID()), 600);
+		for (int i = 0; i < 240; i++) {
+			if (i % 7 == 0) {
+				context.runOnClient(client -> {
+					for (net.minecraft.world.entity.Entity e : client.level.entitiesForRendering()) {
+						if (e instanceof net.minecraft.world.entity.player.Player p && p != client.player && p.distanceTo(client.player) < 4) {
+							client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, p.getEyePosition());
+							client.gameMode.attack(client.player, p);
+							client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+						}
+					}
+				});
+			}
+			context.waitTick();
+			if (i == 160) {
+				context.takeScreenshot("fight-coach");
+			}
+		}
+		boolean kit = world.getServer().computeOnServer(server -> human(server).getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST)
+			.getEnchantments().toString().contains("protection"));
+		if (!kit) {
+			throw new AssertionError("the sword duel didn't give the practice kit (Protection IV armor)");
+		}
+		world.getServer().runOnServer(server -> SparBot.matches().stopAll(server));
+		world.getServer().waitFor(server -> !SparBot.matches().inMatch(human(server).getUUID()), 600);
 	}
 
 	/** Moves a player to just inside reach of the bot, facing it (a player stepping in to punish). */
