@@ -8,9 +8,10 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 2.0. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
-> and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it,
-> cues that tell you when to act) and a **live coach** in your fights against bots. Every bot fights with
+> Status: 3.0. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
+> and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it, from
+> the keys you really pressed, to the tick; cues that tell you when to act) and a **live coach** in your fights
+> against bots. Every bot fights with
 > hand-written, human-limited fighting code (2.0 removed the machine learning): at a chosen skill level and
 > **playstyle**, with any technique switchable per bot. A debug view shows what a bot is thinking.
 

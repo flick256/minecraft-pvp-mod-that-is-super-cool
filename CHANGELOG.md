@@ -45,6 +45,11 @@ Drills that judge what you really did, and bots that stop beating themselves.
   loses, and so does bringing any of them forward. Tiers in UHC: demon beats pro 70%, pro beats advanced 92%,
   advanced beats intermediate every time. New lab entrants for this: `UhcLab ... demon-w:web=0.7,wall=0.5`
   (tactic weights) and `demon-eager` (the 2.0 brain).
+- A bot low on health with a golden apple to eat no longer turns and runs (handing you free hits); it eats or walls
+  up instead. A wall goes up in 1.5 seconds or is given up, where a bot could stand building one for 2.5.
+- The drills client test (`./gradlew runClientGameTest -PdrillsOnly`) now plays the jump reset the way it has to be
+  done: taking hits without jumping must count for nothing, then it sprints into the attacker and jumps on the
+  client tick each knockback arrives, and passes the stage.
 
 ## 2.0.0
 

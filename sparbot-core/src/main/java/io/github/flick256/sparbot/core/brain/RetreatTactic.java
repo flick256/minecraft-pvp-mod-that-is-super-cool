@@ -36,8 +36,8 @@ public final class RetreatTactic implements Tactic {
 		boolean recovered = c.self.healthFraction() > panic + 0.15;
 		if (panicking) {
 			// With an apple to eat, running away just hands the opponent free hits (and the eat is the way back):
-			// healing and walls take it from here. In the simulator a demon that ran anyway lost 3 points more often.
-			return HealTactic.gappleSlot(c.self.inventory()) >= 0 && !Boolean.getBoolean("x.oldretreat") ? 0 : 0.8;
+			// healing and walls take it from here.
+			return HealTactic.gappleSlot(c.self.inventory()) >= 0 ? 0 : 0.8;
 		}
 		// Hysteresis: once retreating, keep going until health has recovered somewhat.
 		return c.memory.retreatTicks > 0 && !recovered ? 0.7 : 0;
