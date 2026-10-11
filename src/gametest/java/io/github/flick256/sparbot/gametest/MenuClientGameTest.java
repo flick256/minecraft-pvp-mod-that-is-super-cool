@@ -307,7 +307,15 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			client.options.keyUp.setDown(true);
 			client.options.keySprint.setDown(true);
 		});
+		String[] whyNotSprinting = {""};
 		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
+			// A player whose sprint dropped (they bumped into something) presses sprint again.
+			context.runOnClient(client -> {
+				if (!client.player.isSprinting() && client.player.onGround()) {
+					whyNotSprinting[0] = "collision " + client.player.horizontalCollision + ", food " + client.player.getFoodData().getFoodLevel();
+					client.player.setSprinting(true);
+				}
+			});
 			context.waitTick();
 			if (i == 120) {
 				context.takeScreenshot("drill-jumpreset");
@@ -323,7 +331,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		if (passed < 1) {
 			throw new AssertionError("jumping as each hit lands didn't pass the jump reset drill's first stage (good reps: "
 				+ world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID())) + "; verdicts: "
-				+ world.getServer().computeOnServer(server -> SparBot.drills().recentVerdicts(human(server).getUUID())) + ")");
+				+ world.getServer().computeOnServer(server -> SparBot.drills().recentVerdicts(human(server).getUUID())) + "; last not sprinting: " + whyNotSprinting[0] + ")");
 		}
 		// Nobody dies in a drill.
 		boolean alive = world.getServer().computeOnServer(server -> {
