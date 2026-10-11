@@ -228,7 +228,29 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	 * (jumping the moment the client sees its hit, as a player would), punishing the whiffer's missed swing,
 	 * and the guard that stops a drill killing you.
 	 */
+	/** While set, the client presses jump on exactly the client ticks a hit's knockback arrives (see drills()). */
+	private static volatile boolean JUMP_ON_HIT;
+	private static int jumpLastHurt;
+	private static boolean jumpHookRegistered;
+
 	private static void drills(ClientGameTestContext context, TestSingleplayerContext world) {
+		context.runOnClient(client -> {
+			if (!jumpHookRegistered) {
+				jumpHookRegistered = true;
+				// The start of a client tick comes after the packets that arrived since the last: a hurt animation seen
+				// here came with its knockback, so jump is held on this very tick (and let go on the next).
+				net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.START_CLIENT_TICK.register(c -> {
+					if (c.player == null) {
+						return;
+					}
+					int hurt = c.player.hurtTime;
+					if (JUMP_ON_HIT) {
+						c.options.keyJump.setDown(hurt > jumpLastHurt && c.player.onGround());
+					}
+					jumpLastHurt = hurt;
+				});
+			}
+		});
 		// Full charge: nine full-charge hits a little over a second apart pass the first stage (eight needed).
 		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill charge"));
 		world.getServer().waitFor(server -> SparBot.drills().inDrill(human(server).getUUID()), 600);
@@ -250,23 +272,42 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		world.getServer().waitFor(server -> SparBot.drills().stagesPassed(human(server).getUUID()) >= 1, 300);
 		stopDrill(context, world);
 
-		// Jump reset: the attacker swings on a rhythm; the client jumps the tick it sees the hit land.
+		// Jump reset: the attacker swings on a rhythm. Taking its hits without jumping counts for nothing (the
+		// knockback lifting you is not a jump); then the client sprints into it and jumps on the very client tick
+		// each hit's knockback arrives (the start of the tick its hurt animation came in), as a perfect player would.
 		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill jumpreset"));
 		world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
+		int[] taken = {0};
 		int[] lastHurt = {0};
-		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
+		for (int i = 0; i < 400 && taken[0] < 2; i++) {
 			context.runOnClient(client -> {
 				int hurt = client.player.hurtTime;
-				if (hurt > lastHurt[0] && client.player.onGround()) {
-					client.player.jumpFromGround();
+				if (hurt > lastHurt[0]) {
+					taken[0]++;
 				}
 				lastHurt[0] = hurt;
 			});
+			context.waitTick();
+		}
+		context.waitTicks(30);
+		int unearned = world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID()));
+		if (taken[0] < 2 || unearned != 0) {
+			throw new AssertionError("taking " + taken[0] + " hits without jumping counted " + unearned + " jump resets");
+		}
+		JUMP_ON_HIT = true;
+		context.runOnClient(client -> client.options.keyUp.setDown(true));
+		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
+			context.runOnClient(client -> client.player.setSprinting(true));
 			context.waitTick();
 			if (i == 120) {
 				context.takeScreenshot("drill-jumpreset");
 			}
 		}
+		JUMP_ON_HIT = false;
+		context.runOnClient(client -> {
+			client.options.keyUp.setDown(false);
+			client.options.keyJump.setDown(false);
+		});
 		int passed = world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()));
 		if (passed < 1) {
 			throw new AssertionError("jumping as each hit lands didn't pass the jump reset drill's first stage (good reps: "

@@ -5,6 +5,8 @@ import io.github.flick256.sparbot.bot.Bot;
 import io.github.flick256.sparbot.bot.BotManager;
 import io.github.flick256.sparbot.bot.BotPlayer;
 import io.github.flick256.sparbot.core.brain.Technique;
+import io.github.flick256.sparbot.core.drill.ClientFrame;
+import io.github.flick256.sparbot.core.drill.ClientFrames;
 import io.github.flick256.sparbot.core.drill.Drill;
 import io.github.flick256.sparbot.core.drill.DrillTally;
 import io.github.flick256.sparbot.core.drill.Feedback;
@@ -42,7 +44,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.stats.Stats;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -76,17 +77,14 @@ import org.jspecify.annotations.Nullable;
 public final class DrillManager {
 	private static final int COUNTDOWN = 60;
 	private static final int BREAK = 50;
-	/** A hit within this long of disabling the bot's shield follows the stun up. */
+	/** How long after disabling the bot's shield a second hit is still waited for (the stun itself is far quicker). */
 	private static final int STUN_FOLLOW_UP = 20;
-	/** A jump this soon after (or just before) a hit lands on you is a jump reset attempt. */
-	private static final int JUMP_RESET_AFTER = 5;
-	private static final int JUMP_RESET_BEFORE = 6;
 	/** A combo is over once this long passes without another hit. */
 	private static final int COMBO_GAP = 30;
 	/** How long after its missed swing the bot can still be punished at all (the rep's own mark is tighter). */
 	private static final int PUNISH_LIMIT = 20;
-	/** Wandering this far from the bay ends the drill. */
-	private static final double LEASH = 40;
+	/** Wandering this far from the bay's centre (just past its walls) ends the drill. */
+	private static final double LEASH = 19;
 	/** The attacker pattern swings this often (ticks). */
 	private static final int ATTACK_RHYTHM = 40;
 	/** Health below this in a drill is topped back up. */
@@ -122,14 +120,26 @@ public final class DrillManager {
 		boolean mace;
 		double reach;
 		double fall;
+		/** The client tick of the click being resolved (see {@link ClientTicks}). */
+		int attackClientTick;
+		/** The client tick of your last landed melee hit (for the W-tap), or -1. */
+		int lastOwnClickTick = -1;
 		// Shields.
 		long stunCheckAt = -1;
 		long stunAt = -1;
+		int axeClickTick;
+		long axeAt;
 		boolean shieldCooling;
-		// Jump resets: a hit taken on the ground waits a few ticks for the jump.
-		long hitTakenAt = -1;
-		int lastJumps;
-		long lastJumpAt = Long.MIN_VALUE / 2;
+		// Jump resets: a hit taken on the ground is read from your client ticks once the knockback has played out.
+		int jumpHitTick = -1;
+		double jumpDx;
+		double jumpDz;
+		// S-taps: your landed hits whose S-tap is still being read.
+		final List<Integer> taps = new ArrayList<>();
+		/** Your sprint hits whose W-tap is still being read: click tick, sprinting (1/0), charge. */
+		final List<double[]> wTaps = new ArrayList<>();
+		/** The last verdict, kept under the cue while it shows. */
+		Component verdictLine = Component.empty();
 		// Combos.
 		int comboHits;
 		long lastOwnHitAt = Long.MIN_VALUE / 2;
@@ -145,14 +155,31 @@ public final class DrillManager {
 		// Webs, fire and totems.
 		boolean inWeb;
 		long webSince;
+		/** Your cobwebs in hand last tick, and when you last placed one (a web you put on yourself isn't an escape). */
+		int ownWebs;
+		long ownWebAt = Long.MIN_VALUE / 2;
+		boolean selfWebbed;
+		// Lava: a pour waiting to be judged (set alight? scooped back?).
+		int lavaBuckets;
+		long pouredAt = -1;
+		boolean pourLit;
+		// Your last swing (block-hitting means swinging between blocks).
+		long lastSwingAt = Long.MIN_VALUE / 2;
+		// Your charged anchor clicked, for the blast it sets off.
+		long anchorUsedAt = Long.MIN_VALUE / 2;
+		int healedTicks;
 		boolean botBurning;
-		boolean hadTotem;
+		int hadTotems;
 		long poppedAt = -1;
 		// Blasts are counted once a tick.
 		long lastBlastAt = -1;
 		final Set<FishingHook> hooks = new HashSet<>();
 		final Set<FishingHook> hooked = new HashSet<>();
 		final Set<AbstractArrow> arrows = new HashSet<>();
+		/** Each arrow's draw (0-1) and the range it was shot from. */
+		final Map<AbstractArrow, double[]> arrowShots = new IdentityHashMap<>();
+		/** Each cast's distance to the bot. */
+		final Map<FishingHook, Float> castFrom = new IdentityHashMap<>();
 		int botDownTicks;
 		/** The action bar shows the last verdict until then, then the cue and progress again. */
 		long verdictUntil = -1;
@@ -204,6 +231,18 @@ public final class DrillManager {
 			}
 			return InteractionResult.PASS;
 		});
+		// A charged respawn anchor you set off (anything but glowstone in hand): its blast is yours.
+		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player instanceof ServerPlayer sp && !(player instanceof BotPlayer)) {
+				net.minecraft.world.level.block.state.BlockState state = level.getBlockState(hit.getBlockPos());
+				Session s = running(sp);
+				if (s != null && state.is(Blocks.RESPAWN_ANCHOR) && state.getValue(net.minecraft.world.level.block.RespawnAnchorBlock.CHARGE) > 0
+					&& !sp.getItemInHand(hand).is(Items.GLOWSTONE)) {
+					s.anchorUsedAt = level.getGameTime();
+				}
+			}
+			return InteractionResult.PASS;
+		});
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (involved(entity)) {
 				healthBefore.put(entity, entity.getHealth() + entity.getAbsorptionAmount());
@@ -219,6 +258,11 @@ public final class DrillManager {
 		// Nobody dies in a drill: what would have killed you heals you instead.
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayer p && !(p instanceof BotPlayer) && inDrill(p.getUUID())) {
+				// A totem in hand pops as it would anywhere (the re-totem drill is about the next one); the drill only
+				// steps in when nothing else would save you.
+				if (totems(p) > 0) {
+					return true;
+				}
 				Float before = healthBefore.remove(entity);
 				if (before != null) {
 					onDamage(entity, source, before);
@@ -268,8 +312,7 @@ public final class DrillManager {
 	public void watchMatch(ServerPlayer player, Bot bot) {
 		if (!inDrill(player.getUUID())) {
 			Session s = new Session(player.getUUID(), bot.name());
-			s.lastJumps = jumps(player);
-			s.hadTotem = player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+			s.hadTotems = totems(player);
 			s.shieldCooling = shieldCooling(player);
 			sessions.put(player.getUUID(), s);
 		}
@@ -401,6 +444,9 @@ public final class DrillManager {
 		player.setDeltaMovement(Vec3.ZERO);
 		KitApplier.applyForPlayer(player, kit(s.drill.kit()));
 		revive(player, false);
+		if (s.drill.rep() == Drill.Rep.POT) {
+			player.setHealth(8.0F); // hurt, so there is something to heal
+		}
 		Bot bot = SparBot.bots().get(s.botName).orElse(null);
 		if (bot != null) {
 			bot.setHome(level.dimension(), botSpot(s, stage), 0);
@@ -522,8 +568,12 @@ public final class DrillManager {
 				stop(player, "you left the bay");
 				continue;
 			}
-			if (player.getHealth() < TOP_UP_BELOW && player.isAlive()) {
-				revive(player, false);
+			// In the pot drill you are only topped up when nearly dead: healing yourself is the drill.
+			float topUpBelow = s.drill.rep() == Drill.Rep.POT ? 4.0F : TOP_UP_BELOW;
+			if (player.getHealth() < topUpBelow && player.isAlive()) {
+				// Health and food only: a fall in progress (a mace smash) or fire you should put out stay as they are.
+				player.setHealth(player.getMaxHealth());
+				player.getFoodData().setFoodLevel(20);
 				player.sendOverlayMessage(Component.literal("Healed up: you can't die in a drill").withStyle(ChatFormatting.YELLOW));
 			}
 			step(server, level, s, player);
@@ -546,8 +596,7 @@ public final class DrillManager {
 			ServerPlayer p = server.getPlayerList().getPlayer(target);
 			if (p != null && !(p instanceof BotPlayer)) {
 				Session s = new Session(target, bot.name());
-				s.lastJumps = jumps(p);
-				s.hadTotem = p.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+				s.hadTotems = totems(p);
 				s.shieldCooling = shieldCooling(p);
 				sessions.put(target, s);
 			}
@@ -592,12 +641,18 @@ public final class DrillManager {
 					s.phase = Phase.RUN;
 					s.phaseTicks = 0;
 					s.tally = new DrillTally();
-					s.lastJumps = jumps(player);
-					s.hadTotem = player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
+					s.hadTotems = totems(player);
 					s.shieldCooling = shieldCooling(player);
 					s.inWeb = false;
+					s.selfWebbed = false;
+					s.ownWebs = count(player, Items.COBWEB);
+					s.lavaBuckets = count(player, Items.LAVA_BUCKET);
+					s.pouredAt = -1;
 					s.poppedAt = -1;
-					s.hitTakenAt = -1;
+					s.jumpHitTick = -1;
+					s.taps.clear();
+					s.wTaps.clear();
+					s.lastOwnClickTick = -1;
 					s.stunAt = -1;
 					s.comboHits = 0;
 					s.whiffAt = -1;
@@ -609,6 +664,8 @@ public final class DrillManager {
 					s.hooks.clear();
 					s.hooked.clear();
 					s.arrows.clear();
+					s.arrowShots.clear();
+					s.castFrom.clear();
 					bot.resetMindForRound();
 					bot.setBrainPaused(false);
 					if (s.pattern instanceof DrillPatterns.Rusher r) {
@@ -623,7 +680,7 @@ public final class DrillManager {
 					return; // the stage was passed this tick
 				}
 				long now = level.getGameTime();
-				if (now >= s.verdictUntil && s.phaseTicks % 4 == 0) {
+				if (s.phaseTicks % 2 == 0) {
 					hud(s, player, body, now);
 				}
 				if (s.phaseTicks >= s.current().seconds() * 20) {
@@ -644,14 +701,17 @@ public final class DrillManager {
 		int left = Math.max(0, (stage.seconds() * 20 - s.phaseTicks) / 20);
 		Component progress = Component.literal(s.tally.goodReps + "/" + stage.reps() + " " + s.drill.rep().label() + "  " + left + " s")
 			.withStyle(ChatFormatting.WHITE);
-		String cue = stage.cues() ? Cues.cue(s.drill.rep(), player, body, s.pattern, now, s.whiffAt, s.stunAt) : null;
-		player.sendOverlayMessage(cue == null || cue.isEmpty() ? progress
-			: Component.literal(cue + "   ").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD).append(progress));
-		// The moment to act goes up in the middle of the screen too, big, where the eyes are.
+		String cue = stage.cues() ? Cues.cue(s.drill.rep(), player, body, s.pattern, now, s.whiffAt, s.stunAt, (int) stage.target()) : null;
+		Component bar = cue == null || cue.isEmpty() ? progress
+			: Component.literal(cue + "   ").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD).append(progress);
+		// The last verdict stays on the bar for a moment, ahead of the cue (the cue never goes quiet).
+		player.sendOverlayMessage(now < s.verdictUntil ? s.verdictLine.copy().append(Component.literal("   ")).append(bar) : bar);
+		// The moment to act goes up in the middle of the screen too, big, where the eyes are (the verdict under it).
 		if (cue != null && Cues.urgent(cue) && (!cue.equals(s.lastUrgent) || now - s.urgentAt > 10)) {
 			s.lastUrgent = cue;
 			s.urgentAt = now;
-			title(player, Component.literal(cue).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), Component.empty(), 8);
+			title(player, Component.literal(cue).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), now < s.verdictUntil ? s.verdictLine : Component.empty(),
+				8);
 		} else if (cue == null || !Cues.urgent(cue)) {
 			s.lastUrgent = "";
 		}
@@ -666,8 +726,9 @@ public final class DrillManager {
 		long now = player.level().getGameTime();
 		s.verdictUntil = now + 30;
 		Drill.Stage stage = s.current();
-		player.sendOverlayMessage(Component.literal((verdict.good() ? "✔ " : "✘ ") + verdict.text()).withStyle(verdict.good() ? ChatFormatting.GREEN
-			: ChatFormatting.RED).append(Component.literal("   " + s.tally.goodReps + "/" + stage.reps()).withStyle(ChatFormatting.WHITE)));
+		s.verdictLine = Component.literal((verdict.good() ? "\u2714 " : "\u2718 ") + verdict.text()).withStyle(verdict.good() ? ChatFormatting.GREEN
+			: ChatFormatting.RED);
+		player.sendOverlayMessage(s.verdictLine.copy().append(Component.literal("   " + s.tally.goodReps + "/" + stage.reps()).withStyle(ChatFormatting.WHITE)));
 		sound(player, verdict.good() ? SoundEvents.NOTE_BLOCK_PLING : SoundEvents.NOTE_BLOCK_BASS, verdict.good() ? 1.6F : 0.6F);
 		title(player, Component.empty(), Component.literal((verdict.good() ? "\u2714 " : "\u2718 ") + verdict.text())
 			.withStyle(verdict.good() ? ChatFormatting.GREEN : ChatFormatting.RED), 30);
@@ -728,31 +789,17 @@ public final class DrillManager {
 		DrillTally t = s.tally;
 		long now = level.getGameTime();
 		t.ticks++;
-		// Jumps, and the jump reset a hit taken on the ground was waiting for.
-		int jumps = jumps(player);
-		if (jumps > s.lastJumps) {
-			s.lastJumpAt = now;
-			if (s.hitTakenAt >= 0 && now - s.hitTakenAt <= JUMP_RESET_AFTER) {
-				int offset = (int) (now - s.hitTakenAt);
-				if (offset <= 2) {
-					t.jumpResets++;
+		// The pot drill against a bot that doesn't hit: healed up for 2 s, you are hurt again.
+		if (s.is(Drill.Rep.POT) && s.current().pattern() != Drill.Pattern.FIGHT) {
+			if (player.getHealth() >= player.getMaxHealth() - 1) {
+				if (++s.healedTicks >= 40) {
+					s.healedTicks = 0;
+					player.setHealth(8.0F);
+					player.sendOverlayMessage(Component.literal("Hurt again: pot up").withStyle(ChatFormatting.RED));
 				}
-				if (s.is(Drill.Rep.JUMP_RESET)) {
-					rep(s, player, Feedback.jumpReset(offset));
-				} else if (s.drill == null) {
-					coach.jumpResetJudged(offset, player, s, this::tipAllowed);
-				}
-				s.hitTakenAt = -1;
+			} else {
+				s.healedTicks = 0;
 			}
-		}
-		s.lastJumps = jumps;
-		if (s.hitTakenAt >= 0 && now - s.hitTakenAt > JUMP_RESET_AFTER) {
-			if (s.is(Drill.Rep.JUMP_RESET)) {
-				rep(s, player, Feedback.jumpReset(null));
-			} else if (s.drill == null) {
-				coach.jumpResetJudged(null, player, s, this::tipAllowed);
-			}
-			s.hitTakenAt = -1;
 		}
 		// A combo that petered out.
 		if (s.comboHits > 0 && now - s.lastOwnHitAt > COMBO_GAP) {
@@ -800,33 +847,57 @@ public final class DrillManager {
 				s.exchangeOpen = true;
 			}
 		}
-		// Webs.
+		// Webs (one you just placed yourself doesn't count: the drill is about theirs).
+		int webs = count(player, Items.COBWEB);
+		if (webs < s.ownWebs) {
+			s.ownWebAt = now;
+		}
+		s.ownWebs = webs;
 		BlockPos feet = player.blockPosition();
 		boolean web = level.getBlockState(feet).is(Blocks.COBWEB) || level.getBlockState(feet.above()).is(Blocks.COBWEB);
 		if (web && !s.inWeb) {
 			s.webSince = now;
+			s.selfWebbed = now - s.ownWebAt <= 10;
 		} else if (!web && s.inWeb) {
-			t.webEscapes++;
-			t.webTicks += (int) (now - s.webSince);
-			if (s.is(Drill.Rep.WEB)) {
-				rep(s, player, Feedback.web((now - s.webSince) / 20.0, s.current().target()));
+			if (!s.selfWebbed) {
+				t.webEscapes++;
+				t.webTicks += (int) (now - s.webSince);
+				if (s.is(Drill.Rep.WEB)) {
+					rep(s, player, Feedback.web((now - s.webSince) / 20.0, s.current().target()));
+				}
 			}
 		}
 		s.inWeb = web;
-		// The bot set alight.
+		// Lava: a pour is judged once it is scooped back (or left lying): did it set them alight?
+		int lava = count(player, Items.LAVA_BUCKET);
+		if (lava < s.lavaBuckets) {
+			s.pouredAt = now;
+			s.pourLit = false;
+		}
+		boolean scooped = lava > s.lavaBuckets;
+		s.lavaBuckets = lava;
 		boolean burning = body.isOnFire();
 		if (burning) {
 			t.botBurningTicks++;
-			if (!s.botBurning && s.is(Drill.Rep.LAVA)) {
-				rep(s, player, Feedback.landed("Set alight!"));
+			if (!s.botBurning && s.pouredAt >= 0) {
+				s.pourLit = true;
 			}
 		}
 		s.botBurning = burning;
+		if (s.pouredAt >= 0 && (scooped || now - s.pouredAt > 80)) {
+			if (s.is(Drill.Rep.LAVA)) {
+				rep(s, player, Feedback.lava(s.pourLit, scooped, (now - s.pouredAt) / 20.0));
+			}
+			s.pouredAt = -1;
+		}
 		// Totems.
-		boolean totem = player.getOffhandItem().is(Items.TOTEM_OF_UNDYING);
-		if (s.hadTotem && !totem) {
+		// Totems: one fewer in your hands is a pop (vanilla tries the main hand, then the offhand); a new one in
+		// the offhand after it is the re-totem.
+		int totems = totems(player);
+		boolean totem = player.getOffhandItem().has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION);
+		if (totems < s.hadTotems && player.getHealth() <= 1.5F) {
 			s.poppedAt = now;
-		} else if (!s.hadTotem && totem && s.poppedAt >= 0) {
+		} else if (totem && s.poppedAt >= 0) {
 			t.retotems++;
 			t.retotemTicks += (int) (now - s.poppedAt);
 			if (s.is(Drill.Rep.RETOTEM)) {
@@ -834,7 +905,7 @@ public final class DrillManager {
 			}
 			s.poppedAt = -1;
 		}
-		s.hadTotem = totem;
+		s.hadTotems = totems;
 		// Your shield, disabled.
 		boolean cooling = shieldCooling(player);
 		if (cooling && !s.shieldCooling) {
@@ -851,7 +922,7 @@ public final class DrillManager {
 		if (s.stunCheckAt >= 0 && now > s.stunCheckAt) {
 			if (shieldCooling(body)) {
 				t.stuns++;
-				s.stunAt = now;
+				s.stunAt = s.axeAt;
 			}
 			s.stunCheckAt = -1;
 		}
@@ -866,23 +937,25 @@ public final class DrillManager {
 			if (!hook.isRemoved() && hook.getHookedIn() == body && s.hooked.add(hook)) {
 				t.rodHooks++;
 				if (s.is(Drill.Rep.ROD)) {
-					rep(s, player, Feedback.rod(true));
+					rep(s, player, Feedback.rod(true, s.castFrom.getOrDefault(hook, 6F)));
 				}
 			}
 		}
 		for (FishingHook hook : s.hooks) {
 			if (hook.isRemoved() && !s.hooked.contains(hook) && s.is(Drill.Rep.ROD)) {
-				rep(s, player, Feedback.rod(false));
+				rep(s, player, Feedback.rod(false, s.castFrom.getOrDefault(hook, 6F)));
 			}
 		}
+		s.castFrom.keySet().removeIf(Entity::isRemoved);
 		s.hooks.removeIf(Entity::isRemoved);
 		s.hooked.removeIf(Entity::isRemoved);
 		for (AbstractArrow arrow : new ArrayList<>(s.arrows)) {
 			boolean stuck = arrow.tickCount > 3 && arrow.getDeltaMovement().lengthSqr() < 1.0E-4;
 			if (arrow.isRemoved() || stuck || arrow.tickCount > 200) {
 				s.arrows.remove(arrow);
+				double[] shot = s.arrowShots.remove(arrow);
 				if (s.is(Drill.Rep.ARROW)) {
-					rep(s, player, Feedback.arrow(false));
+					rep(s, player, Feedback.arrow(false, shot == null ? 1 : shot[0], shot == null ? 15 : shot[1]));
 				}
 			}
 		}
@@ -895,8 +968,27 @@ public final class DrillManager {
 		s.comboHits = 0;
 	}
 
-	private static int jumps(ServerPlayer player) {
-		return player.getStats().getValue(Stats.CUSTOM.get(Stats.JUMP));
+	/** Items with death protection (totems) in either hand. */
+	private static int totems(net.minecraft.world.entity.player.Player p) {
+		int n = 0;
+		for (ItemStack stack : new ItemStack[] {p.getMainHandItem(), p.getOffhandItem()}) {
+			if (stack.has(net.minecraft.core.component.DataComponents.DEATH_PROTECTION)) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	private static int count(ServerPlayer p, net.minecraft.world.item.Item item) {
+		int n = 0;
+		net.minecraft.world.entity.player.Inventory inv = p.getInventory();
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			ItemStack stack = inv.getItem(i);
+			if (stack.is(item)) {
+				n += stack.getCount();
+			}
+		}
+		return n;
 	}
 
 	private static boolean shieldCooling(net.minecraft.world.entity.player.Player p) {
@@ -906,6 +998,53 @@ public final class DrillManager {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * A client tick of a real player ({@link ClientTicks}): reads the jump reset of a hit they took and the S-tap
+	 * of a hit they landed, once enough of their ticks are in.
+	 */
+	public void onClientTick(ServerPlayer player) {
+		Session s = sessions.get(player.getUUID());
+		if (s == null || s.phase != Phase.RUN || s.jumpHitTick < 0 && s.taps.isEmpty() && s.wTaps.isEmpty()) {
+			return;
+		}
+		List<ClientFrame> frames = ClientTicks.frames(player);
+		if (s.jumpHitTick >= 0) {
+			ClientFrames.JumpReading r = ClientFrames.jumpReset(frames, s.jumpHitTick, s.jumpDx, s.jumpDz);
+			if (!r.pending()) {
+				s.jumpHitTick = -1;
+				Feedback.Verdict v = Feedback.jumpReset(r);
+				if (v.good()) {
+					s.tally.jumpResets++;
+				}
+				// A hit taken in the air (still flying from an earlier one) isn't a rep: there was nothing to reset.
+				if (s.is(Drill.Rep.JUMP_RESET) && !"air".equals(v.reason())) {
+					rep(s, player, v);
+				} else if (s.drill == null) {
+					coach.jumpResetJudged(v, player, s, this::tipAllowed);
+				}
+			}
+		}
+		for (java.util.Iterator<double[]> it = s.wTaps.iterator(); it.hasNext();) {
+			double[] w = it.next();
+			ClientFrames.TapReading r = ClientFrames.wTap(frames, (int) w[0]);
+			if (!r.pending()) {
+				it.remove();
+				if (s.is(Drill.Rep.SPRINT_HIT)) {
+					rep(s, player, Feedback.wTap(w[1] > 0, w[2], r));
+				}
+			}
+		}
+		for (java.util.Iterator<Integer> it = s.taps.iterator(); it.hasNext();) {
+			ClientFrames.TapReading r = ClientFrames.sTap(frames, it.next());
+			if (!r.pending()) {
+				it.remove();
+				if (s.is(Drill.Rep.S_TAP)) {
+					rep(s, player, Feedback.sTap(r));
+				}
+			}
+		}
 	}
 
 	// --- Events ---
@@ -943,15 +1082,16 @@ public final class DrillManager {
 		}
 		long now = player.level().getGameTime();
 		s.attackTick = now;
+		s.attackClientTick = ClientTicks.tracked(player) ? ClientTicks.now(player) : (int) now;
 		s.charge = player.getAttackStrengthScale(0.5F);
 		s.fall = player.fallDistance;
 		s.onGround = player.onGround();
 		s.falling = player.fallDistance > 0;
-		s.crit = s.charge > 0.9 && player.fallDistance > 0 && !player.onGround() && !player.onClimbable() && !player.isInWater()
+		s.crit = s.charge > 0.9 && player.fallDistance > 0 && !player.onGround() && !player.onClimbable() && !player.isInWater() && !player.isMobilityRestricted()
 			&& !player.isPassenger() && !player.isSprinting() && target instanceof LivingEntity;
 		s.sprint = player.isSprinting();
 		ItemStack hand = player.getMainHandItem();
-		s.mace = hand.is(Items.MACE);
+		s.mace = hand.is(Items.MACE) && !player.isFallFlying();
 		Vec3 eye = player.getEyePosition();
 		AABB box = target.getBoundingBox();
 		double dx = Math.max(Math.max(box.minX - eye.x, 0), eye.x - box.maxX);
@@ -960,6 +1100,8 @@ public final class DrillManager {
 		s.reach = Math.sqrt(dx * dx + dy * dy + dz * dz);
 		if (target instanceof LivingEntity living && living.isBlocking() && hand.is(ItemTags.AXES)) {
 			s.stunCheckAt = now;
+			s.axeAt = now;
+			s.axeClickTick = s.attackClientTick;
 		}
 	}
 
@@ -968,8 +1110,10 @@ public final class DrillManager {
 		Session s = running(player);
 		if (s != null) {
 			s.tally.swings++;
+			s.lastSwingAt = player.level().getGameTime();
 			if (s.is(Drill.Rep.AIM) && player.getMainHandItem().is(ItemTags.SWORDS)) {
-				rep(s, player, Feedback.aim(s.attackTick == player.level().getGameTime()));
+				boolean on = s.attackTick == player.level().getGameTime();
+				rep(s, player, on && s.charge <= 0.9 ? Feedback.charge(s.charge) : Feedback.aim(on));
 			}
 		}
 	}
@@ -991,8 +1135,11 @@ public final class DrillManager {
 				boolean landed = lost > 0;
 				if (landed) {
 					t.hit(s.charge, s.crit, s.sprint, s.reach);
-					s.comboHits++;
-					s.lastOwnHitAt = now;
+					// A combo is clean hits: full charge, a sprint hit or a crit. A weak one doesn't add to it.
+					if (s.charge > 0.9 && (s.sprint || s.crit)) {
+						s.comboHits++;
+						s.lastOwnHitAt = now;
+					}
 				}
 				if (s.drill == null) {
 					if (landed) {
@@ -1001,23 +1148,31 @@ public final class DrillManager {
 				} else if (landed) {
 					ownHit(s, player, now);
 				}
-				if (landed && s.mace && s.fall >= 1.5) {
+				if (landed && s.mace && s.fall > 1.5) {
 					t.smashes++;
 					if (s.is(Drill.Rep.SMASH)) {
 						rep(s, player, Feedback.landed(String.format(Locale.ROOT, "Smash from %.1f blocks!", s.fall)));
 					}
 				}
-				if (landed && s.stunAt >= 0 && now - s.stunAt <= STUN_FOLLOW_UP && now > s.stunAt) {
-					t.stunFollowUps++;
+				if (landed && s.stunAt >= 0 && now - s.stunAt <= STUN_FOLLOW_UP && s.attackClientTick > s.axeClickTick) {
+					// The second click of a stun, timed in your client's ticks (a double click is a tick or three).
+					int gap = s.attackClientTick - s.axeClickTick;
+					if (gap <= Feedback.STUN_TICKS) {
+						t.stunFollowUps++;
+					}
 					if (s.is(Drill.Rep.STUN)) {
-						rep(s, player, Feedback.stun((int) (now - s.stunAt)));
+						rep(s, player, Feedback.stun(gap));
 					}
 					s.stunAt = -1;
 				}
+				if (landed) {
+					s.lastOwnClickTick = s.attackClientTick;
+				}
 			} else if (mine && direct instanceof AbstractArrow arrow && lost > 0) {
 				t.arrowHits++;
+				double[] shot = s.arrowShots.remove(arrow);
 				if (s.arrows.remove(arrow) && s.is(Drill.Rep.ARROW)) {
-					rep(s, player, Feedback.arrow(true));
+					rep(s, player, Feedback.arrow(true, shot == null ? 1 : shot[0], shot == null ? 15 : shot[1]));
 				}
 			} else if (lost >= 1 && now != s.lastBlastAt) {
 				if (mine && direct instanceof EndCrystal) {
@@ -1026,13 +1181,13 @@ public final class DrillManager {
 					if (s.is(Drill.Rep.CRYSTAL)) {
 						rep(s, player, Feedback.landed(String.format(Locale.ROOT, "Crystal: %.1f hearts", lost / 2)));
 					}
-				} else if (direct instanceof MinecartTNT) {
+				} else if (mine && direct instanceof MinecartTNT) {
 					t.cartBlasts++;
 					s.lastBlastAt = now;
 					if (s.is(Drill.Rep.CART)) {
 						rep(s, player, Feedback.landed(String.format(Locale.ROOT, "Cart: %.1f hearts", lost / 2)));
 					}
-				} else if (source.is(DamageTypes.BAD_RESPAWN_POINT)) {
+				} else if (source.is(DamageTypes.BAD_RESPAWN_POINT) && now - s.anchorUsedAt <= 3) {
 					t.anchorBlasts++;
 					s.lastBlastAt = now;
 					if (s.is(Drill.Rep.ANCHOR)) {
@@ -1046,20 +1201,22 @@ public final class DrillManager {
 		if (s != null && victim instanceof ServerPlayer player && lost > 0 && ofBot(source.getEntity()) == s
 			&& source.getDirectEntity() == source.getEntity()) {
 			s.lastHurtByBotAt = now;
-			boolean jumpedJustBefore = now - s.lastJumpAt <= JUMP_RESET_BEFORE;
-			s.tally.hitTaken(player.onGround() || jumpedJustBefore);
-			if (jumpedJustBefore && now - s.lastJumpAt <= 2) {
-				s.tally.jumpResets++;
-			}
-			if (jumpedJustBefore) {
-				int offset = (int) (s.lastJumpAt - now);
-				if (s.is(Drill.Rep.JUMP_RESET)) {
-					rep(s, player, Feedback.jumpReset(offset));
-				} else if (s.drill == null) {
-					coach.jumpResetJudged(offset, player, s, this::tipAllowed);
+			s.tally.hitTaken(player.onGround());
+			// The jump reset is read from the client's own ticks once the knockback has reached it (onClientTick):
+			// the server's jump counter can't tell a jump from the knockback lifting you.
+			Entity attacker = source.getEntity();
+			if (ClientTicks.tracked(player) && attacker != null) {
+				double dx = player.getX() - attacker.getX();
+				double dz = player.getZ() - attacker.getZ();
+				double len = Math.sqrt(dx * dx + dz * dz);
+				if (len > 1.0E-3) {
+					s.jumpHitTick = ClientTicks.now(player);
+					s.jumpDx = dx / len;
+					s.jumpDz = dz / len;
 				}
-			} else if (player.onGround()) {
-				s.hitTakenAt = now;
+			}
+			if (s.is(Drill.Rep.S_TAP) || s.is(Drill.Rep.REACH)) {
+				rep(s, player, Feedback.spacing());
 			}
 			if (s.comboHits > 0) {
 				endCombo(s, player);
@@ -1068,9 +1225,6 @@ public final class DrillManager {
 				s.exchangeOpen = false;
 				rep(s, player, Feedback.firstHit(false, 0));
 				resetExchange(s, now);
-			}
-			if (s.is(Drill.Rep.TRADE)) {
-				rep(s, player, Feedback.trade(false));
 			}
 			if (s.is(Drill.Rep.BLOCK)) {
 				rep(s, player, Feedback.block(false));
@@ -1085,18 +1239,39 @@ public final class DrillManager {
 			case CHARGE -> rep(s, player, Feedback.charge(s.charge));
 			case REACH -> rep(s, player, Feedback.reach(s.reach, stage.target()));
 			case CRIT -> rep(s, player, Feedback.crit(s.crit, s.charge, s.onGround, s.falling, s.sprint));
-			case SPRINT_HIT -> rep(s, player, Feedback.sprintHit(s.sprint, s.charge));
-			case TRADE -> rep(s, player, Feedback.trade(true));
+			case SPRINT_HIT -> {
+				if (ClientTicks.tracked(player)) {
+					// Judged once the W-tap after it has played out (onClientTick).
+					s.wTaps.add(new double[] {s.attackClientTick, s.sprint ? 1 : 0, s.charge});
+				} else {
+					rep(s, player, Feedback.sprintHit(s.sprint, s.charge));
+				}
+			}
+			case AIM -> {
+			}
+			case S_TAP -> {
+				if (ClientTicks.tracked(player)) {
+					s.taps.add(s.attackClientTick);
+				}
+			}
 			case PUNISH -> {
-				if (s.whiffAt >= 0) {
-					rep(s, player, Feedback.punish((int) (now - s.whiffAt), (int) stage.target()));
+				boolean freshMiss = s.botSwingAt >= 0 && now - s.botSwingAt <= 3 && s.lastHurtByBotAt < s.botSwingAt;
+				if (s.whiffAt >= 0 || freshMiss) {
+					long from = s.whiffAt >= 0 ? s.whiffAt : s.botSwingAt;
+					rep(s, player, Feedback.punish((int) (now - from), (int) stage.target()));
 					s.whiffAt = -1;
+					s.botSwingAt = -1;
+				} else if (s.pattern instanceof DrillPatterns.Whiffer w && w.state == DrillPatterns.Whiffer.State.APPROACH) {
+					rep(s, player, new Feedback.Verdict(false, "Too early: it hadn't swung yet. Let it swing and miss first", "early"));
 				}
 			}
 			case FIRST_HIT -> {
 				if (s.exchangeOpen) {
 					s.exchangeOpen = false;
-					rep(s, player, Feedback.firstHit(true, s.reach));
+					rep(s, player, s.charge > 0.9 ? Feedback.firstHit(true, s.reach) : Feedback.charge(s.charge));
+					resetExchange(s, now);
+				} else if (s.pattern instanceof DrillPatterns.Rusher r && !r.rushing(now) && s.resetAt < 0) {
+					rep(s, player, new Feedback.Verdict(false, "Wait for it: the exchange starts when it comes at you", "early"));
 					resetExchange(s, now);
 				}
 			}
@@ -1119,7 +1294,9 @@ public final class DrillManager {
 			s.tally.blocked++;
 			s.tally.combo = 0;
 			if (s.is(Drill.Rep.BLOCK)) {
-				rep(s, player, Feedback.block(true));
+				// Block-hitting is blocking between your own swings: a shield held up and never lowered isn't it.
+				long since = player.level().getGameTime() - s.lastSwingAt;
+				rep(s, player, since <= 40 ? Feedback.block(true) : Feedback.blockNoSwing());
 			} else if (s.is(Drill.Rep.SHIELD_DEFENCE)) {
 				rep(s, player, Feedback.shieldDefence(false));
 			}
@@ -1132,7 +1309,9 @@ public final class DrillManager {
 		if (s != null && thrower == target && effect == MobEffects.INSTANT_HEALTH.value() && target instanceof ServerPlayer player) {
 			s.tally.potIntensity += Math.min(1, intensity);
 			if (s.is(Drill.Rep.POT)) {
-				rep(s, player, Feedback.pot(Math.min(1, intensity)));
+				// Health as the pot lands (before its heal): a pot at nearly full health is a pot wasted.
+				float missing = player.getMaxHealth() - player.getHealth();
+				rep(s, player, missing < 6 ? Feedback.potWasted(missing) : Feedback.pot(Math.min(1, intensity)));
 			}
 		}
 	}
@@ -1144,9 +1323,12 @@ public final class DrillManager {
 		}
 		if (entity instanceof AbstractArrow arrow) {
 			Session s = running(arrow.getOwner());
-			if (s != null) {
+			if (s != null && arrow.getOwner() instanceof ServerPlayer shooter && shooter.getUseItem().is(Items.BOW)) {
 				s.tally.arrowsShot++;
 				s.arrows.add(arrow);
+				BotPlayer body = SparBot.bots().get(s.botName).map(Bot::body).orElse(null);
+				// A full draw leaves the bow at 3 blocks a tick; the range is from you to the bot as you let go.
+				s.arrowShots.put(arrow, new double[] {arrow.getDeltaMovement().length() / 3.0, body == null ? 0 : shooter.distanceTo(body)});
 			}
 		} else if (entity instanceof ThrownSplashPotion pot) {
 			Session s = running(pot.getOwner());
@@ -1158,6 +1340,8 @@ public final class DrillManager {
 			if (s != null) {
 				s.tally.rodCasts++;
 				s.hooks.add(hook);
+				BotPlayer body = SparBot.bots().get(s.botName).map(Bot::body).orElse(null);
+				s.castFrom.put(hook, body == null ? 0 : hook.getPlayerOwner().distanceTo(body));
 			}
 		}
 	}

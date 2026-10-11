@@ -20,32 +20,48 @@ final class Cues {
 	}
 
 	/** The cue for a drill's rep right now, or "" for none. */
-	static String cue(Drill.Rep rep, ServerPlayer p, BotPlayer bot, @Nullable Object pattern, long now, long whiffAt, long stunAt) {
+	static String cue(Drill.Rep rep, ServerPlayer p, BotPlayer bot, @Nullable Object pattern, long now, long whiffAt, long stunAt, int target) {
+		boolean w = p.getLastClientInput().forward();
 		float charge = p.getAttackStrengthScale(0.5F);
 		double reach = reach(p, bot);
 		return switch (rep) {
-			case CHARGE -> charge >= 0.95F ? "SWING NOW" : bar(charge) + " wait for it";
+			case CHARGE -> charge > 0.9F ? "SWING NOW" : bar(charge) + " wait for it";
 			case REACH -> reach > 3.0 ? String.format(Locale.ROOT, "%.1f: step in", reach)
-				: reach >= 2.6 ? String.format(Locale.ROOT, "%.1f: HIT NOW", reach) : String.format(Locale.ROOT, "%.1f: too close, back off", reach);
-			case CRIT -> crit(p, charge);
-			case SPRINT_HIT -> !p.isSprinting() ? "Let go of W, then press it again" : charge > 0.9F ? "Sprinting: HIT NOW" : "Sprinting: wait for the charge";
-			case JUMP_RESET, BLOCK -> rhythm(rep, pattern, now);
+				: reach >= 2.6 ? (charge > 0.9F ? String.format(Locale.ROOT, "%.1f: HIT NOW", reach) : String.format(Locale.ROOT, "%.1f: hold here, charging", reach))
+				: String.format(Locale.ROOT, "%.1f: too close, back off", reach);
+			case CRIT -> crit(p, charge, w);
+			case SPRINT_HIT -> !p.isSprinting() ? (w ? "Not sprinting: let go of W, press it again" : "Press W again to sprint")
+				: charge > 0.9F ? (reach <= 3.0 ? "Sprinting: HIT, then let go of W" : "Sprinting: step in") : "Sprinting: wait for the charge";
+			case JUMP_RESET -> !p.getLastClientInput().forward() || !p.isSprinting() ? "Sprint into it: hold W (and sprint)" : rhythm(rep, pattern, now);
+			case BLOCK -> rhythm(rep, pattern, now);
 			case AIM -> onTarget(p, bot) ? (charge > 0.9F ? "On target: SWING" : "On target: wait for the charge") : "Keep your crosshair on it";
-			case PUNISH -> punish(pattern, now, whiffAt);
-			case FIRST_HIT -> pattern instanceof DrillPatterns.Rusher r && !r.rushing(now) ? "Get ready: it is coming"
-				: String.format(Locale.ROOT, "%.1f: hit at 3.0", reach);
-			case COMBO -> charge > 0.9F ? (reach <= 3.0 ? "HIT" : "Follow them in") : "W-tap: let go of W, press it again";
-			case TRADE -> bot.getAttackStrengthScale(0.5F) >= 0.9F ? "It is charged: stay out of reach" : "It is recharging: go in and hit";
-			case STUN -> now - stunAt <= 20 && stunAt >= 0 ? "Shield down: SWORD, HIT NOW" : bot.isBlocking() ? "Shield up: hit it with your axe"
+			case PUNISH -> punish(pattern, now, whiffAt, target > 0 ? target : 10);
+			case FIRST_HIT -> pattern instanceof DrillPatterns.Rusher r && !r.rushing(now) ? "Wait for it..."
+				: reach > 3.4 ? String.format(Locale.ROOT, "%.1f: ready...", reach) : reach > 3.0 ? "SWING NOW" : String.format(Locale.ROOT, "%.1f: HIT", reach);
+			case COMBO -> charge > 0.9F ? (reach <= 3.0 ? "HIT" : "Follow them in") : w ? "W-tap: let go of W, press it again" : "Back on W: follow them";
+			case S_TAP -> sTap(p, charge, reach);
+			case STUN -> stunAt >= 0 && now - stunAt <= 4 ? "HIT AGAIN NOW" : bot.isBlocking() ? "Shield up: axe it, then click again at once"
 				: "Wait for its shield";
 			case SHIELD_DEFENCE -> bot.getMainHandItem().is(ItemTags.AXES) ? "AXE: drop your shield" : p.isBlocking() ? "Blocking: good" : "Raise your shield";
-			case POT -> p.getHealth() < 14 ? "Look down and throw a pot" : "";
+			case POT -> p.getHealth() <= 14 ? (p.getXRot() > 60 ? "Looking down: THROW NOW" : "Hurt: look down and throw a pot")
+				: "Pot only when you're down 3 hearts";
 			case WEB -> p.level().getBlockState(p.blockPosition()).is(net.minecraft.world.level.block.Blocks.COBWEB) ? "Caught: water at your feet, now"
 				: "";
 			case LAVA -> reach < 5 ? "Lava at its feet, then scoop it back" : "Get within 4 blocks";
 			case ARROW -> p.isUsingItem() && p.getUseItem().is(Items.BOW) ? (p.getTicksUsingItem() >= 20 ? "Full draw: aim and let go" : "Keep drawing")
 				: "Draw your bow";
-			case RETOTEM -> p.getOffhandItem().is(Items.TOTEM_OF_UNDYING) ? "" : "Totem to your offhand: F or the inventory";
+			case RETOTEM -> p.getOffhandItem().is(Items.TOTEM_OF_UNDYING) ? "Totem ready: fight" : "TOTEM NOW: to your offhand (F or the inventory)";
+			case ROD -> reach < 3.5 ? String.format(Locale.ROOT, "%.1f: too close for the rod, back off", reach)
+				: reach <= 8 ? (p.getMainHandItem().is(Items.FISHING_ROD) ? String.format(Locale.ROOT, "%.1f: CAST NOW, a little above its head", reach)
+					: String.format(Locale.ROOT, "%.1f: rod in hand, then cast", reach)) : String.format(Locale.ROOT, "%.1f: come within 8", reach);
+			case CRYSTAL -> p.getMainHandItem().is(Items.END_CRYSTAL) ? "Crystal on the obsidian, then hit it" : p.getMainHandItem().is(Items.OBSIDIAN)
+				? "Obsidian next to it" : "Obsidian, crystal, hit: one rhythm";
+			case ANCHOR -> p.getMainHandItem().is(Items.RESPAWN_ANCHOR) ? "Anchor beside it" : p.getMainHandItem().is(Items.GLOWSTONE)
+				? "Glowstone into the anchor, then swap" : "Charged? Click it with anything but glowstone";
+			case CART -> p.getMainHandItem().is(Items.RAIL) ? "Rail at its feet" : p.getMainHandItem().is(Items.TNT_MINECART) ? "Cart on the rail"
+				: "Fire at the cart NOW, then back off";
+			case SMASH -> p.onGround() ? (p.getMainHandItem().is(Items.WIND_CHARGE) ? "Look down and throw it at your feet" : "Wind charge in hand for height")
+				: p.fallDistance > 1.5 ? (reach <= 3 ? "Falling: SMASH NOW" : "Falling: steer over it") : "Rising: get above it";
 			default -> "";
 		};
 	}
@@ -53,15 +69,16 @@ final class Cues {
 	/** Whether a cue is the moment to act (shown big in the middle of the screen as well). */
 	static boolean urgent(String cue) {
 		return cue.contains("NOW") || cue.startsWith("JUMP") || cue.contains("GO,") || cue.equals("SHIELD UP") || cue.startsWith("AXE")
-			|| cue.endsWith("SWING") || cue.equals("HIT");
+			|| cue.endsWith("SWING") || cue.equals("HIT") || cue.startsWith("HIT") || cue.matches("[123]\\.\\.\\.") || cue.startsWith("TOTEM NOW") || cue.contains("CAST NOW") || cue.contains("SMASH NOW") || cue.contains("THROW NOW")
+			|| cue.startsWith("Fire at the cart") || cue.startsWith("SWING");
 	}
 
-	private static String crit(ServerPlayer p, float charge) {
+	private static String crit(ServerPlayer p, float charge, boolean w) {
 		if (p.onGround()) {
 			if (charge < 0.6F) {
 				return "Wait for the charge";
 			}
-			return p.isSprinting() ? "Let go of W, then JUMP" : "JUMP";
+			return p.isSprinting() ? (w ? "Let go of W, then JUMP" : "Sprint dropping... JUMP") : "JUMP";
 		}
 		if (p.fallDistance <= 0) {
 			return "Rising: wait...";
@@ -78,12 +95,19 @@ final class Cues {
 		if (rep == Drill.Rep.BLOCK) {
 			return left <= 8 ? "SHIELD UP" : "Lower it and hit";
 		}
-		// The cue goes out a tick or two early: it reaches you a ping late.
-		return left <= 2 ? "JUMP!" : left <= 12 ? "Get ready..." : "Watch its arm";
+		// A count-in on its rhythm, so you jump on the beat rather than react late (a reaction takes 4 ticks or more).
+		return left <= 1 ? "JUMP!" : left <= 9 ? "1..." : left <= 17 ? "2..." : left <= 25 ? "3..." : "Watch its arm";
 	}
 
-	private static String punish(@Nullable Object pattern, long now, long whiffAt) {
-		if (whiffAt >= 0 && now - whiffAt <= 12) {
+	private static String sTap(ServerPlayer p, float charge, double reach) {
+		if (charge >= 0.9F) {
+			return reach <= 3.0 ? "HIT, and tap S NOW" : "Charged: step in to 3 blocks";
+		}
+		return p.getLastClientInput().backward() ? "Tap, don't hold: back to W" : reach < 3.3 ? "Recharging: stay out of its reach" : "Wait for the charge";
+	}
+
+	private static String punish(@Nullable Object pattern, long now, long whiffAt, int window) {
+		if (whiffAt >= 0 && now - whiffAt <= window) {
 			return "It missed: GO, HIT IT";
 		}
 		if (pattern instanceof DrillPatterns.Whiffer w) {

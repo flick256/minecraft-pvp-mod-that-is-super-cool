@@ -199,8 +199,10 @@ final class DrillPatterns {
 	}
 
 	/**
-	 * Waits a moment, then sprints straight at you and swings as soon as you are in its reach. The drill
-	 * decides who hit first and puts you both back for the next exchange ({@link #restart}).
+	 * Waits a moment, then sprints at you, drops to a walk for the last stretch and swings once you are 3
+	 * blocks away (centre to centre): an opponent who swings as it comes into their reach, a step before it
+	 * can, wins the exchange; one who waits for it to arrive loses it. The drill decides who hit first and
+	 * puts you both back for the next exchange ({@link #restart}).
 	 */
 	static final class Rusher implements Watched {
 		private final Supplier<@Nullable ServerPlayer> target;
@@ -235,11 +237,11 @@ final class DrillPatterns {
 				return face(body, t, 0, 0, false);
 			}
 			double d = body.distanceTo(t);
-			boolean attack = !swung && d <= 3.25 && body.getAttackStrengthScale(0.5F) >= 0.95F;
+			boolean attack = !swung && d <= 3.0 && body.getAttackStrengthScale(0.5F) >= 0.95F;
 			if (attack) {
 				swung = true;
 			}
-			Inputs in = face(body, t, d > 1.5 ? 1 : 0, 0, false).withSprint(d > 1.5);
+			Inputs in = face(body, t, d > 1.5 ? 1 : 0, 0, false).withSprint(d > 4.5);
 			return attack ? in.withAttack(true) : in;
 		}
 	}

@@ -199,8 +199,10 @@ final class SwordPlan {
 		// A jump lands about 12 ticks later; the charge should be full on the way down (6-10 ticks in).
 		boolean timed = ready >= 3 && ready <= 8;
 		boolean flying = t != null && t.hurtTime() > 0 && m.sinceOwnHit < 10;
-		boolean combo = timed && flying && distance <= reach + 2.0;
-		boolean punish = timed && m.reading && opponentCharge(c) < 0.5 && distance <= reach + 1.0;
+		// Mid-combo only while they are recharging too: a crit costs the sprint knockback and a few ticks in the air,
+		// and in the simulator a jump into a charged opponent loses the exchange far more often than the 1.5x pays.
+		boolean combo = timed && flying && distance <= reach + 0.3 && m.reading && opponentCharge(c) < 0.3;
+		boolean punish = timed && m.reading && opponentCharge(c) < 0.35 && distance <= reach + 0.5;
 		boolean helpless = timed && c.opponentHelpless() && distance <= reach + 1.5;
 		return (combo || punish || helpless) && m.critDecision.get(c.rng, Math.pow(skill, 1.6), 20);
 	}

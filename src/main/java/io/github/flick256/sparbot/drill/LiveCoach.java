@@ -47,10 +47,10 @@ final class LiveCoach {
 		}
 	}
 
-	/** You took a hit on the ground: the jump reset, or its lack ({@code offset} as in {@link Feedback#jumpReset}). */
-	void jumpResetJudged(Integer offset, ServerPlayer player, Object session, Gate gate) {
-		Feedback.Verdict v = Feedback.jumpReset(offset);
-		if (!v.good() && gate.allow(session, player.level().getGameTime())) {
+	/** You took a hit on the ground: the jump reset, or its lack, read from your client ticks. */
+	void jumpResetJudged(Feedback.Verdict v, ServerPlayer player, Object session, Gate gate) {
+		// A hit taken in the air had nothing to reset; one with no jump at all is only worth a line now and then.
+		if (!v.good() && !"air".equals(v.reason()) && gate.allow(session, player.level().getGameTime())) {
 			say(player, v.text());
 		}
 	}

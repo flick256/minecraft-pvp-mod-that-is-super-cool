@@ -42,7 +42,7 @@ public final class Feedback {
 		if (charge > 0.9) {
 			return Verdict.good("Full charge (" + pct + "%)");
 		}
-		int early = (int) Math.ceil((0.95 - charge) * SWORD_CHARGE_TICKS);
+		int early = Math.max(1, (int) Math.ceil((0.9 - charge) * SWORD_CHARGE_TICKS));
 		return Verdict.bad("early", "Too early: " + pct + "% charge. Wait about " + early + " tick" + (early == 1 ? "" : "s") + " more for the bar to fill");
 	}
 
@@ -50,12 +50,13 @@ public final class Feedback {
 	public static Verdict reach(double reach, double mark) {
 		String r = String.format(Locale.ROOT, "%.2f", reach);
 		if (reach >= mark) {
-			return Verdict.good(r + " blocks: edge of reach");
+			return Verdict.good(r + " blocks: " + (reach >= 2.85 ? "the very edge of reach" : "out at range"));
 		}
 		if (reach < 2.0) {
 			return Verdict.bad("close", r + " blocks: far too close, they can hit you back. Back off between swings");
 		}
-		return Verdict.bad("close", r + " blocks: a little close. Swing as they come into 3 blocks, not after");
+		return Verdict.bad("close", r + " blocks: a little close (aim for " + String.format(Locale.ROOT, "%.1f", mark)
+			+ " or more). Swing as they come into 3 blocks, not after");
 	}
 
 	/** A melee hit, and why it was or wasn't a crit. */
@@ -80,34 +81,94 @@ public final class Feedback {
 
 	/** A melee hit, and whether it carried sprint knockback. */
 	public static Verdict sprintHit(boolean sprinting, double charge) {
+		return sprintHit(sprinting, charge, null);
+	}
+
+	/**
+	 * A melee hit, and whether it carried sprint knockback; {@code reset}: whether W was let go (or S pressed)
+	 * since your last hit, read from your keys (null if unknown).
+	 */
+	public static Verdict sprintHit(boolean sprinting, double charge, Boolean reset) {
 		if (sprinting && charge > 0.9) {
 			return Verdict.good("Sprint hit: extra knockback");
 		}
 		if (sprinting) {
 			return Verdict.bad("charge", "Sprinting, but only " + Math.round(charge * 100) + "% charged: no extra knockback");
 		}
+		if (Boolean.FALSE.equals(reset)) {
+			return Verdict.bad("held", "Not sprinting: you held W the whole time. Let go of W right after each hit, then press it again");
+		}
+		if (Boolean.TRUE.equals(reset)) {
+			return Verdict.bad("nosprint", "Not sprinting: you let go of W but weren't sprinting again yet. Press W again sooner");
+		}
 		return Verdict.bad("nosprint", "Not sprinting: let go of W right after your hit and press it again");
 	}
 
 	/**
-	 * A hit taken on the ground, and when you jumped relative to it ({@code offset} ticks: negative is before,
-	 * null is no jump within a few ticks).
+	 * A W-tap: your hit (a sprint hit at full charge?) and letting go of W (or tapping S) just after it, read from
+	 * your keys ({@link ClientFrames#wTap}). With a sprint key held (or toggle sprint) the game starts your sprint
+	 * again by itself, so in 26.2 the tap is about spacing: letting go of W stops you running into them as they
+	 * fly back, so the next hit lands from range too.
 	 */
-	public static Verdict jumpReset(Integer offset) {
+	public static Verdict wTap(boolean sprinting, double charge, ClientFrames.TapReading r) {
+		Verdict hit = sprintHit(sprinting, charge, null);
+		if (!hit.good()) {
+			return hit;
+		}
+		if (r.offset() == null) {
+			return Verdict.bad("notap", "Sprint hit, but no W-tap: let go of W for a moment right after the hit so you don't run into them");
+		}
+		int o = r.offset();
+		if (o > 3) {
+			return Verdict.bad("late", "Sprint hit, W let go " + o + " ticks after it: too late, let go as you hit");
+		}
+		if (r.held() > 6) {
+			return Verdict.bad("held", "Sprint hit, but W off for " + (r.held() >= 20 ? "too long" : r.held() + " ticks") + ": tap it, then straight back on W");
+		}
+		return Verdict.good("Sprint hit + W-tap (off " + r.held() + " tick" + (r.held() == 1 ? "" : "s") + ")");
+	}
+
+	/** A hit taken on the ground and the jump reset read from your keys and movement ({@link ClientFrames#jumpReset}). */
+	public static Verdict jumpReset(ClientFrames.JumpReading r) {
+		Integer offset = r.offset();
 		if (offset == null) {
-			return Verdict.bad("none", "No jump: jump the moment their hit lands on you");
+			return r.inAir() ? Verdict.bad("air", "You were in the air when it hit: nothing to reset. Stay on the ground and jump as it lands")
+				: Verdict.bad("none", "No jump: jump the moment their hit lands on you");
 		}
 		int o = offset;
-		if (o >= -1 && o <= 1) {
-			return Verdict.good(o == 0 ? "Perfect jump reset!" : "Jump reset (" + Math.abs(o) + " tick " + (o < 0 ? "early" : "late") + ")");
-		}
-		if (o == 2) {
-			return Verdict.good("Jump reset, just: 2 ticks late");
+		if (o == 0) {
+			if (!r.forward()) {
+				return Verdict.bad("nowasd", "Right tick, but you weren't holding W: the jump only cuts knockback while you sprint into them");
+			}
+			if (!r.sprinting()) {
+				return Verdict.bad("nosprint", "Right tick, but you weren't sprinting: the jump only cuts knockback while you sprint into them");
+			}
+			return Verdict.good("Perfect jump reset!");
 		}
 		if (o > 0) {
-			return Verdict.bad("late", "Jumped " + o + " ticks late (" + o * 50 + " ms): jump as their sword hits, not after");
+			return Verdict.bad("late", "Jumped " + o + " tick" + (o == 1 ? "" : "s") + " late (" + o * 50
+				+ " ms): the knockback had already lifted you. Jump as their sword hits");
 		}
-		return Verdict.bad("early", "Jumped " + -o + " ticks early: you were already in the air. Wait for the hit");
+		if (o == -1) {
+			return Verdict.bad("early", "1 tick early, so close: you were just off the ground when it landed");
+		}
+		return Verdict.bad("early", "Jumped " + -o + " ticks early: you were already in the air and took the full knockback. Wait for the hit");
+	}
+
+	/** Your hit and the S-tap around it ({@link ClientFrames#sTap}). */
+	public static Verdict sTap(ClientFrames.TapReading r) {
+		if (r.offset() == null) {
+			return Verdict.bad("none", "No S-tap: tap S as you hit, so you're out of their reach when they swing back");
+		}
+		int o = r.offset();
+		if (o > 3) {
+			return Verdict.bad("late", "S " + o + " ticks after your hit: too late, tap it as you swing");
+		}
+		if (r.held() > 6) {
+			return Verdict.bad("held", "Held S for " + (r.held() >= 20 ? "too long" : r.held() + " ticks") + ": just tap it, then W back in");
+		}
+		return Verdict.good("S-tap! (" + (o < 0 ? -o + " tick" + (o == -1 ? "" : "s") + " before the hit" : o == 0 ? "with the hit" : o + " after") + ", held "
+			+ r.held() + ")");
 	}
 
 	/** A combo that ended ({@code hits} in a row without one back) against the stage's mark. */
@@ -145,22 +206,37 @@ public final class Feedback {
 		return Verdict.bad("second", "They hit first: swing as they come into 3 blocks, a sprint step before they do");
 	}
 
-	/** A hit traded, either way. */
-	public static Verdict trade(boolean yours) {
-		return yours ? Verdict.good("Your hit") : Verdict.bad("hit", "Their hit: tap S as you swing so you're out of their reach when they swing back");
+	/** A hit taken while practising spacing: you stood in their reach. */
+	public static Verdict spacing() {
+		return Verdict.bad("hit", "Hit back: you stayed in their reach. S-tap as you swing, step back in as your charge fills");
 	}
 
 	/** One of the bot's swings at you, with your shield up or not. */
 	public static Verdict block(boolean blocked) {
-		return blocked ? Verdict.good("Blocked") : Verdict.bad("open", "Hit: raise your shield as soon as you have swung");
+		return blocked ? Verdict.good("Blocked between swings") : Verdict.bad("open", "Hit: raise your shield as soon as you have swung");
 	}
 
-	/** Their shield disabled by your axe, and whether your follow-up came {@code ticks} later (null: none in time). */
+	/** A hit blocked with a shield that was never lowered to swing: that's turtling, not block-hitting. */
+	public static Verdict blockNoSwing() {
+		return Verdict.bad("turtle", "Blocked, but you haven't swung for 2 s: lower the shield and hit when your charge is full");
+	}
+
+	/** Client ticks between the axe hit and the next for a stun (a double click); any slower is a plain shield break. */
+	public static final int STUN_TICKS = 4;
+
+	/**
+	 * Their shield disabled by your axe, and your next hit {@code ticks} client ticks after the axe hit (null:
+	 * none in time). A stun is the double click: axe, then the next hit at once, before they can react; a hit
+	 * any later is only a shield break.
+	 */
 	public static Verdict stun(Integer ticks) {
 		if (ticks == null) {
-			return Verdict.bad("slow", "Shield down, but no follow-up: swap to your sword and hit straight away");
+			return Verdict.bad("none", "Shield down, but no second hit: double-click, axe then hit again at once");
 		}
-		return Verdict.good("Stun punished in " + ticks * 50 + " ms!");
+		if (ticks <= STUN_TICKS) {
+			return Verdict.good("Stun! Second hit " + ticks * 50 + " ms after the axe");
+		}
+		return Verdict.bad("slow", "Second hit " + ticks * 50 + " ms after the axe: that's a shield break, not a stun. Double-click: axe, then hit again at once");
 	}
 
 	/** A block with your shield ({@code lost}: your shield was disabled by their axe instead). */
@@ -172,10 +248,15 @@ public final class Feedback {
 	/** A healing pot and how much of its splash reached you (0-1). */
 	public static Verdict pot(double intensity) {
 		int pct = (int) Math.round(intensity * 100);
-		if (intensity >= 0.8) {
+		if (intensity >= 0.9) {
 			return Verdict.good("Pot: " + pct + "% of the heal");
 		}
 		return Verdict.bad("splash", "Pot: only " + pct + "% of the heal. Look down at your feet as you throw");
+	}
+
+	/** A healing pot thrown with only {@code missing} health gone: most of it is wasted. */
+	public static Verdict potWasted(double missing) {
+		return Verdict.bad("wasted", String.format(Locale.ROOT, "Pot wasted: only %.1f hearts missing. Pot when you're down 3 hearts or more", missing / 2));
 	}
 
 	/** Out of a web after {@code seconds}, against the stage's mark. */
@@ -189,12 +270,43 @@ public final class Feedback {
 
 	/** An arrow: on target or not. */
 	public static Verdict arrow(boolean hit) {
-		return hit ? Verdict.good("Arrow hit!") : Verdict.bad("miss", "Missed: draw fully and lead them by their speed");
+		return arrow(hit, 1, 15);
 	}
 
-	/** A rod cast: hooked or not. */
-	public static Verdict rod(boolean hooked) {
-		return hooked ? Verdict.good("Hooked!") : Verdict.bad("miss", "Missed: cast from 4 to 8 blocks, a little above them");
+	/** An arrow, its draw (0-1, from its speed) and the range it was shot from. */
+	public static Verdict arrow(boolean hit, double draw, double range) {
+		if (draw < 0.9) {
+			return Verdict.bad("draw", (hit ? "Hit, but" : "Missed:") + " only " + Math.round(Math.min(1, draw) * 100)
+				+ "% drawn. Hold the draw a full second");
+		}
+		if (!hit) {
+			return Verdict.bad("miss", String.format(Locale.ROOT, "Missed from %.0f blocks: aim a little above them and ahead of where they're going", range));
+		}
+		if (range < 8) {
+			return Verdict.bad("close", String.format(Locale.ROOT, "Hit, but from only %.0f blocks: the drill is shots at range (8 or more)", range));
+		}
+		return Verdict.good(String.format(Locale.ROOT, "Arrow hit from %.0f blocks!", range));
+	}
+
+	/** A rod cast: hooked or not, cast from {@code distance} blocks. */
+	public static Verdict rod(boolean hooked, double distance) {
+		String d = String.format(Locale.ROOT, "%.1f", distance);
+		if (hooked && distance < 3.5) {
+			return Verdict.bad("close", "Hooked, but from " + d + " blocks: cast as they come in, from 4 to 8");
+		}
+		return hooked ? Verdict.good("Hooked from " + d + " blocks!")
+			: Verdict.bad("miss", "Missed from " + d + " blocks: cast from 4 to 8, a little above their head");
+	}
+
+	/** A lava pour: did it set them alight, and was it scooped back ({@code seconds} after the pour)? */
+	public static Verdict lava(boolean lit, boolean scooped, double seconds) {
+		if (lit && scooped) {
+			return Verdict.good(String.format(Locale.ROOT, "Set alight, lava back in %.1f s", seconds));
+		}
+		if (lit) {
+			return Verdict.bad("lying", "Set alight, but you left the lava lying: scoop it straight back, it burns you too");
+		}
+		return Verdict.bad("miss", "No fire: pour at their feet from 2 to 4 blocks, as they stand or eat");
 	}
 
 	/** A new totem in your offhand {@code seconds} after the last popped, against the stage's mark. */

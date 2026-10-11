@@ -82,7 +82,17 @@ public final class EngageTactic implements Tactic {
 		}
 		// Strafe between hits; a practised player steadies for the swing itself (a sidestep drags the aim off).
 		boolean swingComing = SwordPlan.ticksToReady(c) <= 2 && distance <= self.attackReach() + 0.8;
-		if (distance < 5.0 && m.strafeActive && !(swingComing && c.rng.chance(c.skill(Technique.SPACING)))) {
+		// A strafe is for the recharge, close in: sidestepping their swing while the bot can't swing itself. Walking
+		// in sideways only slows the approach and drags its own aim (in the simulator a pro that strafes all the
+		// time loses to one that doesn't; one that strafes like this doesn't).
+		boolean recharging = SwordPlan.ticksToReady(c) > 3 && distance < 4.0;
+		TargetState swinger = c.seen();
+		if (recharging && swinger != null && swinger.ticksSinceSwing() == 0 && c.rng.chance(c.skill(Technique.STRAFE) * 0.5)) {
+			// Their arm just swung: a practised player changes sides so the next one has to be re-aimed.
+			m.strafeDirection = -m.strafeDirection;
+			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
+		}
+		if (m.strafeActive && recharging && !(swingComing && c.rng.chance(c.skill(Technique.SPACING)))) {
 			strafe = m.strafeDirection;
 		}
 
@@ -155,7 +165,9 @@ public final class EngageTactic implements Tactic {
 				jump = true;
 			}
 		} else if (m.critPhase == DuelMemory.CritPhase.AIRBORNE) {
+			// In the air: keep drifting in to come down within reach (backing off mid-jump wastes the crit).
 			sprint = false;
+			forward = distance > judgedReach - 0.3 ? 1 : 0;
 		}
 
 		// Walk over 1-block obstacles like a player would.
