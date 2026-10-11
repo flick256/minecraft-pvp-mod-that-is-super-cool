@@ -1,0 +1,27 @@
+{
+  "id": "sparbot_sword",
+  "displayName": "SparBot Sword (Practice)",
+  "mode": "sword",
+  "provenance": {
+    "source": "sparbot-original",
+    "server": null,
+    "mode": "sword",
+    "minecraftVersion": "26.2",
+    "confidence": "high",
+    "verified": true,
+    "reference": null,
+    "notes": "SparBot's own sword practice kit (2.0), made for long fights: Protection IV diamond armor and a Sharpness I diamond sword. A kill takes about twice as many hits as in the PvPHQ kit (Protection II-III, Sharpness III), so there is time to use and learn every technique. Not a server's kit.",
+    "deviations": []
+  },
+  "armor": {
+    "head": {"id": "minecraft:diamond_helmet", "enchantments": {"minecraft:protection": 4}},
+    "chest": {"id": "minecraft:diamond_chestplate", "enchantments": {"minecraft:protection": 4}},
+    "legs": {"id": "minecraft:diamond_leggings", "enchantments": {"minecraft:protection": 4}},
+    "feet": {"id": "minecraft:diamond_boots", "enchantments": {"minecraft:protection": 4}}
+  },
+  "offhand": null,
+  "slots": {
+    "0": {"id": "minecraft:diamond_sword", "enchantments": {"minecraft:sharpness": 1}}
+  },
+  "effects": []
+}

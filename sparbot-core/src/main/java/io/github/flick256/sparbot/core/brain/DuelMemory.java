@@ -71,6 +71,11 @@ public final class DuelMemory {
 	int sTapTicks;
 	CritPhase critPhase = CritPhase.NONE;
 	int critTicks;
+	/**
+	 * Whether this jump waits for the fall before clicking (a crit) or clicks the moment the charge is back,
+	 * on the way up (no crit): a practised player waits, a novice jumps and clicks whenever.
+	 */
+	boolean critPatient;
 	/** Reach misjudgement (blocks) for the next click; resampled after every click. */
 	double reachError;
 	/** Attack charge the bot waits for before its next click; resampled after every click. */

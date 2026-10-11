@@ -255,6 +255,7 @@ public final class EngageTactic implements Tactic {
 				if (self.onGround() && !self.inWater() && SwordPlan.critOpportunity(c, distance, judgedReach)) {
 					m.critPhase = DuelMemory.CritPhase.WINDUP;
 					m.critTicks = 0;
+					m.critPatient = c.rng.chance(c.skill(Technique.CRITS));
 				}
 			}
 			case WINDUP -> {
@@ -323,6 +324,10 @@ public final class EngageTactic implements Tactic {
 			return false;
 		}
 		if (m.critPhase == DuelMemory.CritPhase.AIRBORNE) {
+			if (!m.critPatient) {
+				// An unpractised jump: the click goes in as soon as the charge is back, falling or not.
+				return aimed && inReach && charged;
+			}
 			// Wait for the fall: vanilla only crits when fallDistance > 0 and charge > 0.9.
 			boolean falling = self.velocity().y() < 0 && self.fallDistance() > 0;
 			return falling && self.attackStrength() > FULL_CHARGE && aimed && inReach;

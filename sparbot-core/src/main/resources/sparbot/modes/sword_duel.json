@@ -1,8 +1,8 @@
 {
   "id": "sword_duel",
   "displayName": "Sword Duel",
-  "description": "Unenchanted diamond gear, swords only, first to 3.",
-  "kit": "basic_sword",
+  "description": "SparBot's practice sword kit (Protection IV, Sharpness I: long fights), first to 3.",
+  "kit": "sparbot_sword",
   "roundsToWin": 3,
   "roundSeconds": 120,
   "countdownSeconds": 3,

@@ -20,7 +20,10 @@ import java.util.Locale;
  */
 public final class SparBotConfig {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+	static final int CURRENT_VERSION = 2;
 
+	/** Which SparBot wrote this file: older files are brought up to date when loaded (see {@link #migrate}). */
+	public int configVersion = CURRENT_VERSION;
 	/** Master switch. When false, bots cannot be spawned and existing ones are removed. */
 	public boolean enabled = true;
 	/** Who may use /sparbot: "all", "moderators", "gamemasters", "admins" or "owners". */
@@ -40,7 +43,7 @@ public final class SparBotConfig {
 	/** Re-equip the bot's kit when it respawns (a kit reset, like the start of a new round). */
 	public boolean kitOnRespawn = true;
 	public String defaultProfile = "intermediate";
-	public String defaultKit = "basic_sword";
+	public String defaultKit = "sparbot_sword";
 	/** Playstyle (or mix, e.g. "aggressive_rusher:0.7,kiter:0.3") new bots start with. */
 	public String defaultPlaystyle = "balanced";
 	/**
@@ -120,6 +123,7 @@ public final class SparBotConfig {
 				if (read != null) {
 					List<String> errors = read.validate();
 					if (errors.isEmpty()) {
+						read.migrate();
 						config = read;
 					} else {
 						SparBot.LOGGER.error("Invalid {}: {}. Using defaults.", file, errors);
@@ -131,6 +135,17 @@ public final class SparBotConfig {
 		}
 		config.save(file);
 		return config;
+	}
+
+	/**
+	 * Brings a file written by an older SparBot up to date. 2.0: the default sword kit was the unenchanted
+	 * basic kit, where a kill takes 8 hits; it is now the practice kit (about 19).
+	 */
+	void migrate() {
+		if (configVersion < 2 && "basic_sword".equals(defaultKit)) {
+			defaultKit = "sparbot_sword";
+		}
+		configVersion = CURRENT_VERSION;
 	}
 
 	/** Writes the config (pretty-printed JSON); a failure is logged, not thrown. */

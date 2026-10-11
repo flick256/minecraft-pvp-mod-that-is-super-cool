@@ -47,15 +47,15 @@ final class PracticeCommands {
 				}
 				return 1;
 			})
-				.then(Commands.literal("waves").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.WAVES, "pvphq_sword",
+				.then(Commands.literal("waves").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.WAVES, "sparbot_sword",
 						"intermediate"))
 					.then(Commands.argument("kit", StringArgumentType.word()).suggests(KITS)
 						.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.WAVES,
 							StringArgumentType.getString(ctx, "kit"), "intermediate"))))
-				.then(Commands.literal("hill").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "pvphq_sword",
+				.then(Commands.literal("hill").executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "sparbot_sword",
 						SparBot.config().defaultProfile))
 					.then(Commands.argument("profile", StringArgumentType.word()).suggests(PROFILES)
-						.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "pvphq_sword",
+						.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL, "sparbot_sword",
 							StringArgumentType.getString(ctx, "profile")))
 						.then(Commands.argument("kit", StringArgumentType.word()).suggests(KITS)
 							.executes(ctx -> game(ctx, io.github.flick256.sparbot.practice.colosseum.ColosseumGames.Kind.HILL,

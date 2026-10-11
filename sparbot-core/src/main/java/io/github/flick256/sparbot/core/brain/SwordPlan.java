@@ -186,7 +186,9 @@ final class SwordPlan {
 		boolean timed = skill >= 0.5 ? ready >= 3 && ready <= 7 : c.self.attackStrength() >= 0.3;
 		boolean safe = !c.memory.reading || opponentCharge(c) < 0.7 || c.target != null && c.target.hurtTime() > 0;
 		boolean upClose = timed && safe && distance <= reach + 1.3;
-		return (approach || upClose) && c.memory.critDecision.get(c.rng, skill, 20);
+		// How often a player goes for crits at all grows faster than linearly with practice: a novice jumps now and
+		// then, a pro on nearly every exchange.
+		return (approach || upClose) && c.memory.critDecision.get(c.rng, Math.pow(skill, 1.6), 20);
 	}
 
 	private static void set(Move mv, int forward, int strafe, boolean sprint) {

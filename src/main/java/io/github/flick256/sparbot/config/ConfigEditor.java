@@ -17,7 +17,7 @@ public final class ConfigEditor {
 	public record Setting(String key, String type, String value) {
 	}
 
-	private static final List<String> FILE_ONLY = List.of("commandPermission");
+	private static final List<String> FILE_ONLY = List.of("commandPermission", "configVersion");
 
 	private ConfigEditor() {
 	}
