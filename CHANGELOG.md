@@ -2,6 +2,42 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 3.0.0
+
+Drills that judge what you really did, and bots that stop beating themselves.
+
+- **Drills read your real keys.** Since 1.21.2 a client tells the server its key state whenever it changes and marks
+  the end of every tick it plays; SparBot now records both for every player (`ClientTicks`), so a drill knows
+  exactly when you pressed W, S, jump or sprint, in your client's own ticks, whatever your ping.
+  - **Jump reset, fixed**: 2.0 counted the game's jump statistic, which the server bumps whenever you leave the
+    ground going up, including when a hit's knockback lifts you, so every hit counted as a jump. Now a jump reset
+    is a take-off of 0.42 blocks (a jump; knockback lifts only 0.4) on the very client tick the knockback arrives,
+    while holding W and sprinting (vanilla's jump only cuts knockback through its sprint boost). Early, late and
+    "no jump" are told apart to the tick, and being hit while still in the air isn't counted at all. The attacker
+    gives a count-in (*3... 2... 1... JUMP!*) on its rhythm, since nobody can react to a hit within a tick.
+  - **S-tap, rebuilt**: a rep is an S tap of 1-5 ticks from just before to just after each hit you land (holding S,
+    or a late tap, is told as such); hits you take in its reach count against you.
+  - **W-tap**: a sprint hit followed by letting go of W (holding the sprint key re-sprints for you in 26.2, so the tap
+    is about not running into them).
+  - **Shield stun = the double click**: your second hit has to land within 4 client ticks (0.2 s) of the axe hit
+    that disabled the shield; anything slower is told as a plain shield break.
+- **Every drill audited and fixed.** The re-totem drill couldn't be passed (a drill healed you before the totem
+  could pop; now a totem in hand pops first). Only anchors you set off and carts you lit count (the bot blowing
+  itself up paid you reps). Block-hitting needs swings between blocks (a shield held up all the time doesn't
+  count). Pots only count when you are hurt, at 90% of the heal or more, and the pot drill keeps you hurt so
+  there's something to heal. Webs you place yourself don't count. A lava pour counts once it is back in your
+  bucket. Arrows must be fully drawn from a bow and hit from 8 blocks or more; rod hooks from 3.5 or more. Aim reps
+  need a full charge (spam clicking used to pass), combos count only clean hits, punishing and first hits judge
+  going in too early, the rusher drops to a walk so the first hit is a real race, and smashes need a fall of more
+  than 1.5 blocks (vanilla's rule). Cues never go quiet after a verdict (they did for 1.5 s), refresh twice as
+  often, and every utility drill has them now.
+- **Sword bots that stop beating themselves.** Measured in the simulator, a pro that jumped for crits mid-combo
+  won only 25% against the same pro without crits: a crit jump costs the sprint knockback and a few ticks in the
+  air, and the opponent recharged and hit first. Bots now crit only when you can't trade (you're recharging,
+  eating, or webbed). Strafing (which cost 6 points) now happens while recharging close in, with a switch of
+  sides when your arm swings. The demon reacts faster (140 ms, still human) and judges reach tighter. Tiers: pro
+  beats advanced 90%, advanced beats intermediate 99%, intermediate beats casual 92%.
+
 ## 2.0.0
 
 The training release: bots that fight like people, fights that last, and drills that actually teach.

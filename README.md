@@ -205,21 +205,29 @@ has three stages:
 2. **Practice**: the same bot, no cues.
 3. **Under pressure**: a bot that fights back, and the skill done mid-fight.
 
-Every attempt is judged the moment you make it and told to you with a sound: *Perfect jump reset!*, *Jumped 4
-ticks late (200 ms)*, *No crit: you were sprinting*, *Too early: 64% charge*. A stage ends as soon as you have
-enough good reps; one that runs out of time starts again with a tip and what went wrong most. **You can't die in
-a drill**: what would have killed you heals you instead. One stage is bronze, two silver, three gold. Your
-inventory is kept safe and comes back after.
+Every attempt is judged the moment you make it and told to you with a sound: *Perfect jump reset!*, *Jumped 2
+ticks late (100 ms): the knockback had already lifted you*, *S-tap! (with the hit, held 3)*, *Second hit 350 ms
+after the axe: that's a shield break, not a stun*, *No crit: you were sprinting*, *Too early: 64% charge*. A stage
+ends as soon as you have enough good reps; one that runs out of time starts again with a tip and what went wrong
+most. **You can't die in a drill**: what would have killed you heals you instead (a totem in your hand still pops
+first). One stage is bronze, two silver, three gold. Your inventory is kept safe and comes back after.
+
+**Judged from what you really pressed.** Since 1.21.2 a client tells the server its keys every time one changes
+and marks the end of every tick it plays, so the drills read your W, S, jump and sprint keys and your movement in
+your client's own ticks, exact whatever your ping. A jump reset is a take-off of 0.42 blocks (a jump) on the very
+client tick the knockback arrives, while holding W and sprinting; knockback alone lifts you 0.4, so being hit
+without jumping never counts (the game's own jump counter can't tell the two apart). S-taps and W-taps are your
+real S press or W release around each hit, and a stun is your second click within 4 client ticks of the axe.
 
 | Group | Drills (what a rep is) |
 |---|---|
-| Sword | `charge` (a full-charge hit), `reach` (a hit from the edge of reach), `crits` (a crit, or why it wasn't), `wtap` (a sprint hit), `jumpreset` (a jump reset, to the tick, against a bot that swings on a rhythm), `combo` (a combo of 3-4), `aim` (a swing on target; a miss takes one back), `punish` (hitting a bot that just swung and missed), `firsthit` (winning the opening hit as a bot sprints at you), `stap` (trades won) |
-| Shield | `blockhit` (a hit blocked), `shieldstun` (a stun followed up within a second), `shielddefence` (a block without losing the shield to an axe) |
-| NoDebuff | `pots` (a pot that heals at least 80%) |
-| UHC | `webs` (out of a web in time), `lava` (setting the bot alight), `bow` (an arrow on target), `rod` (a hook) |
-| Crystal | `crystals` (a blast that hurt), `anchors` (an anchor blast), `retotem` (a new totem in time) |
-| Cart | `carts` (a cart blast that hurt) |
-| Mace | `mace` (a smash from a fall) |
+| Sword | `charge` (a full-charge hit), `reach` (a hit from 2.6 blocks or more; a hit taken counts against you), `crits` (a crit, or why it wasn't), `wtap` (a sprint hit with W let go just after it), `jumpreset` (a jump on the knockback's own tick while sprinting in, against a bot that swings on a rhythm you get a count-in for), `combo` (a combo of 3-4 clean hits: full charge, sprint or crit), `aim` (a full-charge swing on target; a miss or a spam click takes one back), `punish` (hitting a bot that just swung and missed; going in before it swings counts against you), `firsthit` (winning the opening hit at full charge as a bot comes at you), `stap` (an S tap of 1-5 ticks with each hit; a hit taken counts against you) |
+| Shield | `blockhit` (a hit blocked between your own swings; a shield never lowered doesn't count), `shieldstun` (a stun: the double click), `shielddefence` (a block without losing the shield to an axe) |
+| NoDebuff | `pots` (a pot thrown when hurt that heals at least 90%; you are kept hurt so there is something to heal) |
+| UHC | `webs` (out of their web in time; your own webs don't count), `lava` (a pour that set the bot alight and went back in your bucket), `bow` (a fully drawn arrow on target from 8 blocks or more), `rod` (a hook from 3.5 blocks or more) |
+| Crystal | `crystals` (a blast that hurt), `anchors` (a blast from an anchor you set off), `retotem` (a new totem in time after a real pop) |
+| Cart | `carts` (a blast from your own cart that hurt) |
+| Mace | `mace` (a smash from a fall of more than 1.5 blocks) |
 
 ### The live coach
 

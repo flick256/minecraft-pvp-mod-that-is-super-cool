@@ -229,6 +229,18 @@ public final class UhcLab {
 				Map.of(), 0);
 			return new Tournament.Entrant(name, style.applyTo(profile), seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(profile, style, seed));
 		}
+		if (name.contains("-w:")) {
+			// <profile>-w:<tactic>=<weight>,...: the scripted brain with those tactics weighted (a playstyle), for tuning.
+			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-w:")));
+			Map<String, Double> weights = new java.util.HashMap<>();
+			for (String pair : name.substring(name.indexOf("-w:") + 3).split(",")) {
+				String[] kv = pair.split("=");
+				weights.put(kv[0], Double.parseDouble(kv[1]));
+			}
+			io.github.flick256.sparbot.core.style.Playstyle style = new io.github.flick256.sparbot.core.style.Playstyle("tuned", "Tuned", "", weights,
+				Map.of(), 0);
+			return new Tournament.Entrant(name, style.applyTo(profile), seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(profile, style, seed));
+		}
 		return Tournament.scripted(presets.get(name));
 	}
 
