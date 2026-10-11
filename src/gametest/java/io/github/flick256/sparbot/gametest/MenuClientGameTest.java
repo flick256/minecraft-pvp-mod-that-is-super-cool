@@ -311,6 +311,11 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
 			// A player whose sprint dropped (they bumped into something) presses sprint again.
 			context.runOnClient(client -> {
+				// Face the attacker, as a player sprinting into it would (holding W blind walks into the bay's wall).
+				net.minecraft.world.entity.Entity attacker = drillBot(client);
+				if (attacker != null) {
+					client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, attacker.getEyePosition());
+				}
 				if (!client.player.isSprinting() && client.player.onGround()) {
 					whyNotSprinting[0] = "collision " + client.player.horizontalCollision + ", food " + client.player.getFoodData().getFoodLevel();
 					client.player.setSprinting(true);
