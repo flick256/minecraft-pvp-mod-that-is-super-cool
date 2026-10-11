@@ -302,9 +302,12 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			throw new AssertionError("taking " + taken[0] + " hits without jumping counted " + unearned + " jump resets");
 		}
 		JUMP_ON_HIT = true;
-		context.runOnClient(client -> client.options.keyUp.setDown(true));
+		// W and the sprint key held, as a player sprints into the attacker.
+		context.runOnClient(client -> {
+			client.options.keyUp.setDown(true);
+			client.options.keySprint.setDown(true);
+		});
 		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
-			context.runOnClient(client -> client.player.setSprinting(true));
 			context.waitTick();
 			if (i == 120) {
 				context.takeScreenshot("drill-jumpreset");
@@ -313,6 +316,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		JUMP_ON_HIT = false;
 		context.runOnClient(client -> {
 			client.options.keyUp.setDown(false);
+			client.options.keySprint.setDown(false);
 			client.options.keyJump.setDown(false);
 		});
 		int passed = world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()));
