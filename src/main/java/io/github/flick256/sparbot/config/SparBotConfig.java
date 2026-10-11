@@ -69,6 +69,11 @@ public final class SparBotConfig {
 	 * weapons, a fair fight.
 	 */
 	public boolean matchPlayerKit = true;
+	/**
+	 * The live coach: during a fight against a bot, a short line on your action bar when something is worth
+	 * learning from (a half-charged swing, a missed jump reset, the bot just missed so punish it now).
+	 */
+	public boolean liveCoach = true;
 	/** Log every tactic change at INFO level (noisy, for debugging). */
 	public boolean logDecisions = false;
 	/** Record every match to config/sparbot/recordings (for replays and Super Mode training). */

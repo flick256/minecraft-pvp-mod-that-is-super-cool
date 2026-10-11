@@ -1,22 +1,29 @@
 package io.github.flick256.sparbot.core.drill;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
 
 /**
- * A skill drill: one PvP skill practised against a bot set up to train it, in three stages that get
- * harder (a dummy, then a moving bot, then a bot that fights back), each a timed round scored on that one
- * skill. Passing stage one earns bronze, two silver, three gold.
+ * A skill drill: one PvP skill taught in three stages against a bot set up for it.
+ * <ol>
+ *   <li><b>Learn</b>: on-screen cues say exactly when to act (now jump, now swing), against a slow and
+ *       predictable bot;</li>
+ *   <li><b>Practice</b>: the same bot without the cues;</li>
+ *   <li><b>Under pressure</b>: a bot that fights back, the skill done mid-fight.</li>
+ * </ol>
+ * Every attempt (a rep) is judged the moment it happens and told to you with what went wrong (jumped 3 ticks
+ * late, swung at 70% charge, sprinting so no crit); a stage is passed as soon as enough good reps are in. A
+ * stage that runs out of time starts again with a tip, so a drill is never just failed, and you can't die in
+ * one. Passing stage one earns bronze, two silver, three gold.
  *
  * @param discipline the group it is listed under (Sword, Shield, NoDebuff, UHC, Crystal, Cart, Mace)
  * @param skill what it trains, in a few words
  * @param how how to do it, one or two sentences
+ * @param tips the key points, shown when the drill starts and after a stage runs out of time
  * @param kit the player's kit; {@code botKit} the bot's
+ * @param rep what counts as an attempt, and what makes it a good one
  */
-public record Drill(String id, String name, String discipline, String skill, String how, String kit, String botKit, Metric metric, int seconds,
+public record Drill(String id, String name, String discipline, String skill, String how, List<String> tips, String kit, String botKit, Rep rep,
 	List<Stage> stages) {
 
 	/** What the bot does in a stage. */
@@ -27,6 +34,14 @@ public record Drill(String id, String name, String discipline, String skill, Str
 		PACE,
 		/** Walks from side to side with its shield raised, never attacking. */
 		SHIELD,
+		/** Keeps just inside its reach and swings on a steady rhythm you can learn (for jump resets and blocking). */
+		ATTACKER,
+		/** Steps in and swings from just too far away, then stands there recharging: a missed swing to punish. */
+		WHIFFER,
+		/** Strafes and jumps at random, close in, never attacking: something to track. */
+		STRAFER,
+		/** Starts apart and sprints in to hit you: whoever hits first wins the exchange. */
+		RUSHER,
 		/** Fights you with its brain, held to the stage's tier, tactic weights and techniques. */
 		FIGHT
 	}
@@ -34,106 +49,64 @@ public record Drill(String id, String name, String discipline, String skill, Str
 	/**
 	 * One stage.
 	 *
+	 * @param label shown as the stage's name
 	 * @param profile the bot's skill tier
+	 * @param pattern what the bot does
 	 * @param tactics tactic weights for a fighting bot (unlisted: 1, 0: never)
 	 * @param techniquesOff techniques the bot doesn't use
-	 * @param pass the score to reach (or stay under, for a metric where lower is better)
+	 * @param reps good reps needed to pass
+	 * @param seconds how long a try at the stage lasts before it starts again
 	 * @param distance how far apart you start
+	 * @param cues whether the on-screen cues say when to act
+	 * @param target the rep's mark where it has one (seconds out of a web, the combo length...), else 0
 	 */
-	public record Stage(String label, String profile, Pattern pattern, Map<String, Double> tactics, List<String> techniquesOff, double pass,
-		double distance) {
+	public record Stage(String label, String profile, Pattern pattern, Map<String, Double> tactics, List<String> techniquesOff, int reps, int seconds,
+		double distance, boolean cues, double target) {
 	}
 
-	/** How a stage is scored. */
-	public enum Metric {
-		FULL_CHARGE("full-charge hits", true, 6, t -> t.share(t.fullChargeHits, t.hits), t -> t.hits),
-		REACH("average reach", false, 6, t -> t.hits == 0 ? 0 : t.reachSum / t.hits, t -> t.hits),
-		CRITS("critical hits", true, 6, t -> t.share(t.crits, t.hits), t -> t.hits),
-		SPRINT_HITS("sprint hits (W-taps)", true, 6, t -> t.share(t.sprintHits, t.hits), t -> t.hits),
-		HIT_SHARE("hits landed of all hits traded", true, 6, t -> t.share(t.hits, t.hits + t.hitsTaken), t -> t.hits + t.hitsTaken),
-		COMBO("longest combo", false, 1, t -> t.bestCombo, t -> t.hits),
-		JUMP_RESETS("jump resets", true, 5, t -> t.share(t.jumpResets, t.hitsTakenOnGround), t -> t.hitsTakenOnGround),
-		ACCURACY("swings that hit", true, 8, t -> t.share(t.hits, Math.max(t.hits, t.swings)), t -> t.swings),
-		BLOCKED("hits blocked", true, 5, t -> t.share(t.blocked, t.blocked + t.hitsTaken), t -> t.blocked + t.hitsTaken),
-		STUN_FOLLOW_UPS("shield stuns followed up", false, 1, t -> t.stunFollowUps, t -> t.stuns),
-		SHIELD_DEFENCE("shield score (+1 a block, -3 a lost shield)", false, 1, t -> t.blocked - 3.0 * t.shieldsLost, t -> t.blocked + t.shieldsLost),
-		POT_ACCURACY("healing per pot", true, 3, t -> t.pots == 0 ? 0 : t.potIntensity / t.pots, t -> t.pots),
-		WEB_ESCAPE("seconds to get out of a web", false, 1, t -> t.webEscapes == 0 ? Double.POSITIVE_INFINITY : t.webTicks / 20.0 / t.webEscapes,
-			t -> t.webEscapes, true),
-		BURNING("time the bot was on fire", true, 1, t -> t.share(t.botBurningTicks, t.ticks), t -> t.ticks),
-		BOW_HITS("arrows that hit", true, 4, t -> t.share(t.arrowHits, t.arrowsShot), t -> t.arrowsShot),
-		ROD_HOOKS("rods that hooked", true, 4, t -> t.share(t.rodHooks, t.rodCasts), t -> t.rodCasts),
-		CRYSTAL_BLASTS("crystal blasts that hurt", false, 1, t -> t.crystalBlasts, t -> t.crystalBlasts),
-		ANCHOR_BLASTS("anchor blasts that hurt", false, 1, t -> t.anchorBlasts, t -> t.anchorBlasts),
-		CART_BLASTS("cart blasts that hurt", false, 1, t -> t.cartBlasts, t -> t.cartBlasts),
-		SMASHES("mace smashes", false, 1, t -> t.smashes, t -> t.smashes),
-		RETOTEM("seconds to a new totem", false, 1, t -> t.retotems == 0 ? Double.POSITIVE_INFINITY : t.retotemTicks / 20.0 / t.retotems, t -> t.retotems,
-			true);
+	/**
+	 * What counts as one attempt in a drill, and how the attempts add up. A strict rep takes a good one back
+	 * for each bad one (so swinging wildly can't pass an aim drill); otherwise a bad rep only costs time.
+	 */
+	public enum Rep {
+		CHARGE("full-charge hits", false),
+		REACH("hits from the edge of reach", false),
+		CRIT("critical hits", false),
+		SPRINT_HIT("sprint hits", false),
+		JUMP_RESET("jump resets", false),
+		COMBO("combos", false),
+		AIM("swings on target", true),
+		PUNISH("punished misses", false),
+		FIRST_HIT("first hits", false),
+		TRADE("trades won", true),
+		BLOCK("hits blocked", true),
+		STUN("shield stuns followed up", false),
+		SHIELD_DEFENCE("blocks without losing the shield", true),
+		POT("full pots", false),
+		WEB("quick web escapes", false),
+		LAVA("times you set them alight", false),
+		ARROW("arrows on target", false),
+		ROD("rod hooks", false),
+		CRYSTAL("crystal blasts", false),
+		ANCHOR("anchor blasts", false),
+		RETOTEM("quick re-totems", false),
+		CART("cart blasts", false),
+		SMASH("mace smashes", false);
 
 		private final String label;
-		private final boolean percent;
-		private final int minSamples;
-		private final ToDoubleFunction<DrillTally> value;
-		private final ToIntFunction<DrillTally> samples;
-		private final boolean lowerIsBetter;
+		private final boolean strict;
 
-		Metric(String label, boolean percent, int minSamples, ToDoubleFunction<DrillTally> value, ToIntFunction<DrillTally> samples) {
-			this(label, percent, minSamples, value, samples, false);
-		}
-
-		Metric(String label, boolean percent, int minSamples, ToDoubleFunction<DrillTally> value, ToIntFunction<DrillTally> samples, boolean lowerIsBetter) {
+		Rep(String label, boolean strict) {
 			this.label = label;
-			this.percent = percent;
-			this.minSamples = minSamples;
-			this.value = value;
-			this.samples = samples;
-			this.lowerIsBetter = lowerIsBetter;
+			this.strict = strict;
 		}
 
 		public String label() {
 			return label;
 		}
 
-		public boolean lowerIsBetter() {
-			return lowerIsBetter;
-		}
-
-		public int minSamples() {
-			return minSamples;
-		}
-
-		public double value(DrillTally tally) {
-			return value.applyAsDouble(tally);
-		}
-
-		public int samples(DrillTally tally) {
-			return samples.applyAsInt(tally);
-		}
-
-		/** Whether a stage with this tally reaches its pass mark (with enough tries to count). */
-		public boolean passes(DrillTally tally, double pass) {
-			if (samples(tally) < minSamples) {
-				return false;
-			}
-			double v = value(tally);
-			return lowerIsBetter ? v <= pass : v >= pass;
-		}
-
-		/** A score or pass mark as shown: 64%, 2.71, 1.2 s, 5. */
-		public String format(double v) {
-			if (Double.isInfinite(v)) {
-				return "-";
-			}
-			if (percent) {
-				return Math.round(v * 100) + "%";
-			}
-			if (lowerIsBetter) {
-				return String.format(Locale.ROOT, "%.1f s", v);
-			}
-			if (this == REACH) {
-				return String.format(Locale.ROOT, "%.2f", v);
-			}
-			return v == Math.rint(v) ? Long.toString(Math.round(v)) : String.format(Locale.ROOT, "%.1f", v);
+		public boolean strict() {
+			return strict;
 		}
 	}
 

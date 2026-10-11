@@ -19,6 +19,10 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
 			world.getServer().runCommand("sparbot config set autoTarget false");
 			context.waitTicks(5);
+			if (Boolean.getBoolean("sparbot.drillsOnly")) {
+				drills(context, world);
+				return;
+			}
 
 			context.getInput().pressKey(GLFW.GLFW_KEY_B);
 			context.waitForScreen(SparBotMenuScreen.class);
@@ -200,33 +204,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			// The training hall, and a drill: full charge against the dummy, real clicks scored by the server.
 			view(context, world, "training-hall", io.github.flick256.sparbot.core.practice.PracticeLayout.HALL_X + 0.5, 92,
 				io.github.flick256.sparbot.core.practice.PracticeLayout.HALL_Z + 60, 180, 30);
-			context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill charge"));
-			world.getServer().waitFor(server -> SparBot.drills().inDrill(human(server).getUUID()), 200);
-			// After the countdown, nine full-charge hits a little over a second apart.
-			world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
-			for (int i = 0; i < 9; i++) {
-				context.runOnClient(client -> {
-					net.minecraft.world.entity.Entity dummy = null;
-					for (net.minecraft.world.entity.Entity e : client.level.entitiesForRendering()) {
-						if (e instanceof net.minecraft.world.entity.player.Player p && p.getName().getString().equals("Drill1")) {
-							dummy = e;
-						}
-					}
-					if (dummy != null) {
-						client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, dummy.getEyePosition());
-						client.gameMode.attack(client.player, dummy);
-						client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-					}
-				});
-				context.waitTicks(25);
-				if (i == 2) {
-					context.takeScreenshot("drill-charge");
-				}
-			}
-			// Stage one ends 30 s after it started and is scored: six or more hits, all at full charge.
-			world.getServer().waitFor(server -> SparBot.drills().stagesPassed(human(server).getUUID()) >= 1, 900);
-			context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill stop"));
-			world.getServer().waitFor(server -> !SparBot.drills().inDrill(human(server).getUUID()), 200);
+			drills(context, world);
 			// A fight in the meadow against a pro, started like the Fight button does.
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight uhc_duel pro"));
 			world.getServer().waitFor(server -> SparBot.matches().match("practice_uhc").isPresent(), 600);
@@ -243,6 +221,125 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice leave"));
 			world.getServer().waitFor(server -> human(server) != null && human(server).level() == server.overworld(), 200);
 		}
+	}
+
+	/**
+	 * The drills, played by the real client: full charge against the dummy, jump resets against the attacker
+	 * (jumping the moment the client sees its hit, as a player would), punishing the whiffer's missed swing,
+	 * and the guard that stops a drill killing you.
+	 */
+	private static void drills(ClientGameTestContext context, TestSingleplayerContext world) {
+		// Full charge: nine full-charge hits a little over a second apart pass the first stage (eight needed).
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill charge"));
+		world.getServer().waitFor(server -> SparBot.drills().inDrill(human(server).getUUID()), 600);
+		world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
+		for (int i = 0; i < 9; i++) {
+			context.runOnClient(client -> {
+				net.minecraft.world.entity.Entity dummy = drillBot(client);
+				if (dummy != null) {
+					client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, dummy.getEyePosition());
+					client.gameMode.attack(client.player, dummy);
+					client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+				}
+			});
+			context.waitTicks(25);
+			if (i == 2) {
+				context.takeScreenshot("drill-charge");
+			}
+		}
+		world.getServer().waitFor(server -> SparBot.drills().stagesPassed(human(server).getUUID()) >= 1, 300);
+		stopDrill(context, world);
+
+		// Jump reset: the attacker swings on a rhythm; the client jumps the tick it sees the hit land.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill jumpreset"));
+		world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
+		int[] lastHurt = {0};
+		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()) < 1); i++) {
+			context.runOnClient(client -> {
+				int hurt = client.player.hurtTime;
+				if (hurt > lastHurt[0] && client.player.onGround()) {
+					client.player.jumpFromGround();
+				}
+				lastHurt[0] = hurt;
+			});
+			context.waitTick();
+			if (i == 120) {
+				context.takeScreenshot("drill-jumpreset");
+			}
+		}
+		int passed = world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()));
+		if (passed < 1) {
+			throw new AssertionError("jumping as each hit lands didn't pass the jump reset drill's first stage (good reps: "
+				+ world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID())) + ")");
+		}
+		// Nobody dies in a drill.
+		boolean alive = world.getServer().computeOnServer(server -> {
+			net.minecraft.server.level.ServerPlayer p = human(server);
+			p.setHealth(1);
+			p.invulnerableTime = 0;
+			p.hurtServer((net.minecraft.server.level.ServerLevel) p.level(), p.damageSources().generic(), 100);
+			return p.isAlive() && p.getHealth() >= p.getMaxHealth() - 0.01F;
+		});
+		if (!alive) {
+			throw new AssertionError("a lethal hit in a drill killed the player");
+		}
+		stopDrill(context, world);
+
+		// Whiff punish: step in and hit the moment the whiffer's swing misses.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill punish"));
+		world.getServer().waitFor(server -> SparBot.drills().stageRunning(human(server).getUUID()), 600);
+		for (int i = 0; i < 900 && world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID()) < 2); i++) {
+			boolean open = world.getServer().computeOnServer(server -> SparBot.drills().punishWindowOpen(human(server).getUUID()));
+			if (open) {
+				world.getServer().runOnServer(server -> {
+					net.minecraft.server.level.ServerPlayer p = human(server);
+					SparBot.bots().get("Drill" + (SparBot.drills().bayOf(p.getUUID()) + 1)).map(io.github.flick256.sparbot.bot.Bot::body).ifPresent(b -> {
+						Vec3Holder.step(p, b);
+					});
+				});
+				context.waitTicks(2);
+				context.runOnClient(client -> {
+					net.minecraft.world.entity.Entity bot = drillBot(client);
+					if (bot != null) {
+						client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, bot.getEyePosition());
+						client.gameMode.attack(client.player, bot);
+						client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+					}
+				});
+				context.waitTicks(30);
+			}
+			context.waitTick();
+		}
+		int punished = world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID()));
+		if (punished < 2) {
+			throw new AssertionError("hitting the whiffer right after its missed swing didn't count as a punish (good reps: " + punished + ")");
+		}
+		context.takeScreenshot("drill-punish");
+		stopDrill(context, world);
+	}
+
+	/** Moves a player to just inside reach of the bot, facing it (a player stepping in to punish). */
+	private static final class Vec3Holder {
+		static void step(net.minecraft.server.level.ServerPlayer p, net.minecraft.world.entity.Entity bot) {
+			net.minecraft.world.phys.Vec3 away = p.position().subtract(bot.position()).multiply(1, 0, 1).normalize();
+			net.minecraft.world.phys.Vec3 to = bot.position().add(away.scale(2.3));
+			float yaw = (float) Math.toDegrees(Math.atan2(-(bot.getX() - to.x), bot.getZ() - to.z));
+			p.teleportTo((net.minecraft.server.level.ServerLevel) p.level(), to.x, to.y, to.z, java.util.Set.of(), yaw, 0, true);
+		}
+	}
+
+	private static void stopDrill(ClientGameTestContext context, TestSingleplayerContext world) {
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill stop"));
+		world.getServer().waitFor(server -> !SparBot.drills().inDrill(human(server).getUUID()), 200);
+	}
+
+	private static net.minecraft.world.entity.Entity drillBot(net.minecraft.client.Minecraft client) {
+		for (net.minecraft.world.entity.Entity e : client.level.entitiesForRendering()) {
+			if (e instanceof net.minecraft.world.entity.player.Player p && p.getName().getString().startsWith("Drill")) {
+				return e;
+			}
+		}
+		return null;
 	}
 
 	private static void at(TestSingleplayerContext world, double x, double y, double z, float yaw, float pitch, net.minecraft.world.level.GameType mode) {

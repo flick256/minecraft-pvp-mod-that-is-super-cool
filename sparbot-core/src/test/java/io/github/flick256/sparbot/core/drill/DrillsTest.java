@@ -24,12 +24,15 @@ class DrillsTest {
 			assertEquals(3, d.stages().size(), d.id() + " has three stages (bronze, silver, gold)");
 			assertTrue(Kits.BUNDLED_IDS.contains(d.kit()), d.id() + ": unknown kit " + d.kit());
 			assertTrue(Kits.BUNDLED_IDS.contains(d.botKit()), d.id() + ": unknown bot kit " + d.botKit());
-			assertTrue(d.seconds() >= 20 && d.seconds() <= 60, d.id() + " runs 20-60 s a stage");
 			assertFalse(d.how().isBlank() || d.skill().isBlank(), d.id() + " says what it trains and how");
+			assertFalse(d.tips().isEmpty(), d.id() + " has tips");
+			assertTrue(d.stages().get(0).cues(), d.id() + ": the first stage teaches with cues");
+			assertFalse(d.stages().get(2).cues(), d.id() + ": the last stage is done without them");
 			for (Drill.Stage s : d.stages()) {
 				assertTrue(profiles.contains(s.profile()), d.id() + ": unknown profile " + s.profile());
 				assertTrue(s.distance() >= 3 && s.distance() <= 2 * 15 - 2, d.id() + ": the bot starts inside the bay");
-				assertTrue(s.pass() > 0, d.id() + ": a pass mark");
+				assertTrue(s.reps() >= 1 && s.reps() <= 20, d.id() + ": 1-20 good reps to pass");
+				assertTrue(s.seconds() >= 45 && s.seconds() <= 180, d.id() + ": a try lasts 45-180 s");
 				for (Map.Entry<String, Double> w : s.tactics().entrySet()) {
 					assertTrue(Playstyle.TACTICS.contains(w.getKey()), d.id() + ": unknown tactic " + w.getKey());
 					assertTrue(w.getValue() >= 0 && w.getValue() <= 3, d.id() + ": tactic weight 0-3");
@@ -45,50 +48,50 @@ class DrillsTest {
 	@Test
 	void everySkillTheUserAskedForHasADrill() {
 		for (String id : new String[] {"shieldstun", "pots", "jumpreset", "wtap", "stap", "crits", "combo", "blockhit", "webs", "lava", "bow", "rod",
-			"crystals", "anchors", "retotem", "carts", "mace"}) {
+			"crystals", "anchors", "retotem", "carts", "mace", "punish", "firsthit"}) {
 			assertTrue(Drills.get(id).isPresent(), "no drill " + id);
 		}
 	}
 
 	@Test
-	void scoresComeFromTheTally() {
+	void repsAddUpAndStrictRepsTakeOneBack() {
 		DrillTally t = new DrillTally();
-		t.hit(1.0, true, true, 2.9);
-		t.hit(0.5, false, false, 2.1);
-		t.hit(0.95, true, false, 2.6);
-		assertEquals(2 / 3.0, Drill.Metric.FULL_CHARGE.value(t), 1e-9);
-		assertEquals(2 / 3.0, Drill.Metric.CRITS.value(t), 1e-9);
-		assertEquals(1 / 3.0, Drill.Metric.SPRINT_HITS.value(t), 1e-9);
-		assertEquals((2.9 + 2.1 + 2.6) / 3, Drill.Metric.REACH.value(t), 1e-9);
-		assertEquals(3, Drill.Metric.COMBO.value(t));
-		t.hitTaken(true);
-		t.hit(1, false, false, 3);
-		assertEquals(3, Drill.Metric.COMBO.value(t), "a hit taken breaks the combo");
-		assertEquals(0.8, Drill.Metric.HIT_SHARE.value(t), 1e-9);
+		t.rep(Feedback.charge(0.95), false);
+		t.rep(Feedback.charge(0.5), false);
+		assertEquals(2, t.reps);
+		assertEquals(1, t.goodReps, "a bad rep only costs time");
+		DrillTally aim = new DrillTally();
+		aim.rep(Feedback.aim(true), true);
+		aim.rep(Feedback.aim(true), true);
+		aim.rep(Feedback.aim(false), true);
+		assertEquals(1, aim.goodReps, "a miss takes a good swing back");
+		assertTrue(aim.commonestMistake().startsWith("Missed"), aim.commonestMistake());
 	}
 
 	@Test
-	void tooFewTriesNeverPass() {
-		DrillTally t = new DrillTally();
-		t.hit(1, false, false, 3);
-		assertEquals(1.0, Drill.Metric.FULL_CHARGE.value(t));
-		assertFalse(Drill.Metric.FULL_CHARGE.passes(t, 0.5), "one perfect hit isn't a pass");
-		for (int i = 0; i < 6; i++) {
-			t.hit(1, false, false, 3);
-		}
-		assertTrue(Drill.Metric.FULL_CHARGE.passes(t, 0.9));
-	}
-
-	@Test
-	void fasterIsBetterForEscapesAndTotems() {
-		DrillTally t = new DrillTally();
-		assertFalse(Drill.Metric.WEB_ESCAPE.passes(t, 1.5), "never caught: nothing to score");
-		t.webEscapes = 2;
-		t.webTicks = 30;
-		assertEquals(0.75, Drill.Metric.WEB_ESCAPE.value(t), 1e-9);
-		assertTrue(Drill.Metric.WEB_ESCAPE.passes(t, 1.0));
-		assertFalse(Drill.Metric.WEB_ESCAPE.passes(t, 0.5));
-		assertEquals("0.8 s", Drill.Metric.WEB_ESCAPE.format(0.75));
+	void feedbackSaysWhatWentWrong() {
+		assertTrue(Feedback.charge(0.92).good());
+		assertFalse(Feedback.charge(0.6).good());
+		assertTrue(Feedback.charge(0.6).text().contains("60%"));
+		assertEquals("sprint", Feedback.crit(false, 1.0, false, true, true).reason(), "sprinting spoils a crit");
+		assertEquals("rising", Feedback.crit(false, 1.0, false, false, false).reason(), "on the way up isn't a crit");
+		assertEquals("ground", Feedback.crit(false, 1.0, true, false, false).reason());
+		assertTrue(Feedback.crit(true, 1, false, true, false).good());
+		assertTrue(Feedback.jumpReset(0).good());
+		assertTrue(Feedback.jumpReset(-1).good());
+		assertEquals("late", Feedback.jumpReset(4).reason());
+		assertTrue(Feedback.jumpReset(4).text().contains("4 ticks late"));
+		assertEquals("early", Feedback.jumpReset(-5).reason());
+		assertEquals("none", Feedback.jumpReset(null).reason());
+		assertTrue(Feedback.reach(2.8, 2.6).good());
+		assertFalse(Feedback.reach(1.5, 2.6).good());
+		assertTrue(Feedback.punish(6, 10).good());
+		assertFalse(Feedback.punish(16, 10).good());
+		assertFalse(Feedback.punish(null, 10).good());
+		assertTrue(Feedback.combo(4, 3).good());
+		assertFalse(Feedback.combo(2, 3).good());
+		assertTrue(Feedback.web(0.8, 1.0).good());
+		assertFalse(Feedback.web(2.5, 1.0).good());
 	}
 
 	@Test
