@@ -230,7 +230,7 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	 */
 	/** While set, the client presses jump on exactly the client ticks a hit's knockback arrives (see drills()). */
 	private static volatile boolean JUMP_ON_HIT;
-	private static int jumpLastHurt;
+	private static net.minecraft.world.phys.Vec3 jumpLastVelocity;
 	private static boolean jumpHookRegistered;
 
 	private static void drills(ClientGameTestContext context, TestSingleplayerContext world) {
@@ -239,15 +239,22 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				jumpHookRegistered = true;
 				// The start of a client tick comes after the packets that arrived since the last: a hurt animation seen
 				// here came with its knockback, so jump is held on this very tick (and let go on the next).
+				// The knockback is a new velocity set by a packet between ticks: at the start of the tick it differs from
+				// what the last tick left (the player stood or walked, so only knockback pushes it away from the bot).
 				net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.START_CLIENT_TICK.register(c -> {
 					if (c.player == null) {
 						return;
 					}
-					int hurt = c.player.hurtTime;
+					net.minecraft.world.phys.Vec3 v = c.player.getDeltaMovement();
+					boolean knocked = jumpLastVelocity != null && v.y > 0.3 && jumpLastVelocity.y <= 0 && c.player.onGround();
 					if (JUMP_ON_HIT) {
-						c.options.keyJump.setDown(hurt > jumpLastHurt && c.player.onGround());
+						c.options.keyJump.setDown(knocked);
 					}
-					jumpLastHurt = hurt;
+				});
+				net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(c -> {
+					if (c.player != null) {
+						jumpLastVelocity = c.player.getDeltaMovement();
+					}
 				});
 			}
 		});
@@ -311,7 +318,8 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		int passed = world.getServer().computeOnServer(server -> SparBot.drills().stagesPassed(human(server).getUUID()));
 		if (passed < 1) {
 			throw new AssertionError("jumping as each hit lands didn't pass the jump reset drill's first stage (good reps: "
-				+ world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID())) + ")");
+				+ world.getServer().computeOnServer(server -> SparBot.drills().goodReps(human(server).getUUID())) + "; verdicts: "
+				+ world.getServer().computeOnServer(server -> SparBot.drills().recentVerdicts(human(server).getUUID())) + ")");
 		}
 		// Nobody dies in a drill.
 		boolean alive = world.getServer().computeOnServer(server -> {

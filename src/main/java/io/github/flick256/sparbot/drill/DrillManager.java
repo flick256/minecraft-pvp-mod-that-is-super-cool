@@ -138,6 +138,8 @@ public final class DrillManager {
 		final List<Integer> taps = new ArrayList<>();
 		/** Your sprint hits whose W-tap is still being read: click tick, sprinting (1/0), charge. */
 		final List<double[]> wTaps = new ArrayList<>();
+		/** The last few verdicts' texts (for tests). */
+		final java.util.ArrayDeque<String> recent = new java.util.ArrayDeque<>();
 		/** The last verdict, kept under the cue while it shows. */
 		Component verdictLine = Component.empty();
 		// Combos.
@@ -723,6 +725,10 @@ public final class DrillManager {
 			return;
 		}
 		s.tally.rep(verdict, s.drill.rep().strict());
+		s.recent.addLast((verdict.good() ? "+ " : "- ") + verdict.text());
+		while (s.recent.size() > 12) {
+			s.recent.removeFirst();
+		}
 		long now = player.level().getGameTime();
 		s.verdictUntil = now + 30;
 		Drill.Stage stage = s.current();
@@ -1361,6 +1367,12 @@ public final class DrillManager {
 	public int stagesPassed(UUID player) {
 		Session s = sessions.get(player);
 		return s == null ? -1 : s.passed;
+	}
+
+	/** The last few verdicts in the player's drill, newest last (for tests). */
+	public List<String> recentVerdicts(UUID player) {
+		Session s = sessions.get(player);
+		return s == null ? List.of() : List.copyOf(s.recent);
 	}
 
 	/** Good reps so far in the current stage, or -1 (for tests). */
