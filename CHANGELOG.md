@@ -37,6 +37,14 @@ Drills that judge what you really did, and bots that stop beating themselves.
   eating, or webbed). Strafing (which cost 6 points) now happens while recharging close in, with a switch of
   sides when your arm swings. The demon reacts faster (140 ms, still human) and judges reach tighter. Tiers: pro
   beats advanced 90%, advanced beats intermediate 99%, intermediate beats casual 92%.
+- **UHC bots that don't stop to build in your face.** With the learned UHC brain gone (2.0), the scripted brain
+  reached for a web, lava, a block boost or a wall in any free moment, often with you in reach. Tuned in the UHC
+  simulator, these speculative plays are now held back, while clear openings are taken at once (lava on a webbed
+  or eating opponent, a web to cover a heal, a wall to heal behind) and a play already under way is finished, not
+  dropped half done. The demon beats the 2.0 demon 64% of the time; holding back water, healing or melee instead
+  loses, and so does bringing any of them forward. Tiers in UHC: demon beats pro 70%, pro beats advanced 92%,
+  advanced beats intermediate every time. New lab entrants for this: `UhcLab ... demon-w:web=0.7,wall=0.5`
+  (tactic weights) and `demon-eager` (the 2.0 brain).
 
 ## 2.0.0
 
