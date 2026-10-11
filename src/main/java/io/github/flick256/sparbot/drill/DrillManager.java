@@ -1019,8 +1019,18 @@ public final class DrillManager {
 		if (s.jumpHitTick >= 0) {
 			ClientFrames.JumpReading r = ClientFrames.jumpReset(frames, s.jumpHitTick, s.jumpDx, s.jumpDz);
 			if (!r.pending()) {
-				s.jumpHitTick = -1;
 				Feedback.Verdict v = Feedback.jumpReset(r);
+				if (Boolean.getBoolean("sparbot.debugJumps")) {
+					StringBuilder sb = new StringBuilder("jump reset " + r + " hit tick " + s.jumpHitTick + ":");
+					for (ClientFrame fr : frames) {
+						if (fr.tick() >= s.jumpHitTick - 3 && fr.tick() <= s.jumpHitTick + 8) {
+							sb.append(String.format(Locale.ROOT, " [%d y%.3f g%s f%s j%s sk%s sp%s]", fr.tick(), fr.y(), fr.onGround() ? 1 : 0, fr.forward() ? 1 : 0,
+								fr.jump() ? 1 : 0, fr.sprintKey() ? 1 : 0, fr.sprinting() ? 1 : 0));
+						}
+					}
+					org.slf4j.LoggerFactory.getLogger("SparBot").info(sb.toString());
+				}
+				s.jumpHitTick = -1;
 				if (v.good()) {
 					s.tally.jumpResets++;
 				}

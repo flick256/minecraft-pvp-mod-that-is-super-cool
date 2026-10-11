@@ -83,7 +83,7 @@ if (project.hasProperty('deepOnly')) {
 // The client test's drills alone (a few minutes): ./gradlew runClientGameTest -PdrillsOnly
 if (project.hasProperty('drillsOnly')) {
 	tasks.named('runClientGameTest') {
-		jvmArgs "-Dsparbot.drillsOnly=true"
+		jvmArgs "-Dsparbot.drillsOnly=true", "-Dsparbot.debugJumps=true"
 	}
 }
 
