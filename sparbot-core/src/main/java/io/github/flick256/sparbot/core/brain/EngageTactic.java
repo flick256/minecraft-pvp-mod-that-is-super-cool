@@ -80,7 +80,9 @@ public final class EngageTactic implements Tactic {
 			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 25);
 			m.strafeActive = c.rng.chance(c.skill(Technique.STRAFE));
 		}
-		if (distance < 5.0 && m.strafeActive) {
+		// Strafe between hits; a practised player steadies for the swing itself (a sidestep drags the aim off).
+		boolean swingComing = SwordPlan.ticksToReady(c) <= 2 && distance <= self.attackReach() + 0.8;
+		if (distance < 5.0 && m.strafeActive && !(swingComing && c.rng.chance(c.skill(Technique.SPACING)))) {
 			strafe = m.strafeDirection;
 		}
 
@@ -130,6 +132,12 @@ public final class EngageTactic implements Tactic {
 
 		// Jump reset: jump the moment knockback lands to cancel part of it.
 		boolean selfJustHurt = self.hurtTime() > m.lastSelfHurtTime;
+		// Hit while strafing: a player breaks the combo by switching sides, so the next hit has to be re-aimed.
+		if (selfJustHurt && m.strafeActive && c.rng.chance(c.skill(Technique.STRAFE))) {
+			m.strafeDirection = -m.strafeDirection;
+			m.ticksUntilStrafeSwitch = c.rng.nextInt(8, 20);
+			strafe = distance < 5.0 ? m.strafeDirection : 0;
+		}
 		if (selfJustHurt && self.onGround() && c.rng.chance(c.skill(Technique.JUMP_RESET))) {
 			jump = true;
 		}

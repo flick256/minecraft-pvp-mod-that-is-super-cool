@@ -2,6 +2,53 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 2.0.0
+
+The training release: bots that fight like people, fights that last, and drills that actually teach.
+
+- **No more machine learning.** The learned models, the training command, the `autoModels`/`defaultModel` settings
+  and the menu's melee switch are gone. Every bot fights with the hand-written brain, which 2.0 makes more human:
+  - **Bots see you the way a client does**: a ping late and two ticks behind (a client eases other players into
+    place), where before they tracked you almost exactly, which is how they landed shots on strafes and knockback
+    that no player could. In return a bot's click lands on the body its client shows, the same rule that lets
+    yours land.
+  - **A hand's aim**: the bot's aim point wanders over your body (a pro's by about a fifth of a block, a beginner's
+    by half), and its lead covers only its own hand's lag instead of predicting you.
+  - **Bows by eye**: each arrow's distance and lead are estimated, misjudged by more for a lower tier and a longer
+    shot (a pro is off by about a block at 20), instead of solved exactly. No more shots from 40 blocks.
+  - **Crits when they make sense**: a skilled bot jumps for a crit only when you can't hit back (flying from its
+    last hit, recharging, eating), releasing W for a tick first and jumping forward into the hit; a novice still
+    jumps at random and gets hit for it. Before, every tier crit-jumped constantly, even intermediates hit 60%
+    crits.
+  - Fixed: with realistic delays, a bot never noticed its own hits landing in time, so combos and W-taps after a
+    hit never started. The tiers are checked in the simulator: pro beats advanced 85%, advanced beats intermediate
+    99%, and a pro's hits land from 2.4 blocks on average.
+- **Longer sword fights: the SparBot practice kit** (`sparbot_sword`: Protection IV diamond armor, Sharpness I
+  diamond sword) is the default kit, the sword duel's kit and the drills' kit. A kill takes about 19 hits (20-30
+  seconds between equal players) instead of 10 in the PvPHQ kit (13 seconds) or 8 in the old unenchanted default.
+  An existing config's `defaultKit` of `basic_sword` moves over. The PvPHQ kits are unchanged.
+- **Drills, rebuilt as lessons.** Each has three stages: *Learn* (cues on your action bar say when to act:
+  `JUMP!`, `Falling: HIT NOW`, `It missed: GO, HIT IT`, a charge bar), *Practice* (no cues) and *Under pressure*
+  (a bot that fights back).
+  - **Every attempt is judged the moment you make it**, with a sound: *Perfect jump reset!*, *Jumped 4 ticks late
+    (200 ms)*, *Jumped 5 ticks early*, *No crit: you were sprinting*, *Too early: 64% charge. Wait about 4 ticks
+    more*, *2.41 blocks: a little close*.
+  - A stage is passed **as soon as you have enough good reps**; one that runs out of time starts again with a tip
+    and what went wrong most. No more drills that just end.
+  - **You can't die in a drill**: low health is topped up and what would have killed you heals you instead.
+  - **Bots made for each skill**: an *attacker* that swings on a rhythm you can learn (jump resets, blocking), a
+    *whiffer* that swings from just too far and stands there recharging (punishing), a *strafer* (aim), a *rusher*
+    that sprints at you (first hit).
+  - **New drills**: `punish` (hit an opponent who just swung and missed) and `firsthit` (win the opening hit).
+- **The live coach**: in fights against bots (matches and the menu's *Fight*), a line on your action bar when
+  something is worth learning from: a half-charged swing, a hit taken without a jump reset, swinging from too
+  close, a disabled shield, and the windows (*It missed: go in and hit before it recharges!*). The `liveCoach`
+  setting turns it off.
+- New: `./gradlew :sparbot-core:swordLab` (how long sword fights last and how they are won) and
+  `./gradlew runClientGameTest -PdrillsOnly` (the drills played by a real client: jumping as each hit lands passes
+  the jump reset drill, hitting right after a miss passes the punish drill, and a lethal hit in a drill doesn't
+  kill).
+
 ## 1.2.0
 
 A new version of the Celestial Colosseum's story, its boss, its rewards and its halls. **SparBot now adds its own

@@ -57,6 +57,9 @@ intermediate 0.98.)
 Bot against bot the gaps look steep: two scripted players of the same level trade almost every hit,
 so small edges in reaction and aim decide nearly every fight. Against a person the levels feel
 closer. The reading, spacing and feints mostly pay off against opponents who make human mistakes
-(swinging early, walking into reach while charged), which bots of the same level rarely do. This is
-also why the next step is a learned policy trained against itself in the simulator (see
-`docs/machine-learning.md`).
+(swinging early, walking into reach while charged), which bots of the same level rarely do.
+
+Since 2.0 every bot sees its opponent as a client would (a ping late, plus two ticks of interpolation), hits the
+body its client shows, aims with a wandering hand, and jumps for crits only when the opponent can't trade. In the
+simulator in the practice kit: pro beats advanced 85%, advanced beats intermediate 99%, intermediate beats casual
+96%; a pro's hits land from about 2.4 blocks (`./gradlew :sparbot-core:swordLab`).

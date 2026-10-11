@@ -50,6 +50,12 @@ final class Cues {
 		};
 	}
 
+	/** Whether a cue is the moment to act (shown big in the middle of the screen as well). */
+	static boolean urgent(String cue) {
+		return cue.contains("NOW") || cue.startsWith("JUMP") || cue.contains("GO,") || cue.equals("SHIELD UP") || cue.startsWith("AXE")
+			|| cue.endsWith("SWING") || cue.equals("HIT");
+	}
+
 	private static String crit(ServerPlayer p, float charge) {
 		if (p.onGround()) {
 			if (charge < 0.6F) {

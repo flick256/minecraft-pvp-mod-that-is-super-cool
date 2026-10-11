@@ -156,6 +156,9 @@ public final class DrillManager {
 		int botDownTicks;
 		/** The action bar shows the last verdict until then, then the cue and progress again. */
 		long verdictUntil = -1;
+		/** The last urgent cue shown in the middle of the screen, and when. */
+		String lastUrgent = "";
+		long urgentAt = Long.MIN_VALUE / 2;
 		/** The live coach's last tip (fights only), and when. */
 		long lastTipAt = Long.MIN_VALUE / 2;
 
@@ -644,6 +647,14 @@ public final class DrillManager {
 		String cue = stage.cues() ? Cues.cue(s.drill.rep(), player, body, s.pattern, now, s.whiffAt, s.stunAt) : null;
 		player.sendOverlayMessage(cue == null || cue.isEmpty() ? progress
 			: Component.literal(cue + "   ").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD).append(progress));
+		// The moment to act goes up in the middle of the screen too, big, where the eyes are.
+		if (cue != null && Cues.urgent(cue) && (!cue.equals(s.lastUrgent) || now - s.urgentAt > 10)) {
+			s.lastUrgent = cue;
+			s.urgentAt = now;
+			title(player, Component.literal(cue).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), Component.empty(), 8);
+		} else if (cue == null || !Cues.urgent(cue)) {
+			s.lastUrgent = "";
+		}
 	}
 
 	/** One judged attempt: counted, told on the action bar with a sound, and the stage passed when enough are in. */
@@ -658,12 +669,21 @@ public final class DrillManager {
 		player.sendOverlayMessage(Component.literal((verdict.good() ? "✔ " : "✘ ") + verdict.text()).withStyle(verdict.good() ? ChatFormatting.GREEN
 			: ChatFormatting.RED).append(Component.literal("   " + s.tally.goodReps + "/" + stage.reps()).withStyle(ChatFormatting.WHITE)));
 		sound(player, verdict.good() ? SoundEvents.NOTE_BLOCK_PLING : SoundEvents.NOTE_BLOCK_BASS, verdict.good() ? 1.6F : 0.6F);
+		title(player, Component.empty(), Component.literal((verdict.good() ? "\u2714 " : "\u2718 ") + verdict.text())
+			.withStyle(verdict.good() ? ChatFormatting.GREEN : ChatFormatting.RED), 30);
 		if (s.tally.goodReps >= stage.reps()) {
 			Bot bot = SparBot.bots().get(s.botName).orElse(null);
 			if (bot != null) {
 				endStage(player.level().getServer(), (ServerLevel) player.level(), s, player, bot, true);
 			}
 		}
+	}
+
+	/** A title (and subtitle) in the middle of the screen, up at once, for {@code stay} ticks. */
+	private static void title(ServerPlayer player, Component title, Component subtitle, int stay) {
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket(0, stay, 6));
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket(subtitle));
+		player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket(title));
 	}
 
 	private static void sound(ServerPlayer player, Holder<SoundEvent> sound, float pitch) {

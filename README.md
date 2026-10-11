@@ -8,22 +8,22 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: milestones 1-7 (sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches,
-> Elo, recording and replay, an in-game menu) plus a duel simulator and **learned melee**: a network
-> trained by imitation and self-play, under the same human limits as every bot. Bots fight at a chosen
-> skill level and **playstyle**, with any technique switchable per bot. A debug view shows what a bot
-> is thinking.
+> Status: 2.0. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
+> and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it,
+> cues that tell you when to act) and a **live coach** in your fights against bots. Every bot fights with
+> hand-written, human-limited fighting code (2.0 removed the machine learning): at a chosen skill level and
+> **playstyle**, with any technique switchable per bot. A debug view shows what a bot is thinking.
 
 ## What a bot can do (milestone 3)
 
 | Mechanic | Behaviour (26.2 rules checked in source) |
 |---|---|
 | Melee | Times hits to the attack cooldown, crits (falling, not sprinting, more than 90% charge; skilled players jump in at full charge), W-tap, S-tap, strafing, jump reset. Reads your swings to judge your charge: stays just outside your reach while you are charged, feints in and out to draw a swing, rushes in when you miss, combos only while you are recharging. See [docs/sword-tiers.md](docs/sword-tiers.md) for what each level does |
-| Learned melee | Optional: a neural network trained in a duel simulator (imitating the scripted pro, then playing itself) drives the movement and clicks, held to the same human limits. Bundled: `sword`, and `uhc`, a whole UHC brain (melee with shield and axe, plus when to use lava, webs, water, walls, the bow and heals, learned in a UHC simulator with blocks and fluids). Train your own in game with `/sparbot train uhc <name>`. See [docs/machine-learning.md](docs/machine-learning.md) |
+| Seeing like a player | A bot sees you the way a client shows you: a ping late and two ticks behind (a client eases other players into place), and its clicks land on the body its client shows, as yours do. Its aim point wanders over your body as a hand's does, and it judges an arrow's distance and lead by eye, off by more over a longer shot and for a lower tier |
 | Reflexes | Busy with a bucket, blocks or crystals, a bot still takes the free hit when you walk into reach, jump-resets the knockback and sidesteps instead of standing still |
 | Shield | Block-hits (raises the shield while recharging, lowers it in time to swing); guards against a drawn bow; avoids blocking an axe user when skilled |
 | Axe | Switches to the axe when the opponent raises a shield (an axe hit disables it for 5 s); circles a shield if it has no axe |
-| Bow / crossbow | Used at 8-40 blocks; full 20-tick draw; crossbow charged in 25 ticks, then fired; aim solved with the real arrow physics and leading moving targets |
+| Bow / crossbow | Used at 8-30 blocks; full 20-tick draw; crossbow charged in 25 ticks, then fired; each shot's distance and lead are estimated by eye (misjudged by more for a lower tier and a longer shot), not solved |
 | Ender pearl | Closes 16-45 block gaps (lands just short of the opponent) or escapes when low and cornered; aim solved with real pearl physics |
 | Golden apples / food | Eats a golden apple when low (not in the opponent's face unless desperate), and food when hungry and safe |
 | Totems | After a pop, puts a new totem in the offhand: the swap key from the hotbar, or opening the inventory (taking human time) |
@@ -91,8 +91,6 @@ All commands need the permission level set in the config (default: gamemasters, 
 | `/sparbot kit capture <id> [mode]` | Saves **your current inventory** as a kit, slot for slot (marked user-supplied and verified) |
 | `/sparbot kit give <kit> [players]` | Equips you (or the players) with a kit, replacing the inventory, like a server's kit menu (not during a match) |
 | `/sparbot technique <bot> [<technique> on\|off]` | Shows or switches a bot's techniques: `strafe`, `wtap`, `stap`, `jumpreset`, `crits`, `spacing`, `reading`, `feints`, `combos`, `blockhit`, `shieldstun`, `reflexes` |
-| `/sparbot model <bot> <model\|off>` / `models` | Has a bot fight in melee with a learned model (bundled: `sword`, `uhc`), or the scripted melee again |
-| `/sparbot train [sword\|uhc\|uhcmelee] <name> [generations] [from]` / `train status` / `train stop` | Trains a model in the background (self-play in the simulator; `uhc` trains the whole UHC brain in full-kit fights) and saves every new best to `config/sparbot/models/<name>.json` |
 | `/sparbot kit info <kit>` | Shows a kit's provenance (source, version, confidence, deviations) |
 | `/sparbot layout save <kit>` / `layout reset <kit>` | Saves how **you** arranged a kit as your own layout: every `kit give` (and the menu's Equip) puts it back that way |
 | `/sparbot heal [players]` | Full heal (health, hunger, fire, harmful effects), outside matches |
@@ -124,7 +122,7 @@ All commands need the permission level set in the config (default: gamemasters, 
 
 With SparBot installed on your client too, press **B** (rebindable in Controls) or run `/sparbot menu`:
 - **Bots:** every bot with its profile, style and health, and buttons to fight it, kill or respawn it, or remove it.
-  **Tech** opens the bot's page: its melee (scripted or a learned model) and an on/off switch per technique
+  **Tech** opens the bot's page: an on/off switch per technique
 - **Spawn:** name, profile, kit and playstyle, then *Spawn bot*
 - **Kits:** every kit with an *Equip* button that gives it to you (replacing your inventory)
 - **You:** a full heal, natural regeneration, your saved kit layouts, and your last fight against a bot:
@@ -199,22 +197,36 @@ trains it. The menu's You page keeps your last ten.
 
 ### Skill drills
 
-Every PvP skill as a drill, in the training hall: `/sparbot drill <name>` or the menu's Drills tab. Each has
-three stages that get harder (a dummy, then a moving bot, then a bot that fights back, or three tiers of
-fighting bot), each a timed round scored on that one skill from what the server sees you do. Pass a stage
-for the next; one stage is bronze, two silver, three gold. Your inventory is kept safe and comes back after.
+Every PvP skill as a lesson, in the training hall: `/sparbot drill <name>` or the menu's Drills tab. Each drill
+has three stages:
 
-| Group | Drills |
+1. **Learn**: cues on your action bar say exactly when to act (`JUMP!` as the attacker's sword comes down,
+   `Falling: HIT NOW` for a crit, `It missed: GO, HIT IT`), against a slow, predictable bot built for that skill.
+2. **Practice**: the same bot, no cues.
+3. **Under pressure**: a bot that fights back, and the skill done mid-fight.
+
+Every attempt is judged the moment you make it and told to you with a sound: *Perfect jump reset!*, *Jumped 4
+ticks late (200 ms)*, *No crit: you were sprinting*, *Too early: 64% charge*. A stage ends as soon as you have
+enough good reps; one that runs out of time starts again with a tip and what went wrong most. **You can't die in
+a drill**: what would have killed you heals you instead. One stage is bronze, two silver, three gold. Your
+inventory is kept safe and comes back after.
+
+| Group | Drills (what a rep is) |
 |---|---|
-| Sword | `charge` (full-charge hits), `reach` (edge of reach), `crits`, `wtap` (sprint resets), `stap` (spacing: trades won), `combo` (longest combo), `jumpreset` (the bot combos you), `aim` (swings that hit) |
-| Shield | `blockhit` (hits blocked between swings), `shieldstun` (disable a shield with an axe and follow up), `shielddefence` (block without losing your shield to an axe) |
-| NoDebuff | `pots` (how much of each healing pot lands on you) |
-| UHC | `webs` (seconds to get out), `lava` (time the bot burns), `bow` (arrows that hit), `rod` (rods that hook) |
-| Crystal | `crystals` (blasts that hurt), `anchors` (anchor blasts), `retotem` (seconds to a new totem) |
-| Cart | `carts` (cart blasts that hurt) |
-| Mace | `mace` (smashes from a fall) |
+| Sword | `charge` (a full-charge hit), `reach` (a hit from the edge of reach), `crits` (a crit, or why it wasn't), `wtap` (a sprint hit), `jumpreset` (a jump reset, to the tick, against a bot that swings on a rhythm), `combo` (a combo of 3-4), `aim` (a swing on target; a miss takes one back), `punish` (hitting a bot that just swung and missed), `firsthit` (winning the opening hit as a bot sprints at you), `stap` (trades won) |
+| Shield | `blockhit` (a hit blocked), `shieldstun` (a stun followed up within a second), `shielddefence` (a block without losing the shield to an axe) |
+| NoDebuff | `pots` (a pot that heals at least 80%) |
+| UHC | `webs` (out of a web in time), `lava` (setting the bot alight), `bow` (an arrow on target), `rod` (a hook) |
+| Crystal | `crystals` (a blast that hurt), `anchors` (an anchor blast), `retotem` (a new totem in time) |
+| Cart | `carts` (a cart blast that hurt) |
+| Mace | `mace` (a smash from a fall) |
 
-The pass marks are first estimates of what each tier of bot manages; they will be tuned.
+### The live coach
+
+In a fight against a bot (a match, or the menu's *Fight*), the coach puts a line on your action bar when
+something is worth learning from, judged the same way as the drills: a half-charged swing, a hit taken without a
+jump reset, swinging from too close, a disabled shield, and the window calls (*It missed: go in and hit before it
+recharges!*). At most one line every two and a half seconds; `liveCoach` in the config turns it off.
 
 ## Skill profiles
 
@@ -292,6 +304,7 @@ Every kit has a **provenance** block stating its source, game version, confidenc
 plus every deviation made when translating it from an older version. Custom kits go in `config/sparbot/kits/`.
 
 Bundled kits:
+- `sparbot_sword`: SparBot's sword practice kit (2.0, the default): Protection IV diamond armor and a Sharpness I diamond sword, so a kill takes about 19 hits instead of 10 and there is time to use every technique.
 - `basic_sword`: SparBot's own duel kit (unenchanted diamond gear).
 - `sparbot_*`: SparBot's own kits for each mode (combat, ranged, nodebuff, mace, spear, crystal, cart, uhc).
 - `pvphq_sword`, `pvphq_uhc`, `pvphq_smp`, `pvphq_mace`, `pvphq_crystal`, `pvphq_cart_low`, `pvphq_cart_high`: PvPHQ's kits, transcribed from
@@ -347,15 +360,14 @@ These rules never relax, and the build fails if any of them breaks:
 | `respawnMode` | `auto` | `off` (bot leaves after dying), `manual` or `auto` |
 | `autoRespawnDelayTicks` | `60` | Delay before an automatic respawn |
 | `kitOnRespawn` | `true` | Re-equip the kit on respawn (start of a new round) |
-| `defaultProfile` / `defaultKit` | `intermediate` / `basic_sword` | Used when `/sparbot spawn` omits them |
+| `defaultProfile` / `defaultKit` | `intermediate` / `sparbot_sword` | Used when `/sparbot spawn` omits them |
 | `disabledTechniques` | `""` | Techniques new bots start with switched off, comma-separated (e.g. `strafe,feints`) |
-| `defaultModel` | `""` | Learned melee model new bots start with (`""` or `none`: the scripted melee) |
-| `autoModels` | `true` | Bots nobody chose a melee for get the learned brain for their kit and tier: UHC kits the learned UHC brain (`uhc_demon` for demon bots when it is there). It beats the scripted bot of the same tier about 9 times in 10 in the simulator, with as much utility |
+| `liveCoach` | `true` | The live coach's lines during fights against bots |
 | `shieldStuns` | `true` | A fully blocked hit doesn't start the blocker's invulnerability, so the second click of a stun lands |
 | `matchPlayerKit` | `true` | A bot sent to fight you wears the kit you last equipped |
 | `naturalRegeneration` | `true` | Off: UHC rules outside matches (only golden apples and heads heal) |
 | `logDecisions` | `false` | Log every tactic change |
-| `recordMatches` | `false` | Record every match (for replays, and later for Super Mode training) |
+| `recordMatches` | `false` | Record every match (for replays) |
 
 ## Building
 
@@ -365,5 +377,7 @@ These rules never relax, and the build fails if any of them breaks:
 
 This runs the core unit tests and the in-game GameTests on a headless 26.2 server
 (`-PgametestFilter=<test id>` runs only some). `./gradlew :sparbot-core:tournament` prints how the skill
-levels do against each other in the duel simulator; `./gradlew :sparbot-core:trainSword` trains a model.
+levels do against each other in the duel simulator, and `./gradlew :sparbot-core:swordLab -Pa=pro -Pb=advanced
+-Pkit=sparbot_sword` how long sword fights last and how they are won. `./gradlew runClientGameTest -PdrillsOnly`
+plays the drills with a real client.
 `./gradlew runServer` and `./gradlew runClient` start a development game.
