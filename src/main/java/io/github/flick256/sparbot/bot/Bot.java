@@ -204,10 +204,24 @@ public final class Bot {
 		return Collections.unmodifiableSet(disabledTechniques);
 	}
 
+	private boolean eagerUtility;
+
+	/**
+	 * Utility whenever it is possible, without the brain's restraint (see DuelBrain#restraint): for tests that check
+	 * a bot can web, pour or boost at all, against a dummy that gives no clear opening.
+	 */
+	public void setEagerUtility(boolean eager) {
+		this.eagerUtility = eager;
+		rebuildBrain();
+	}
+
 	private void rebuildBrain() {
 		DuelBrain brain = new DuelBrain(profile, playstyle, seed, new io.github.flick256.sparbot.core.brain.EngageTactic());
 		if (disabledTechniques != null) {
 			brain.setDisabledTechniques(disabledTechniques);
+		}
+		if (eagerUtility) {
+			brain.eager();
 		}
 		this.policy = brain;
 		// The shaper enforces limits from the effective (playstyle-biased) profile.

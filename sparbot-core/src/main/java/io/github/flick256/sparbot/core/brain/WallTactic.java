@@ -29,9 +29,10 @@ public final class WallTactic implements Tactic {
 	private static final double MAX_RANGE = 7.0;
 	/** Starts this far above the health at which the bot eats, so the wall is up in time. */
 	private static final double EARLY = 0.15;
-	private static final int TIMEOUT = 50;
+	/** A player puts a six-block wall up in about a second and a half; standing there longer is a free target. */
+	private static final int TIMEOUT = 30;
 	/** One block that won't go down in this many ticks is skipped. */
-	private static final int BLOCK_TIMEOUT = 8;
+	private static final int BLOCK_TIMEOUT = 6;
 	private static final int COOLDOWN = 160;
 	private static final double STOPPED = 0.03;
 	private static final int STOP_TICKS = 4;

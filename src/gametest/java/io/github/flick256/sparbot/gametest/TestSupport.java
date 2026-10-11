@@ -85,6 +85,7 @@ final class TestSupport {
 			new io.github.flick256.sparbot.core.profile.SkillProfile.ItemSkills(i.hotbarSwitchMs(), i.inventoryMs(), 1, i.gappleHealthFraction(),
 				i.eatHungerBelow(), 1, 1, 1, 1, i.potHealthFraction(), 1, 1, 1, 1, 1),
 			p.mistakeRate(), p.panicHealthFraction()));
+		bot.setEagerUtility(true); // a certain bot uses what it can, not only on clear openings
 		return bot;
 	}
 
