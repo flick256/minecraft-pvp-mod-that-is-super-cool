@@ -45,6 +45,7 @@ class UhcTacticsTest {
 	@Test
 	void poursLavaUnderTheOpponentAndScoopsItBackUp() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, LAVA), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
+		h.brain.eager(); // a speculative pour/web in a free window: what the restraint holds back (see DuelBrain#restraint)
 		h.attackStrength = 0.2F; // just swung
 		assertTrue(usesWithin(h, ItemKind.LAVA_BUCKET, 40), "emptied the lava bucket");
 		assertTrue(h.pitch > 15, "onto the ground at the opponent's feet, pitch " + h.pitch);
@@ -80,6 +81,7 @@ class UhcTacticsTest {
 	@Test
 	void websTheOpponent() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WEBS), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
+		h.brain.eager(); // a speculative pour/web in a free window: what the restraint holds back (see DuelBrain#restraint)
 		h.attackStrength = 0.2F; // just swung: the switch to the web costs no hit
 		assertTrue(usesWithin(h, ItemKind.COBWEB, 40), "placed a cobweb");
 		assertEquals("web", h.brain.lastTrace().tactic());

@@ -119,6 +119,11 @@ public final class DuelBrain implements Policy {
 			double score = tactic.score(context);
 			if (score > 0 && !(tactic instanceof SearchTactic)) {
 				score *= style.weight(tactic.name());
+				// A clear opening (scored as high as a webbed or eating opponent gives) is taken whatever the restraint.
+				// Nor is a play already under way: dropping it half done (a web half placed) is the worst of both.
+				if (restrained && score < RESTRAINT_ABOVE && tactic != active) {
+					score *= restraint(tactic.name());
+				}
 			}
 			tacticScores[i] = score;
 		}
@@ -168,6 +173,32 @@ public final class DuelBrain implements Policy {
 		perception.clear();
 		active = null;
 		trace = DecisionTrace.NONE;
+	}
+
+	/**
+	 * How readily the UHC utility plays are reached for, against the scores their tactics give. Tuned in the UHC
+	 * simulator (UhcLab, tactic-weight entrants): reaching for a web, lava, a block boost or a wall whenever one
+	 * is possible cost fights, mostly by stopping to place something with the opponent in reach. Clear openings
+	 * (scored at {@link Scores#SURVIVAL} or more: a webbed or eating opponent, say) are still taken at once. Held
+	 * back like this, a demon beats the old, eager demon about 69% of the time; holding back water, healing or melee instead
+	 * loses (32-39%), and bringing any of them forward loses too.
+	 */
+	/** Openings scored at least this (a webbed or eating opponent, a wall to heal behind) are never held back. */
+	static final double RESTRAINT_ABOVE = Scores.SPECIALIST + 0.09;
+	private boolean restrained = true;
+
+	/** The 2.0 brain's eager utility (no {@link #restraint}): for comparing in the simulator. */
+	public DuelBrain eager() {
+		restrained = false;
+		return this;
+	}
+
+	static double restraint(String tactic) {
+		return switch (tactic) {
+			case "web", "lava", "boost" -> 0.7;
+			case "wall" -> 0.5;
+			default -> 1.0;
+		};
 	}
 
 	private Mistake pickMistake() {

@@ -229,6 +229,11 @@ public final class UhcLab {
 				Map.of(), 0);
 			return new Tournament.Entrant(name, style.applyTo(profile), seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(profile, style, seed));
 		}
+		if (name.endsWith("-eager")) {
+			// <profile>-eager: the scripted brain with 2.0's eager utility (no restraint), to compare against.
+			SkillProfile profile = presets.get(name.substring(0, name.length() - 6));
+			return new Tournament.Entrant(name, profile, seed -> new io.github.flick256.sparbot.core.brain.DuelBrain(profile, seed).eager());
+		}
 		if (name.contains("-w:")) {
 			// <profile>-w:<tactic>=<weight>,...: the scripted brain with those tactics weighted (a playstyle), for tuning.
 			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-w:")));
