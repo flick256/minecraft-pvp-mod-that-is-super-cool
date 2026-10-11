@@ -53,7 +53,7 @@ public final class MenuSync {
 			boolean alive = body != null && body.isAlive();
 			bots.add(new MenuState.BotEntry(bot.name(), bot.profile().id(), bot.playstyle().id(), alive, alive ? body.getHealth() : 0,
 				bot.disabledTechniques().stream().map(io.github.flick256.sparbot.core.brain.Technique::id).sorted().toList(),
-				bot.modelId() == null ? "" : bot.modelId()));
+				""));
 		}
 		List<MenuState.Setting> settings = ConfigEditor.settings(SparBot.config()).stream()
 			.map(s -> new MenuState.Setting(s.key(), s.type(), s.value())).toList();
@@ -61,7 +61,7 @@ public final class MenuSync {
 			sorted(SparBot.matches().modes().ids()), bots, settings, sorted(SparBot.kits().ids()).stream()
 				.flatMap(id -> SparBot.kits().get(id).stream())
 				.map(kit -> new MenuState.KitEntry(kit.id(), kit.displayName(), kit.provenance().verified())).toList(),
-			sorted(SparBot.models().ids()), viewer == null ? List.of() : SparBot.playerLayouts().kits(viewer.getUUID()),
+			List.of(), viewer == null ? List.of() : SparBot.playerLayouts().kits(viewer.getUUID()),
 			viewer == null ? java.util.Map.of() : SparBot.drills().medalsOf(viewer.getUUID()),
 			viewer == null || SparBot.drills().reports() == null ? List.of() : SparBot.drills().reports().of(viewer.getUUID()));
 	}

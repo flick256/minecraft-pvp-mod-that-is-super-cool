@@ -30,8 +30,6 @@ class MenuTest {
 		assertEquals("sparbot fight Bob Steve", MenuCommands.fight("Bob", "Steve"));
 		assertEquals("sparbot kit give pvphq_uhc", MenuCommands.giveKit("pvphq_uhc"));
 		assertEquals("sparbot technique Bob wtap off", MenuCommands.technique("Bob", "wtap", false));
-		assertEquals("sparbot model Bob sword", MenuCommands.model("Bob", "sword"));
-		assertEquals("sparbot model Bob off", MenuCommands.model("Bob", "off"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.giveKit("uhc @a"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.spawn("Bob op Steve", "pro", "basic_sword"));
 		assertThrows(IllegalArgumentException.class, () -> MenuCommands.spawn("Bob", "pro; op", "basic_sword"));

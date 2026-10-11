@@ -35,8 +35,6 @@ public final class DuelBrain implements Policy {
 	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
 	private DecisionTrace trace = DecisionTrace.NONE;
-	/** Learned shifts to the tactic scores, or null for the scripted priorities. */
-	private LearnedTactics learnedTactics;
 
 	public DuelBrain(SkillProfile profile, long seed) {
 		this(profile, Playstyle.BALANCED, seed);
@@ -47,10 +45,7 @@ public final class DuelBrain implements Policy {
 		this(profile, style, seed, new EngageTactic());
 	}
 
-	/**
-	 * @param melee what fights in melee: the scripted {@link EngageTactic}, a {@link LearnedMeleeTactic}, or
-	 *     an {@link ImitationRecorder}
-	 */
+	/** @param melee what fights in melee (the scripted {@link EngageTactic}, or a test's stand-in) */
 	public DuelBrain(SkillProfile profile, Playstyle style, long seed, Tactic melee) {
 		this.tactics = List.of(melee, new RetreatTactic(), new SearchTactic(), new HealTactic(),
 			new RetotemTactic(), new RangedTactic(), new GuardTactic(), new PearlTactic(), new KiteTactic(),
@@ -73,21 +68,6 @@ public final class DuelBrain implements Policy {
 
 	public DuelMemory memory() {
 		return memory;
-	}
-
-	/** Chooses tactics with a learned network on top of the scripted scores ({@code null}: the scripted priorities). */
-	public void setLearnedTactics(LearnedTactics tactics) {
-		this.learnedTactics = tactics;
-	}
-
-	/** A brain for a learned model: its melee network, and its tactic chooser if it has one. */
-	public static DuelBrain learned(SkillProfile profile, Playstyle style, long seed, io.github.flick256.sparbot.core.ml.Mlp model) {
-		DuelBrain brain = new DuelBrain(profile, style, seed, new LearnedMeleeTactic(model));
-		// (A tactic chooser made for a different set of tactics is left out: the scripted choices then.)
-		if (model.tactics() != null && LearnedTactics.fits(model.tactics())) {
-			brain.setLearnedTactics(new LearnedTactics(model.tactics()));
-		}
-		return brain;
 	}
 
 	/** Switches techniques off (the rest on). */
@@ -134,9 +114,6 @@ public final class DuelBrain implements Policy {
 				score *= style.weight(tactic.name());
 			}
 			tacticScores[i] = score;
-		}
-		if (learnedTactics != null) {
-			learnedTactics.shift(context, tactics, tacticScores, active);
 		}
 		Tactic best = null;
 		double bestScore = Double.NEGATIVE_INFINITY;

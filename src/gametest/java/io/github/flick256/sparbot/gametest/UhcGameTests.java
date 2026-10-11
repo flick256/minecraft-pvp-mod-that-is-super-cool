@@ -204,8 +204,8 @@ public class UhcGameTests {
 		helper.succeedWhen(() -> {
 			helper.assertTrue(disabledAt[0] >= 0, "the axe disabled the shield");
 			helper.assertTrue(t.getHealth() < healthAtDisable[0], "then a hit landed");
-			helper.assertTrue(helper.getTick() - disabledAt[0] <= 10, "right after the stun, " + (helper.getTick() - disabledAt[0]) + " ticks later (melee "
-				+ bot.modelId() + ")" + afterStun);
+			helper.assertTrue(helper.getTick() - disabledAt[0] <= 10, "right after the stun, " + (helper.getTick() - disabledAt[0]) + " ticks later"
+				+ afterStun);
 			TestSupport.remove(bot, target);
 		});
 	}

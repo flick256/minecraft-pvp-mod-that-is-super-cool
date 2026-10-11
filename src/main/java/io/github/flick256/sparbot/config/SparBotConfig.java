@@ -48,13 +48,6 @@ public final class SparBotConfig {
 	 * spacing, blockhit, shieldstun, reflexes); "" uses them all. Per bot: /sparbot technique.
 	 */
 	public String disabledTechniques = "";
-	/** Learned melee model new bots start with ("" = the scripted melee). Per bot: /sparbot model. */
-	public String defaultModel = "";
-	/**
-	 * Bots nobody chose a melee for get the learned brain for their kit and tier: UHC kits the learned UHC
-	 * brain (the demon one for demon bots). Off: the scripted brain unless a model is set.
-	 */
-	public boolean autoModels = true;
 	/**
 	 * Natural regeneration (from a full hunger bar) for players and bots outside matches. Off is UHC
 	 * rules for practice: only golden apples and heads heal. Matches set their own rule.

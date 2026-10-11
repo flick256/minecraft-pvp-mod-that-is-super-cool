@@ -201,30 +201,9 @@ public final class UhcLab {
 	}
 
 	/**
-	 * A contestant by name: a profile id (the scripted brain), {@code melee:<model>} (the pro with a bundled
-	 * melee model) or {@code melee:<path.json>}.
+	 * A contestant by name: a profile id (the scripted brain), or {@code <profile>-off:<techniques>}.
 	 */
 	static Tournament.Entrant entrant(String name, Map<String, SkillProfile> presets) {
-		if (name.startsWith("melee:")) {
-			// melee:<model>[@<profile>]: the model at that tier's limits (pro by default).
-			String model = name.substring("melee:".length());
-			String tier = "pro";
-			if (model.contains("@")) {
-				tier = model.substring(model.indexOf('@') + 1);
-				model = model.substring(0, model.indexOf('@'));
-			}
-			io.github.flick256.sparbot.core.ml.Mlp net;
-			if (model.endsWith(".json")) {
-				try {
-					net = io.github.flick256.sparbot.core.ml.Mlp.fromJson(java.nio.file.Files.readString(java.nio.file.Path.of(model)));
-				} catch (java.io.IOException e) {
-					throw new java.io.UncheckedIOException(e);
-				}
-			} else {
-				net = io.github.flick256.sparbot.core.ml.Models.loadBundled().get(model);
-			}
-			return io.github.flick256.sparbot.core.ml.SelfPlay.entrant(name, presets.get(tier), net);
-		}
 		if (name.contains("-off:")) {
 			// <profile>-off:<technique>,<technique>: the scripted brain with those techniques switched off (blockhit, shieldstun...).
 			SkillProfile profile = presets.get(name.substring(0, name.indexOf("-off:")));

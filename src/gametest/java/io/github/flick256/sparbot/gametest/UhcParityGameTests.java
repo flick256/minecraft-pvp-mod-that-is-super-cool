@@ -115,9 +115,6 @@ public class UhcParityGameTests {
 		double gap = 8 + round % 8;
 		double cx = HALF + 1;
 		Bot a = TestSupport.spawnBot(helper, modelA == null ? "ParityA" : "BrainA", cx - gap / 2, 1, cx, -90, "pro", "sparbot_uhc");
-		if (modelA != null) {
-			a.setModel(modelA, SparBot.models().get(modelA).orElseThrow());
-		}
 		Bot b = TestSupport.spawnBot(helper, "ParityB", cx + gap / 2, 1, cx, 90, "pro", "sparbot_uhc");
 		a.setAssignedTarget(TestSupport.body(b).getUUID());
 		b.setAssignedTarget(TestSupport.body(a).getUUID());

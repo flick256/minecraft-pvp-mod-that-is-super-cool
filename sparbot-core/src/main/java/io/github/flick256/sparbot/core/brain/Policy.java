@@ -4,7 +4,7 @@ import io.github.flick256.sparbot.core.act.Inputs;
 import io.github.flick256.sparbot.core.sense.Observation;
 
 /**
- * Anything that can drive a bot: the scripted utility brain today, a learned policy later. A policy
+ * Anything that can drive a bot: the scripted utility brain, or a test's stand-in. A policy
  * only maps observations to human inputs; the input shaper then enforces human limits on its output.
  */
 public interface Policy {

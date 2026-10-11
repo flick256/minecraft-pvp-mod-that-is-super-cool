@@ -40,7 +40,7 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 	private static final Gson GSON = new Gson();
 
 	/** A bot as the menu lists it. */
-	/** @param model the learned melee model the bot fights with, "" for the scripted melee */
+	/** @param model unused since 2.0 (bots fight with the scripted brain), always "" */
 	public record BotEntry(String name, String profile, String style, boolean alive, float health, List<String> disabledTechniques, String model) {
 	}
 

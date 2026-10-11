@@ -318,21 +318,11 @@ public final class SparBotMenuScreen extends Screen {
 			return;
 		}
 		Technique[] all = Technique.values();
-		int rowsTotal = all.length + 1;
+		int rowsTotal = all.length;
 		int first = clampPage(rowsTotal) * rows();
 		for (int row = first; row < Math.min(first + rows(), rowsTotal); row++) {
 			int y = TOP + (row - first) * ROW_HEIGHT;
-			if (row == 0) {
-				// First row: scripted melee or a learned model.
-				List<String> melee = new ArrayList<>();
-				melee.add("scripted");
-				melee.addAll(state.models());
-				String current = bot.model().isEmpty() ? "scripted" : bot.model();
-				labels.add(new Label(bot.name() + ": melee", center - 190, y + 6, WHITE));
-				addRenderableWidget(cycle("melee", melee, current, v -> run(MenuCommands.model(bot.name(), v.equals("scripted") ? "off" : v)), center + 20, y, 120));
-				continue;
-			}
-			Technique technique = all[row - 1];
+			Technique technique = all[row];
 			labels.add(new Label(bot.name() + ": " + technique.id(), center - 190, y + 6, WHITE));
 			boolean on = !bot.disabledTechniques().contains(technique.id());
 			addRenderableWidget(CycleButton.onOffBuilder(on).displayOnlyValue().create(center + 20, y, 120, 20, Component.literal(technique.id()),
