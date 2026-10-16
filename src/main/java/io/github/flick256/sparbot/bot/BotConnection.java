@@ -3,6 +3,7 @@ package io.github.flick256.sparbot.bot;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.network.Connection;
+import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
@@ -81,6 +82,19 @@ public final class BotConnection extends Connection {
 
 	@Override
 	public void flushChannel() {
+	}
+
+	@Override
+	public void disconnect(DisconnectionDetails details) {
+		try {
+			super.disconnect(details);
+		} finally {
+			// Unlike socket connections, this channel has no network loop to drain it after the
+			// last player tick. Disconnects during server shutdown must release it here.
+			drain();
+			pendingMotion = null;
+			pendingTeleport = -1;
+		}
 	}
 
 	/** Releases anything the embedded pipeline buffered (protocol switch messages). */

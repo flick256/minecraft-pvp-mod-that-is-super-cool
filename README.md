@@ -37,7 +37,7 @@ their client too** to join a server that has it.
 | Respawn anchors | Puts an anchor down next to the opponent, charges it with glowstone and sets it off with the sword in hand (26.2: outside the Nether a charged anchor blows up with power 5 and fire); only when the opponent takes more of the blast than the bot |
 | TNT minecarts | Inst-carts whenever the opponent is on the ground 2.5-6 blocks away (or webbed, still, running in; not when they sprint sideways): rail where they will be by the time the arrow arrives, cart on it, and a short-draw Flame shot released as soon as it's on the cart (26.2: a burning arrow makes the cart explode at once, power 4 + 1.5 x arrow speed x a random fraction); never shoots through the opponent; refills carts from the inventory, since they don't stack |
 | Lava, water and cobwebs (UHC) | Webbed itself, it pours water onto the web it's in (flowing water destroys a web in 26.2), or cuts it with the sword if it has no water, and does it again if you drain it, then scoops the water back up; webs you where you stand, or where you'll land after a knock-up; spams lava: pours it onto a webbed opponent's web (it lands on their head) or under their feet, scoops it back a few ticks later and pours again, never leaving it down; puts itself out with water when burning; walks around lava and fire instead of into them |
-| Shield stun | Axe hit on a raised shield (disables it for 5 s), then a pre-planned instant switch back to the sword or mace and a hit before the opponent can react; skill decides how often the follow-up is ready |
+| Shield follow-up | Axe hit on a raised shield (a successful disable lasts 5 s), then a switch back to the sword or mace once the shield dropping is recognised; skill decides how often the weapon switch is prepared. A shield raised again cancels the assumed stun |
 | Leftover fluids | Sees water and lava source blocks around it: scoops up any it can reach with an empty bucket (its own or yours) when it's safe, blocks up lava next to it, swims out of water pockets |
 | Block boost (UHC/SMP) | A few blocks out: puts a block ahead, sprint-jumps onto it and launches off it into the fight |
 | Blocks (UHC) | Getting low with a golden apple to eat: with the opponent still well out of reach, builds a wall between them (two blocks for a beginner, three wide and two high for a pro); with them coming in, back-pedals and fast-clicks a line of blocks onto the ground in front (two high when quick) that they have to jump through; then eats behind it. Blocks go down at the profile's click rate (butterfly-fast for a Demon) |
@@ -389,4 +389,20 @@ This runs the core unit tests and the in-game GameTests on a headless 26.2 serve
 levels do against each other in the duel simulator, and `./gradlew :sparbot-core:swordLab -Pa=pro -Pb=advanced
 -Pkit=sparbot_sword` how long sword fights last and how they are won. `./gradlew runClientGameTest -PdrillsOnly`
 plays the drills with a real client.
+`./gradlew runClientGameTest -PshutdownOnly` opens and closes two worlds with live UHC bots,
+checking that each integrated server stops and the bot manager is cleared.
 `./gradlew runServer` and `./gradlew runClient` start a development game.
+
+## Lunar launcher still shows the game running
+
+Use a Lunar Minecraft/Fabric profile matching the requirements above, with one SparBot jar installed.
+If the window closes but Lunar keeps showing **Close Game**, check whether Minecraft's Java process
+is still running. The game log now includes `SparBot shutdown: stopping ...`, each completed step,
+and `SparBot server shutdown complete` after the server has finished saving.
+
+For a report, include the Minecraft, Lunar and SparBot versions, whether you entered a world or spawned
+bots, and the final shutdown section of `logs/latest.log`. If the Java process remains alive, a thread
+dump (`jcmd <Minecraft PID> Thread.print`, using the matching JDK) identifies what is waiting after the
+window closes. If the Java process has already exited, report that too: the launcher's state needs to be
+distinguished from a game process that is still shutting down. The standard Fabric shutdown test does
+not test Lunar's launcher indicator.

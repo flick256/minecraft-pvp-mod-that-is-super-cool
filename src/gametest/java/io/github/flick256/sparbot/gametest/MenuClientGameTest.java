@@ -16,6 +16,10 @@ import org.lwjgl.glfw.GLFW;
 public class MenuClientGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
+		if (Boolean.getBoolean("sparbot.shutdownOnly")) {
+			shutdown(context);
+			return;
+		}
 		try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
 			world.getServer().runCommand("sparbot config set autoTarget false");
 			context.waitTicks(5);
@@ -220,6 +224,23 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			});
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice leave"));
 			world.getServer().waitFor(server -> human(server) != null && human(server).level() == server.overworld(), 200);
+		}
+	}
+
+	/** Two world closures in the same JVM, with a live bot left for the shutdown hook each time. */
+	private static void shutdown(ClientGameTestContext context) {
+		for (int run = 0; run < 2; run++) {
+			java.util.concurrent.atomic.AtomicReference<net.minecraft.server.MinecraftServer> stopped = new java.util.concurrent.atomic.AtomicReference<>();
+			try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
+				world.getServer().runCommand("sparbot spawn ExitBot pro sparbot_uhc");
+				world.getServer().waitFor(server -> SparBot.bots().get("ExitBot").isPresent());
+				world.getServer().runOnServer(server -> stopped.set(server));
+				context.waitTicks(10);
+			}
+			context.waitFor(client -> client.getSingleplayerServer() == null && stopped.get().isStopped(), 200);
+			if (!SparBot.bots().all().isEmpty()) {
+				throw new AssertionError("Bot manager retained a bot after world shutdown");
+			}
 		}
 	}
 

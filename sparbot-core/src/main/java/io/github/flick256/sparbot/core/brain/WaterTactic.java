@@ -47,6 +47,7 @@ public final class WaterTactic implements Tactic {
 	private int bucketSlot = -1;
 	private BlockSpot water;
 	private long failedAt = Long.MIN_VALUE / 2;
+	private long reactAt = -1;
 
 	@Override
 	public String name() {
@@ -66,6 +67,15 @@ public final class WaterTactic implements Tactic {
 		SelfState self = c.self;
 		boolean burning = (self.onFire() || self.inLava()) && !self.inWater();
 		if (!(burning || self.inWeb()) || self.inventory().hotbarSlot(ItemKind.WATER_BUCKET) < 0 || c.observation.tick() - failedAt < FAILED_COOLDOWN) {
+			reactAt = -1;
+			return 0;
+		}
+		// Own fire/web flags are current (movement is locally predicted), but noticing the danger
+		// still takes human time. Switching hands and aiming happen after this reaction.
+		if (reactAt < 0) {
+			reactAt = c.observation.tick() + Math.max(1, (int) Math.ceil(c.profile.reactionTimeMs().sample(c.rng) / 50.0));
+		}
+		if (c.observation.tick() < reactAt) {
 			return 0;
 		}
 		return willWater.get(c.rng, c.profile.items().uhcSkill(), 40) ? Scores.SURVIVAL + 0.12 : 0;
@@ -85,6 +95,7 @@ public final class WaterTactic implements Tactic {
 		phase = Phase.IDLE;
 		willWater.reset();
 		failedAt = Long.MIN_VALUE / 2;
+		reactAt = -1;
 	}
 
 	@Override
@@ -225,6 +236,7 @@ public final class WaterTactic implements Tactic {
 
 	private Inputs finish() {
 		phase = Phase.IDLE;
+		reactAt = -1;
 		willWater.reset();
 		return Inputs.IDLE;
 	}

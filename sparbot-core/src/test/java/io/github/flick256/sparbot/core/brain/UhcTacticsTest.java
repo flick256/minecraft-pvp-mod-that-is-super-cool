@@ -79,6 +79,24 @@ class UhcTacticsTest {
 	}
 
 	@Test
+	void scoopsThenStopsTheLavaChainWhenTheOpponentGetsIntoWater() {
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(1, LAVA), TestFixtures.target(new Vec3(0, 0, 3), 0));
+		h.brain.eager();
+		h.attackStrength = 0.2F;
+		assertTrue(usesWithin(h, ItemKind.LAVA_BUCKET, 40));
+		h.slots[1] = BUCKET;
+		h.target = new io.github.flick256.sparbot.core.sense.TargetState(7, "Steve", new Vec3(0, 0, 3), Vec3.ZERO, 0, 20, 20,
+			true, 0, false, true, 0, 0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15, false, false, true);
+		// Let the water be recognised while the lava is still down (the harness leaves pickups to us).
+		for (int i = 0; i <= h.brain.memory().reactionDelayTicks; i++) {
+			h.tick();
+		}
+		assertTrue(usesWithin(h, ItemKind.BUCKET, 80), "retrieves the lava already placed");
+		h.slots[1] = LAVA;
+		assertFalse(usesWithin(h, ItemKind.LAVA_BUCKET, 80), "does not keep pouring into water");
+	}
+
+	@Test
 	void websTheOpponent() {
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, WEBS), TestFixtures.target(new Vec3(0, 0, 3.0), 0));
 		h.brain.eager(); // a speculative pour/web in a free window: what the restraint holds back (see DuelBrain#restraint)
@@ -131,7 +149,7 @@ class UhcTacticsTest {
 	}
 
 	@Test
-	void followsAShieldStunWithAnInstantHit() {
+	void followsAShieldStunAfterRecognisingTheShieldDropped() {
 		ItemInfo axe = TestFixtures.AXE;
 		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 1, axe),
 			TestFixtures.target(new Vec3(0, 0, 2.5), 0, ItemKind.SWORD, ItemKind.SHIELD, ItemKind.SHIELD, true));
@@ -148,8 +166,11 @@ class UhcTacticsTest {
 			}
 		}
 		assertTrue(axeHit >= 0, "disabled the shield with the axe");
-		// Seeing the shield come down takes a tick or two, then the switch and the hit.
-		assertTrue(followUp >= 0 && followUp - axeHit <= 6, "switched back and hit within 6 ticks (axe " + axeHit + ", sword " + followUp + ")");
+		// Recognising the shield dropping takes the full reaction delay, rather than just aim-tracking delay.
+		int reaction = h.brain.memory().reactionDelayTicks;
+		assertTrue(followUp - axeHit >= reaction, "did not react before recognising the shield dropped");
+		assertTrue(followUp >= 0 && followUp - axeHit <= reaction + 3,
+			"switched back promptly after reacting (axe " + axeHit + ", sword " + followUp + ")");
 	}
 
 	@Test

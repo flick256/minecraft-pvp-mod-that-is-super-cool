@@ -2,6 +2,23 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 3.0.1
+
+- Melee clicks use one displayed position for the opponent. Previously a click could hit either the
+  live server body or its delayed displayed body, giving moving opponents an unfairly large effective target.
+- Ordinary swings have a small, sampled motor delay rather than always landing on the first eligible tick.
+- Recognising shield raises, axe switches, bow draws and offensive utility openings now uses the full
+  reaction delay. Continuous aim tracking still uses the faster tracking view.
+- Shield avoidance decisions stay stable for a short window instead of rerolling every tick. A raised
+  shield cancels an assumed stun; a voluntary shield drop is no longer treated as a guaranteed five-second disable.
+- Water escapes take time to notice fire or a web. Lava chains stop after pickup if the opponent enters
+  water, or is already burning outside a web, so the bot can return to melee.
+- Shutdown releases simulated connection buffers even when no more bot ticks run. Cleanup failures are
+  logged per subsystem and do not skip the remaining cleanup. The log records each shutdown step.
+- Added a client regression test that closes two worlds with live bots in the same game process.
+  Lunar launcher's closed-game indicator still needs verification in Lunar itself; these changes do not
+  establish compatibility with every Lunar/Minecraft version.
+
 ## 3.0.0
 
 Drills that judge what you really did, and bots that stop beating themselves.

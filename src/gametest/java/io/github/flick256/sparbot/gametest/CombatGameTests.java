@@ -16,6 +16,31 @@ import net.minecraft.world.item.Items;
 
 /** Milestone 3: shields, axes, bows, crossbows, pearls, totems and block-hitting, with real items. */
 public class CombatGameTests {
+	@GameTest
+	public void attackUsesOnlyTheDisplayedOpponentNotTwoCopies(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot a = TestSupport.dummy(helper, "ShownA", 2.5, 1, 3.5, -90, "basic_sword");
+		Bot b = TestSupport.dummy(helper, "ShownB", 4.5, 1, 3.5, 90, "basic_sword");
+		try {
+			var displayed = TestSupport.body(b).getBoundingBox().move(0, 0, 3);
+			var hit = BotTestAccess.attackHit(a, b, displayed);
+			helper.assertFalse(hit instanceof net.minecraft.world.phys.EntityHitResult,
+				"the live target is under the crosshair, but its displayed body is not: the click misses");
+			displayed = TestSupport.body(b).getBoundingBox();
+			hit = BotTestAccess.attackHit(a, b, displayed);
+			helper.assertTrue(hit instanceof net.minecraft.world.phys.EntityHitResult entity && entity.getEntity() == TestSupport.body(b),
+				"a displayed body under the crosshair and within reach can be hit");
+			hit = BotTestAccess.attackHit(a, b, displayed.move(4, 0, 0));
+			helper.assertFalse(hit instanceof net.minecraft.world.phys.EntityHitResult, "a displayed body beyond reach cannot be hit");
+			helper.setBlock(new net.minecraft.core.BlockPos(3, 2, 3), net.minecraft.world.level.block.Blocks.STONE);
+			hit = BotTestAccess.attackHit(a, b, displayed);
+			helper.assertFalse(hit instanceof net.minecraft.world.phys.EntityHitResult, "a wall in front of the displayed body blocks the click");
+		} finally {
+			TestSupport.remove(a, b);
+		}
+		helper.succeed();
+	}
+
 	private static void clearInventory(BotPlayer body) {
 		Inventory inv = body.getInventory();
 		for (int i = 0; i < 36; i++) {
@@ -71,6 +96,14 @@ public class CombatGameTests {
 		Bot wall = TestSupport.dummy(helper, "Turtle", 5.0, 1, 3.5, 90, "sparbot_combat");
 		BotPlayer w = TestSupport.body(wall);
 		holdUse(helper, wall);
+		// Start with an active shield, and keep its front towards the attacker. Otherwise a
+		// circle behind the stationary dummy wins without ever needing to disable its shield.
+		bot.setBrainPaused(true);
+		helper.runAfterDelay(10, () -> bot.setBrainPaused(false));
+		helper.onEachTick(() -> {
+			net.minecraft.world.phys.Vec3 to = TestSupport.body(bot).position().subtract(w.position());
+			w.setYRot((float) (Math.toDegrees(Math.atan2(to.z, to.x)) - 90));
+		});
 		bot.setAssignedTarget(w.getUUID());
 		helper.succeedWhen(() -> {
 			helper.assertTrue(w.getCooldowns().isOnCooldown(new ItemStack(Items.SHIELD)), "the bot disabled the shield with its axe");

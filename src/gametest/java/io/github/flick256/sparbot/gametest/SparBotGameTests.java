@@ -252,6 +252,7 @@ public class SparBotGameTests {
 		helper.succeedWhen(() -> {
 			helper.assertTrue(helper.getLevel().getServer().getPlayerList().getPlayer(bot.uuid()) == null, "bot still in the player list");
 			helper.assertTrue(body.isRemoved(), "bot entity still in the world");
+			helper.assertFalse(io.github.flick256.sparbot.bot.BotTestAccess.connected(bot), "bot connection still open after removal");
 		});
 	}
 

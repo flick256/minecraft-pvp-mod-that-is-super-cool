@@ -104,14 +104,26 @@ public final class BotManager {
 	public void remove(Bot bot, String reason) {
 		bots.remove(bot.name().toLowerCase(Locale.ROOT));
 		BotPlayer player = bot.body();
-		if (player != null && !player.hasDisconnected()) {
-			player.connection.disconnect(Component.literal(reason));
+		try {
+			if (player != null && !player.hasDisconnected()) {
+				player.connection.disconnect(Component.literal(reason));
+			}
+		} finally {
+			// Also close bodies already removed by another mod, and never leave a channel behind
+			// if a disconnect callback fails. No further bot ticks are guaranteed during shutdown.
+			bot.connection().disconnect(Component.literal(reason));
 		}
 		SparBot.LOGGER.info("Removed bot {}: {}", bot.name(), reason);
 	}
 
 	public void removeAll(String reason) {
-		new ArrayList<>(bots.values()).forEach(bot -> remove(bot, reason));
+		for (Bot bot : new ArrayList<>(bots.values())) {
+			try {
+				remove(bot, reason);
+			} catch (RuntimeException e) {
+				SparBot.LOGGER.error("Could not remove bot {} during cleanup", bot.name(), e);
+			}
+		}
 	}
 
 	/** Respawns a dead bot through the vanilla respawn packet, then marks it loaded like a client would. */
@@ -156,6 +168,7 @@ public final class BotManager {
 			if (player == null || listed != player) {
 				// Kicked, banned, or removed by something else.
 				bots.remove(bot.name().toLowerCase(Locale.ROOT));
+				bot.connection().disconnect(Component.literal("bot left the server"));
 				SparBot.LOGGER.info("Bot {} left the server", bot.name());
 				continue;
 			}

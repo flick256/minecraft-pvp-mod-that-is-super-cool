@@ -139,6 +139,7 @@ public final class DuelBrain implements Policy {
 			}
 		}
 		if (best != active) {
+			memory.swingReadyAt = -1;
 			if (active != null) {
 				active.onExit(context);
 			}

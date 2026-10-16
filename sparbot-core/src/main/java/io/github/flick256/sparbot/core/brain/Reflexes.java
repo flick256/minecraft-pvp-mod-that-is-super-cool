@@ -33,12 +33,10 @@ final class Reflexes {
 		// The free hit: weapon in hand, charged, crosshair on them, in reach.
 		double distance = c.targetDistance();
 		double reach = self.attackReach() + m.reachError;
-		if (!in.attack() && !in.use() && !self.inventory().usingItem() && self.holdingMeleeWeapon() && in.hotbarSlot() < 0
-			&& self.attackStrength() >= m.cooldownThreshold && distance <= reach && c.clickHitsTarget(reach + 0.5)) {
+		if (SwingTiming.ready(c, !in.attack() && !in.use() && !self.inventory().usingItem() && self.holdingMeleeWeapon() && in.hotbarSlot() < 0
+			&& self.attackStrength() >= m.cooldownThreshold && distance <= reach && c.clickHitsTarget(reach + 0.5))) {
 			in = in.withAttack(true);
-			m.ticksSinceOwnClick = 0;
-			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
-			m.cooldownThreshold = EngageTactic.sampleCooldownThreshold(c);
+			SwingTiming.clicked(c);
 		}
 
 		// Standing still under pressure gets you comboed: sidestep while the hands work.

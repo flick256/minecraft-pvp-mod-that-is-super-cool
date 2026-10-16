@@ -33,7 +33,7 @@ public final class WebTactic implements Tactic {
 
 	@Override
 	public double score(BrainContext c) {
-		TargetState t = c.seen();
+		TargetState t = c.target;
 		InventoryState inv = c.self.inventory();
 		if (placing) {
 			if (t != null && t.visible() && !t.inWeb() && inv.hotbarSlot(ItemKind.COBWEB) >= 0 && c.targetDistance() <= MAX_RANGE + 1.0) {

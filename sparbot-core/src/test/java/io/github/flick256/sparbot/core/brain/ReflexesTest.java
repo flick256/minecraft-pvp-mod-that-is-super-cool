@@ -47,7 +47,14 @@ class ReflexesTest {
 	@Test
 	void takesTheFreeHitWhileBusyWithUtility() {
 		BrainHarness h = harness(Surroundings.EMPTY);
-		assertTrue(Reflexes.apply(h.context(swordReady()), BUSY, Inputs.IDLE).attack(), "the opponent walked into reach: hit them");
+		BrainContext initial = h.context(swordReady());
+		boolean attacked = false;
+		for (int tick = 0; tick <= 2; tick++) {
+			BrainContext c = new BrainContext(new io.github.flick256.sparbot.core.sense.Observation(tick, swordReady(), h.target),
+				h.target, 0, initial.profile, initial.style, initial.rng, initial.aim, initial.memory);
+			attacked |= Reflexes.apply(c, BUSY, Inputs.IDLE).attack();
+		}
+		assertTrue(attacked, "takes the free hit within the pro's motor timing window");
 	}
 
 	@Test

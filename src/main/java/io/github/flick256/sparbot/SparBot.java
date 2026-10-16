@@ -70,16 +70,29 @@ public final class SparBot implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(DRILLS::tick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> MATCHES.onJoin(handler.player));
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-			DRILLS.stopAll(server);
-			PRACTICE.games().stop(server, "the server is stopping");
-			PRACTICE.stopDeep(server);
-			MATCHES.stopAll(server);
-			RECORDER.stopAll();
-			REPLAYS.stopAll();
-			BOTS.removeAll("server stopping");
+			// A failure in one subsystem must not skip bot disconnects or the other cleanup.
+			stopPart("drills", () -> DRILLS.stopAll(server));
+			stopPart("colosseum games", () -> PRACTICE.games().stop(server, "the server is stopping"));
+			stopPart("Deep encounter", () -> PRACTICE.stopDeep(server));
+			stopPart("matches", () -> MATCHES.stopAll(server));
+			stopPart("recordings", RECORDER::stopAll);
+			stopPart("replays", REPLAYS::stopAll);
+			stopPart("bots", () -> BOTS.removeAll("server stopping"));
 		});
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> LOGGER.info("SparBot server shutdown complete"));
 		LOGGER.info("SparBot {} initialised: {} skill profiles, enabled={}", FabricLoader.getInstance().getModContainer(MOD_ID)
 			.map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("?"), PROFILES.ids().size(), config.enabled);
+	}
+
+	private static void stopPart(String name, Runnable cleanup) {
+		LOGGER.info("SparBot shutdown: stopping {}", name);
+		long started = System.nanoTime();
+		try {
+			cleanup.run();
+			LOGGER.info("SparBot shutdown: stopped {} in {} ms", name, (System.nanoTime() - started) / 1_000_000);
+		} catch (RuntimeException e) {
+			LOGGER.error("SparBot shutdown: failed to stop {}; continuing cleanup", name, e);
+		}
 	}
 
 	public static void reloadConfigAndProfiles() {

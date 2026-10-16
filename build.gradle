@@ -87,6 +87,13 @@ if (project.hasProperty('drillsOnly')) {
 	}
 }
 
+// Close two integrated-server worlds with live bots: ./gradlew runClientGameTest -PshutdownOnly
+if (project.hasProperty('shutdownOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs "-Dsparbot.shutdownOnly=true"
+	}
+}
+
 // Run only some GameTests: ./gradlew runGameTest -PgametestFilter=learned
 if (project.hasProperty('gametestFilter')) {
 	tasks.named('runGameTest') {

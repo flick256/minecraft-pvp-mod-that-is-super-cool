@@ -26,8 +26,6 @@ public final class EngageTactic implements Tactic {
 	private static final double AXE_MIN_CHARGE = 0.25;
 	/** How long after a shield stun the bot still goes for the immediate follow-up hit. */
 	static final int STUN_WINDOW = 8;
-	/** An axe disables a shield for 5 s (the axe's disable_blocking_for_seconds). */
-	private static final int SHIELD_DISABLE_TICKS = 100;
 	/** Ticks a raised shield takes before it blocks. */
 	private static final int SHIELD_DELAY_TICKS = 5;
 	/** A shield counter that draws no swing in this long is dropped (they read it), and not tried again for a while. */
@@ -178,18 +176,19 @@ public final class EngageTactic implements Tactic {
 		// Weapon: the best sword, or an axe while the opponent holds a shield up (an axe hit disables a
 		// raised shield for 5 s in 26.2). Switching takes the profile's hotbar time and resets the charge.
 		InventoryState inv = self.inventory();
-		TargetState seen = c.seen();
-		if (m.shieldDisabledTicks > 0) {
-			m.shieldDisabledTicks--;
+		// Tracking is for aiming. Recognising a shield or a weapon switch needs reaction time.
+		TargetState seen = c.target;
+		// A shield can also come down voluntarily: never ignore a visibly raised shield based
+		// on an assumed five-second disable timer.
+		boolean shieldUp = seen != null && seen.blocking();
+		if (shieldUp) {
+			m.stunTicks = 0;
 		}
-		// A shield our axe just disabled can't block, whatever it looks like.
-		boolean shieldUp = seen != null && seen.blocking() && m.shieldDisabledTicks == 0;
 		// The axe swing may have missed: only a shield that actually came down was disabled.
 		if (m.axeConfirmTicks > 0) {
 			m.axeConfirmTicks--;
 			if (seen != null && !seen.blocking()) {
 				m.axeConfirmTicks = 0;
-				m.shieldDisabledTicks = SHIELD_DISABLE_TICKS;
 				// Shield stun: the shield is down for 5 s, so the next hit can't be blocked. A skilled player
 				// has the follow-up ready: switch straight back and hit at once (any charge still knocks them
 				// up, and a mace smash bonus isn't scaled by charge at all).
@@ -224,12 +223,13 @@ public final class EngageTactic implements Tactic {
 		}
 
 		boolean attack = armed && !inv.usingItem() && !holdFire && wantsToClick(c, distance, judgedReach);
+		boolean disablingAxe = false;
 		if (m.axeMode && m.axeConfirmTicks == 0 && armed && !inv.usingItem() && c.crosshairOnTarget(judgedReach + 0.5) && distance <= judgedReach
 			&& self.attackStrength() >= AXE_MIN_CHARGE) {
 			// Disabling the shield only needs the hit to land, not a full charge. Whether it did shows in the
 			// next few ticks (see above).
 			attack = true;
-			m.axeConfirmTicks = AXE_CONFIRM_TICKS;
+			disablingAxe = true;
 		} else if (stun) {
 			m.stunTicks--;
 			// The second click of a stun: straight away with the axe still in hand (its knockback is the point,
@@ -245,12 +245,13 @@ public final class EngageTactic implements Tactic {
 		// time to swing (clicks are ignored while an item is in use, as in vanilla).
 		boolean use = false;
 		boolean shieldReady = inv.offhand().is(ItemKind.SHIELD) && !inv.offhand().onCooldown();
-		boolean axeThreat = seen != null && seen.mainHand() == ItemKind.AXE && c.rng.chance(c.profile.items().shieldSkill());
+		boolean axeThreat = seen != null && seen.mainHand() == ItemKind.AXE
+			&& m.avoidAxeDecision.get(c.rng, c.profile.items().shieldSkill(), 20);
 		// A shield only blocks 0.25 s (5 ticks) after it goes up (BlocksAttacks block_delay_seconds), so it
 		// is only worth raising with longer than that to wait; a player reading swings only raises it
 		// while the opponent is charged (nothing to block otherwise).
 		boolean worthBlocking = SwordPlan.ticksToReady(c) >= SHIELD_DELAY_TICKS + 2 && (!m.reading || SwordPlan.opponentCharge(c) >= 0.85);
-		if (shieldReady && armed && !attack && !axeThreat && m.critPhase == DuelMemory.CritPhase.NONE && distance <= judgedReach + 1.0
+		if (shieldReady && armed && !attack && !axeThreat && !stun && !m.axeMode && m.critPhase == DuelMemory.CritPhase.NONE && distance <= judgedReach + 1.0
 			&& self.attackStrength() < m.cooldownThreshold - BLOCK_HIT_RELEASE_MARGIN && worthBlocking
 			&& m.blockHitDecision.get(c.rng, c.skill(Technique.BLOCK_HIT), 40)) {
 			use = true;
@@ -263,10 +264,13 @@ public final class EngageTactic implements Tactic {
 			sprint = false;
 			forward = counter;
 		}
+		// A prepared stun is already a planned double click; ordinary swings have motor variance.
+		attack = stun ? attack : SwingTiming.ready(c, attack);
 		if (attack) {
-			m.ticksSinceOwnClick = 0;
-			m.reachError = c.profile.reach().rangeErrorBlocks().sample(c.rng);
-			m.cooldownThreshold = sampleCooldownThreshold(c);
+			if (disablingAxe) {
+				m.axeConfirmTicks = Math.max(AXE_CONFIRM_TICKS, m.reactionDelayTicks + 2);
+			}
+			SwingTiming.clicked(c);
 		}
 
 		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, use, press);
@@ -317,7 +321,7 @@ public final class EngageTactic implements Tactic {
 	 */
 	static int shieldCounter(BrainContext c, boolean ready, boolean busy, double distance, double judgedReach) {
 		DuelMemory m = c.memory;
-		TargetState seen = c.seen();
+		TargetState seen = c.target;
 		if (m.shieldCounterTicks > 0) {
 			m.shieldCounterTicks++;
 			boolean swung = seen != null && seen.ticksSinceSwing() < m.shieldCounterTicks;

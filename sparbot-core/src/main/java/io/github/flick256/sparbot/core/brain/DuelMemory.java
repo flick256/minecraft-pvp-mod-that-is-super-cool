@@ -7,6 +7,7 @@ public final class DuelMemory {
 	final Hands hands = new Hands();
 	final Decision axeDecision = new Decision();
 	final Decision blockHitDecision = new Decision();
+	final Decision avoidAxeDecision = new Decision();
 	/** Whether the bot holds its swings while in front of a raised shield (decided per window). */
 	final Decision respectShieldDecision = new Decision();
 	/** Shield counter: walking in behind the shield for the opponent to swing into (see EngageTactic). */
@@ -43,8 +44,6 @@ public final class DuelMemory {
 	int stunTicks;
 	/** The follow-up was planned before the axe hit, so the weapon switch is a single key press. */
 	boolean stunPlanned;
-	/** The opponent's shield was disabled by our axe this long ago counts down from 100 (5 s): no point axing it again. */
-	int shieldDisabledTicks;
 	/** How far the bot actually moved last tick (what a thrown or shot projectile inherits). */
 	Vec3 selfMotion = Vec3.ZERO;
 	Vec3 lastSelfPosition;
@@ -80,6 +79,8 @@ public final class DuelMemory {
 	double reachError;
 	/** Attack charge the bot waits for before its next click; resampled after every click. */
 	double cooldownThreshold = 0.9;
+	/** A hand can be a little late to a swing window, even with a fully charged weapon. */
+	long swingReadyAt = -1;
 	int lastSelfHurtTime;
 	int lastTargetHurtTime;
 	int ticksSinceOwnClick = Integer.MAX_VALUE / 2;

@@ -266,11 +266,11 @@ public class UhcGameTests {
 			body.getInventory().setItem(slot, ItemStack.EMPTY); // no bow, no buckets at all, no webs: only blocks
 		}
 		helper.setBlock(new BlockPos(3, 1, 3), Blocks.LAVA);
-		Bot target = TestSupport.dummy(helper, "Far2", 6.5, 1, 6.5, 90, "basic_sword");
-		bot.setAssignedTarget(TestSupport.body(target).getUUID());
+		// Test the cleanup mechanic without an opponent to chase into melee while the bot is
+		// noticing the source. Under melee pressure it should deliberately leave cleanup alone.
 		helper.succeedWhen(() -> {
 			helper.assertTrue(!helper.getBlockState(new BlockPos(3, 1, 3)).getFluidState().isSource(), "the lava was blocked up");
-			TestSupport.remove(bot, target);
+			TestSupport.remove(bot);
 		});
 	}
 

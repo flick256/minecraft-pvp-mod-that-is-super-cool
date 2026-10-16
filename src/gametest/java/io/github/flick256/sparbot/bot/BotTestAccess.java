@@ -19,4 +19,12 @@ public final class BotTestAccess {
 	public static void pauseBrain(Bot bot, boolean paused) {
 		bot.setBrainPaused(paused);
 	}
+
+	public static net.minecraft.world.phys.HitResult attackHit(Bot bot, Bot target, net.minecraft.world.phys.AABB displayedBody) {
+		return ClientEmulator.shownHit(bot.body(), new Perception.SeenBody(target.body(), displayedBody));
+	}
+
+	public static boolean connected(Bot bot) {
+		return bot.connection().isConnected();
+	}
 }

@@ -74,10 +74,10 @@ public final class LavaTactic implements Tactic {
 				return Scores.SPECIALIST + 0.1;
 			}
 		}
-		TargetState t = c.seen();
+		TargetState t = c.target;
 		InventoryState inv = c.self.inventory();
 		if (c.target == null || t == null || !t.visible() || inv.hotbarSlot(ItemKind.LAVA_BUCKET) < 0 || !inRange(c, t)
-			|| c.observation.tick() - failedAt < FAILED_COOLDOWN) {
+			|| c.observation.tick() - failedAt < FAILED_COOLDOWN || t.onFire() && !t.inWeb()) {
 			return 0;
 		}
 		double skill = c.profile.items().uhcSkill();
@@ -159,7 +159,8 @@ public final class LavaTactic implements Tactic {
 					holdTicks = (int) Math.round((webbed ? 14 : 7) - 4 * skill) + c.rng.nextInt(0, 2);
 					return aimAtLava(c, inv);
 				}
-				if (t == null || ticks > PLACE_TIMEOUT || !inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET) || !inRange(c, t)) {
+				if (t == null || ticks > PLACE_TIMEOUT || !inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET) || !inRange(c, t)
+					|| c.target != null && (c.target.inWater() || c.target.onFire() && !c.target.inWeb())) {
 					if (ticks > PLACE_TIMEOUT) {
 						failedAt = c.observation.tick();
 					}
@@ -183,7 +184,9 @@ public final class LavaTactic implements Tactic {
 				if (inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET)) {
 					pours++;
 					lava = null;
-					if (pours < poursPlanned && t != null && t.visible() && inRange(c, t)) {
+					TargetState recognised = c.target;
+					if (pours < poursPlanned && recognised != null && recognised.visible() && inRange(c, recognised)
+						&& !recognised.inWater() && (recognised.inWeb() || !recognised.onFire())) {
 						// Again, wherever they are now.
 						phase = Phase.PLACE;
 						ticks = 0;

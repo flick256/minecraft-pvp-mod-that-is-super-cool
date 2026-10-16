@@ -121,7 +121,7 @@ public final class BrainContext {
 	 * item is in use), or stuck in a cobweb and out of their reach.
 	 */
 	public boolean opponentHelpless() {
-		TargetState t = seen();
+		TargetState t = target;
 		if (t == null) {
 			return false;
 		}
@@ -135,7 +135,7 @@ public final class BrainContext {
 	 * it while charged with the opponent in reach hands them free hits.
 	 */
 	public boolean utilityWindow() {
-		TargetState t = seen();
+		TargetState t = target;
 		if (t == null) {
 			return true;
 		}

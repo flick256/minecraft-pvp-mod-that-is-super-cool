@@ -318,7 +318,7 @@ public final class ClientEmulator {
 			listener.handleAnimate(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
 			return;
 		}
-		HitResult hit = shownHit(player, bot, raycast(player));
+		HitResult hit = shownHit(player, bot.clickableBody());
 		switch (hit.getType()) {
 			case ENTITY -> {
 				Entity target = ((EntityHitResult) hit).getEntity();
@@ -345,14 +345,13 @@ public final class ClientEmulator {
 	 * players where it draws them (interpolated, a ping late) and the server accepts the hit. So when the
 	 * opponent's body as shown is under the crosshair, in reach and in front of any block, that is the hit.
 	 */
-	private static HitResult shownHit(BotPlayer player, Bot bot, HitResult hit) {
-		if (hit.getType() == HitResult.Type.ENTITY) {
-			return hit;
-		}
-		Perception.SeenBody shown = bot.clickableBody();
+	static HitResult shownHit(BotPlayer player, Perception.@Nullable SeenBody shown) {
 		if (shown == null || !shown.entity().isAlive() || shown.entity().isRemoved() || shown.entity().level() != player.level()) {
-			return hit;
+			return raycast(player);
 		}
+		// Only one copy of the opponent exists on a client's screen. Accepting the live body as
+		// well as the displayed body gives the bot two chances to hit a moving opponent.
+		HitResult hit = raycast(player, e -> e != shown.entity() && EntitySelector.CAN_BE_PICKED.test(e));
 		Vec3 from = player.getEyePosition(1.0F);
 		double reach = player.entityInteractionRange();
 		Vec3 to = from.add(player.getViewVector(1.0F).scale(reach));
@@ -364,7 +363,7 @@ public final class ClientEmulator {
 			return hit;
 		}
 		double distanceSq = entry.get().distanceToSqr(from);
-		if (hit.getType() == HitResult.Type.BLOCK && hit.getLocation().distanceToSqr(from) <= distanceSq) {
+		if (hit.getType() != HitResult.Type.MISS && hit.getLocation().distanceToSqr(from) <= distanceSq) {
 			return hit;
 		}
 		return new EntityHitResult(shown.entity(), entry.get());
@@ -427,24 +426,28 @@ public final class ClientEmulator {
 
 	/** LocalPlayer#raycastHitResult with partial tick 1.0 (the server has no frames between ticks). */
 	public static HitResult raycast(BotPlayer player) {
+		return raycast(player, EntitySelector.CAN_BE_PICKED);
+	}
+
+	private static HitResult raycast(BotPlayer player, java.util.function.Predicate<Entity> pickable) {
 		ItemStack active = player.getActiveItem();
 		AttackRange range = active.get(DataComponents.ATTACK_RANGE);
 		double blockRange = player.blockInteractionRange();
 		HitResult hit = null;
 		if (range != null) {
-			hit = range.getClosesetHit(player, 1.0F, EntitySelector.CAN_BE_PICKED);
+			hit = range.getClosesetHit(player, 1.0F, pickable);
 			if (hit instanceof BlockHitResult) {
 				hit = filter(hit, player.getEyePosition(1.0F), blockRange);
 			}
 		}
 		if (hit == null || hit.getType() == HitResult.Type.MISS) {
-			hit = pick(player, blockRange, player.entityInteractionRange());
+			hit = pick(player, blockRange, player.entityInteractionRange(), pickable);
 		}
 		return hit;
 	}
 
 	/** LocalPlayer#pick. */
-	private static HitResult pick(BotPlayer player, double blockRange, double entityRange) {
+	private static HitResult pick(BotPlayer player, double blockRange, double entityRange, java.util.function.Predicate<Entity> pickable) {
 		double maxDistance = Math.max(blockRange, entityRange);
 		double maxDistanceSq = maxDistance * maxDistance;
 		Vec3 from = player.getEyePosition(1.0F);
@@ -457,7 +460,7 @@ public final class ClientEmulator {
 		Vec3 direction = player.getViewVector(1.0F);
 		Vec3 to = from.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
 		AABB box = player.getBoundingBox().expandTowards(direction.scale(maxDistance)).inflate(1.0, 1.0, 1.0);
-		EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(player, from, to, box, EntitySelector.CAN_BE_PICKED, maxDistanceSq);
+		EntityHitResult entityHit = ProjectileUtil.getEntityHitResult(player, from, to, box, pickable, maxDistanceSq);
 		return entityHit != null && entityHit.getLocation().distanceToSqr(from) < blockDistanceSq
 			? filter(entityHit, from, entityRange)
 			: filter(blockHit, from, blockRange);

@@ -20,7 +20,7 @@ public final class GuardTactic implements Tactic {
 
 	@Override
 	public double score(BrainContext c) {
-		TargetState t = c.seen();
+		TargetState t = c.target;
 		InventoryState inv = c.self.inventory();
 		if (c.target == null || t == null || !t.visible() || !inv.offhand().is(ItemKind.SHIELD) || inv.offhand().onCooldown()) {
 			return 0;
