@@ -76,6 +76,69 @@ class HumanCombatTest {
 	}
 
 	@Test
+	void aShieldDropFromBeforeTheAxeClickCannotConfirmAStun() {
+		TargetState down = TestFixtures.target(NEAR, 0);
+		DuelMemory memory = new DuelMemory();
+		memory.axeConfirmTicks = 8;
+		memory.axeClickAt = 20;
+		new EngageTactic().act(context(21, swordWith(TestFixtures.AXE), down, down, memory, 1));
+		assertEquals(0, memory.stunTicks, "the decision view has not caught up with the click");
+		assertTrue(memory.axeConfirmTicks > 0);
+	}
+
+	@Test
+	void aLongerPerceptionDelayCannotConfirmAnOlderShieldDrop() {
+		TargetState down = TestFixtures.target(new Vec3(0, 0, 6), 0);
+		DuelMemory memory = new DuelMemory();
+		memory.axeConfirmTicks = 8; memory.axeClickAt = 20;
+		memory.reactionDelayTicks = 8; memory.trackingDelayTicks = 3;
+		new EngageTactic().act(context(25, swordWith(TestFixtures.AXE), down, down, memory, 1));
+		assertEquals(0, memory.stunTicks, "the current decision view is from tick 17, before the click at tick 20");
+		assertTrue(memory.axeConfirmTicks > 0);
+	}
+
+	@Test
+	void doesNotRunThroughTheOpponentWhileWaitingForAnAxeResult() {
+		TargetState down = TestFixtures.target(new Vec3(0, 0, 2.3), 0);
+		DuelMemory memory = new DuelMemory();
+		memory.axeConfirmTicks = 8; memory.axeClickAt = 20; memory.axeMode = true;
+		var inputs = new EngageTactic().act(context(21, swordWith(TestFixtures.AXE), down, down, memory, 1));
+		assertEquals(0, inputs.forward(), "keep a useful aiming distance during the confirmation wait");
+		assertFalse(inputs.sprint());
+	}
+
+	@Test
+	void disablingTheFollowUpTechniqueReallyDisablesIt() {
+		TargetState down = TestFixtures.target(NEAR, 0);
+		DuelMemory memory = new DuelMemory();
+		memory.axeConfirmTicks = 8;
+		BrainContext base = context(25, swordWith(TestFixtures.AXE), down, down, memory, 1);
+		BrainContext c = new BrainContext(base.observation, base.tracked, base.trackingDelayTicks, base.profile, base.style,
+			base.rng, base.aim, memory, java.util.Set.of(Technique.SHIELD_STUN));
+		new EngageTactic().act(c);
+		assertFalse(memory.stunPlanned);
+		assertEquals(0, memory.stunTicks);
+	}
+
+	@Test
+	void aFailedFollowUpSkillRollDoesNotForceADoubleClick() {
+		int declined = 0;
+		for (long seed = 1; seed <= 30; seed++) {
+			TargetState down = TestFixtures.target(new Vec3(0, 0, 6), 0);
+			DuelMemory memory = new DuelMemory(); memory.axeConfirmTicks = 8;
+			var p = TestFixtures.preset("beginner"); var rng = new Rng(seed);
+			var c = new BrainContext(new Observation(25, swordWith(TestFixtures.AXE), down), down, 3, p, Playstyle.BALANCED,
+				rng, new AimController(p.aim(), rng), memory);
+			new EngageTactic().act(c);
+			if (!memory.stunPlanned) {
+				declined++;
+				assertEquals(0, memory.stunTicks, "a declined skill roll must not leave a forced follow-up window");
+			}
+		}
+		assertTrue(declined > 10, "exercise failed rolls, rather than only successful stuns");
+	}
+
+	@Test
 	void doesNotPourAgainOntoAnOpponentAlreadyBurningInTheOpen() {
 		TargetState burning = new TargetState(7, "Steve", NEAR, Vec3.ZERO, 0, 20, 20, true, 0, false, true, 0,
 			0.3, 1.8, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.EMPTY, 15, true, false);

@@ -59,7 +59,7 @@ public final class EngageTactic implements Tactic {
 		// it (see BrainContext#handLeadTicks), so the aim only leads by the hand's own lag, as much as skill manages.
 		TargetState aimAt = c.seen();
 		Vec3 lead = aimAt.velocity().scale(c.profile.aim().trackingLead() * BrainContext.HAND_LEAD_TICKS);
-		Vec3 goal = c.wandered(aimAt.chest().add(lead));
+		Vec3 goal = c.wandered(SwightPlan.meleeAim(c, aimAt, lead));
 		float goalYaw = Angles.yawTowards(self.eyePosition(), goal);
 		float goalPitch = Angles.pitchTowards(self.eyePosition(), goal);
 		float[] look = c.aim.step(self.yaw(), self.pitch(), goalYaw, goalPitch);
@@ -187,13 +187,13 @@ public final class EngageTactic implements Tactic {
 		// The axe swing may have missed: only a shield that actually came down was disabled.
 		if (m.axeConfirmTicks > 0) {
 			m.axeConfirmTicks--;
-			if (seen != null && !seen.blocking()) {
+			if (seen != null && !seen.blocking() && c.observation.tick() - decisionDelay(c) >= m.axeClickAt) {
 				m.axeConfirmTicks = 0;
 				// Shield stun: the shield is down for 5 s, so the next hit can't be blocked. A skilled player
 				// has the follow-up ready: switch straight back and hit at once (any charge still knocks them
 				// up, and a mace smash bonus isn't scaled by charge at all).
-				m.stunTicks = c.allows(Technique.SHIELD_STUN) ? STUN_WINDOW : 0;
 				m.stunPlanned = c.rng.chance(c.skill(Technique.SHIELD_STUN));
+				m.stunTicks = m.stunPlanned ? STUN_WINDOW : 0;
 				m.axeMode = false;
 				shieldUp = false;
 			} else if (m.axeConfirmTicks == 0) {
@@ -210,8 +210,16 @@ public final class EngageTactic implements Tactic {
 		}
 		int weaponSlot = m.axeMode ? axeSlot : Hands.preferredMeleeSlot(inv);
 		boolean stun = m.stunTicks > 0;
-		int press = stun && m.stunPlanned ? c.memory.hands.requestPlanned(c, weaponSlot) : c.memory.hands.request(c, weaponSlot);
+		int press = stun && m.stunPlanned && !"swight".equals(c.profile.id()) ? c.memory.hands.requestPlanned(c, weaponSlot) : c.memory.hands.request(c, weaponSlot);
 		boolean armed = weaponSlot < 0 || inv.selectedSlot() == weaponSlot;
+
+		// Wait for the axe result from a usable distance. Continuing to run forward during
+		// perception delay can put our eyes inside/past the opponent and lose the follow-up aim.
+		if ((m.axeConfirmTicks > 0 || stun) && distance < judgedReach - 0.4) {
+			forward = distance < 1.4 ? -1 : 0;
+			strafe = 0;
+			sprint = false;
+		}
 
 		// Facing a raised shield without an axe, a skilled player circles to its side instead of
 		// wasting swings on it (a shield blocks hits within 90 degrees of where its holder faces).
@@ -268,7 +276,9 @@ public final class EngageTactic implements Tactic {
 		attack = stun ? attack : SwingTiming.ready(c, attack);
 		if (attack) {
 			if (disablingAxe) {
-				m.axeConfirmTicks = Math.max(AXE_CONFIRM_TICKS, m.reactionDelayTicks + 2);
+				int delay = decisionDelay(c);
+				m.axeClickAt = c.observation.tick();
+				m.axeConfirmTicks = Math.max(AXE_CONFIRM_TICKS, delay + 2);
 			}
 			SwingTiming.clicked(c);
 		}
@@ -276,6 +286,11 @@ public final class EngageTactic implements Tactic {
 		Inputs inputs = new Inputs(look[0], look[1], forward, strafe, jump, false, sprint, attack, use, press);
 		// Out of sight (behind a wall): find a way round to them.
 		return target.visible() ? Movement.guardEdges(c, inputs) : Movement.navigate(c, inputs);
+	}
+
+	/** Current delay, including focus: it may change while an axe confirmation is pending. */
+	private static int decisionDelay(BrainContext c) {
+		return c.memory.reactionDelayTicks + Math.max(0, c.trackingDelayTicks - c.memory.trackingDelayTicks);
 	}
 
 	private void updateCrit(BrainContext c, double distance, double judgedReach) {

@@ -42,4 +42,24 @@ public class SwightGameTests {
 			helper.succeed();
 		});
 	}
+	@GameTest(maxTicks = 160)
+	public void swightHitsTheExposedBodyBelowAHeadHeightWeb(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot swight = TestSupport.spawnBot(helper, "WebAngle", 2.5, 1, 3.5, -90, "swight", "pvphq_uhc");
+		var body = TestSupport.body(swight);
+		for (int slot = 0; slot < 36; slot++) { body.getInventory().setItem(slot, net.minecraft.world.item.ItemStack.EMPTY); }
+		body.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(Items.DIAMOND_SWORD));
+		body.getInventory().setItem(1, new net.minecraft.world.item.ItemStack(Items.WATER_BUCKET));
+		body.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, net.minecraft.world.item.ItemStack.EMPTY);
+		Bot target = TestSupport.dummy(helper, "Webbed", 5.5, 1, 3.5, 90, "basic_sword");
+		var web = new net.minecraft.core.BlockPos(5, 2, 3);
+		helper.setBlock(web, net.minecraft.world.level.block.Blocks.COBWEB);
+		swight.setAssignedTarget(TestSupport.body(target).getUUID());
+		helper.succeedWhen(() -> {
+			helper.assertTrue(swight.stats().hits() > 0, "Swight found an exposed part of the real hitbox through normal aim and clicks");
+			helper.assertTrue(helper.getBlockState(web).is(net.minecraft.world.level.block.Blocks.COBWEB), "the obstructing web was not removed to pass the test");
+			TestSupport.remove(swight, target);
+		});
+	}
+
 }

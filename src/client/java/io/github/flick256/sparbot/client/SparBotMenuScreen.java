@@ -41,8 +41,10 @@ public final class SparBotMenuScreen extends Screen {
 
 	private record Label(String text, int x, int y, int color) { }
 	private record Card(int y, int height, boolean featured) { }
+	private record Illustration(int y, boolean uhc) { }
 	private final List<Label> labels = new ArrayList<>();
 	private final List<Card> cards = new ArrayList<>();
+	private final List<Illustration> illustrations = new ArrayList<>();
 	private final Map<Tab, Integer> positions = new EnumMap<>(Tab.class);
 	private final Map<String, String> settingDrafts = new HashMap<>();
 	private final Map<String, EditBox> fields = new HashMap<>();
@@ -86,7 +88,7 @@ public final class SparBotMenuScreen extends Screen {
 
 	@Override
 	protected void init() {
-		labels.clear(); cards.clear();
+		labels.clear(); cards.clear(); illustrations.clear();
 		previousFields.clear(); previousFields.putAll(fields); fields.clear();
 		panelWidth = Math.min(760, width - 16);
 		panelHeight = Math.min(480, height - 16);
@@ -142,11 +144,13 @@ public final class SparBotMenuScreen extends Screen {
 
 	private void overview() {
 		int y = card(94, false);
+		illustrate(y + 58, false);
 		text("A better fight starts here.", 12, y + 12, TEXT);
 		wrap("Head into practice with a complete kit, or build your own sparring partner.", 12, y + 28, contentWidth - 24, MUTED);
 		button("Start practice", 12, y + 64, Math.min(150, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> show(Tab.PRACTICE));
 		if (state.profiles().contains("swight")) {
 			y = card(112, true);
+			illustrate(y + 78, true);
 			text("SWIGHT  /  UHC SPECIALIST", 12, y + 12, GOLD);
 			wrap("Utility with a plan. A demanding UHC opponent with human limits, built to challenge Demon.", 12, y + 29, contentWidth - 24, MUTED);
 			button("Challenge Swight", 12, y + 82, Math.min(160, contentWidth - 24), MenuButton.Tone.GOLD,
@@ -170,9 +174,17 @@ public final class SparBotMenuScreen extends Screen {
 		section("02  CHOOSE YOUR OPPONENT");
 		choices(profiles(), practiceProfile, value -> { practiceProfile = value; if (value.equals("swight")) { practiceMode = uhcMode(); } rebuildKeepingFocus(); });
 		boolean swight = "swight".equals(practiceProfile);
-		int y = card(swight ? 104 : 76, swight);
+		String intro = "Swight specialises in UHC. Deliberate utility, finite resources and room to punish mistakes.";
+		String rules = "Shield timing matters: raise early and face the hit. Axes disable a block; lava and fire still hurt.";
+		int rulesY = 41 + font.getSplitter().splitLines(intro, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size() * 12;
+		int artY = rulesY + font.getSplitter().splitLines(rules, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size() * 12 + 12;
+		int y = card(swight ? artY + (contentWidth >= 350 ? 34 : 2) : 76, swight);
+		illustrate(y + (swight ? artY : 42), swight);
 		text(pretty(practiceMode) + "  /  " + pretty(practiceProfile), 12, y + 12, swight ? GOLD : TEXT);
-		if (swight) { wrap("Swight specialises in UHC. Deliberate utility, finite resources and room to punish mistakes.", 12, y + 29, contentWidth - 24, MUTED); }
+		if (swight) {
+			wrap(intro, 12, y + 29, contentWidth - 24, MUTED);
+			wrap(rules, 12, y + rulesY, contentWidth - 24, MUTED);
+		}
 
 		section("EXPLORE THE PRACTICE WORLD");
 		flowButtons(List.of("Hub", "Colosseum", "Leave"), List.of(() -> runAndClose(MenuCommands.practiceHub()),
@@ -392,6 +404,10 @@ public final class SparBotMenuScreen extends Screen {
 		cursorY += ((names.size() + columns - 1) / columns) * 28 + 8;
 	}
 
+	private void illustrate(int y, boolean uhc) {
+		if (contentWidth >= 350) { illustrations.add(new Illustration(y, uhc)); }
+	}
+
 	private int card(int height, boolean featured) {
 		int y = cursorY;
 		cards.add(new Card(y, height, featured));
@@ -480,10 +496,24 @@ public final class SparBotMenuScreen extends Screen {
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		g.fillGradient(0, 0, width, height, 0xEF101B2A, 0xF5080E19);
+		// The quiet grid belongs to the backdrop; content remains a solid, readable surface.
+		for (int x = 12; x < width; x += 24) {
+			for (int y = 12; y < height; y += 24) { g.fill(x, y, x + 1, y + 1, 0x303D7083); }
+		}
 		g.fill(left + 3, top + 4, left + panelWidth + 3, top + panelHeight + 4, 0x70000000);
 		g.fill(left, top, left + panelWidth, top + panelHeight, 0xFF111A28);
 		g.outline(left, top, panelWidth, panelHeight, 0xFF314153);
-		g.fill(left + 1, top + 1, left + sidebar, top + panelHeight - 1, 0xFF171E2B);
+		g.fillGradient(left + 1, top + 1, left + sidebar, top + panelHeight - 1, 0xFF1B2835, 0xFF141C29);
+		MenuArt.corners(g, left, top, panelWidth, panelHeight, 0xFF53747E);
+		g.fillGradient(contentX, top + 1, left + panelWidth - 1, top + 49, 0xFF182C38, 0xFF111A28);
+		if (panelHeight > 330 && sidebar >= 110) {
+			int cy = top + panelHeight - 91;
+			g.horizontalLine(left + 18, left + sidebar - 18, cy - 14, 0xFF293D4B);
+			MenuArt.item(g, net.minecraft.world.item.Items.DIAMOND_SWORD, left + 31, cy);
+			MenuArt.item(g, net.minecraft.world.item.Items.SHIELD, left + 56, cy);
+			g.text(font, "TRAIN. ADAPT.", left + 18, cy + 27, MUTED, false);
+			g.text(font, "GO AGAIN.", left + 18, cy + 40, ACCENT, false);
+		}
 		g.fill(left + 10, top + 14, left + 12, top + 30, ACCENT);
 		g.text(font, "SPARBOT", left + 18, top + 13, TEXT, false);
 		g.text(font, "PRACTICE", left + 18, top + 26, MUTED, false);
@@ -493,10 +523,20 @@ public final class SparBotMenuScreen extends Screen {
 		g.horizontalLine(contentX, contentX + contentWidth, top + 51, 0xFF293747);
 		g.enableScissor(contentX, contentTop, contentX + contentWidth, contentBottom);
 		for (Card card : cards) {
-			g.fill(contentX, card.y(), contentX + contentWidth, card.y() + card.height(), card.featured() ? 0xFF2C2926 : 0xFF1B2635);
+			g.fillGradient(contentX, card.y(), contentX + contentWidth, card.y() + card.height(), card.featured() ? 0xFF373027 : 0xFF20313F, card.featured() ? 0xFF252421 : 0xFF192331);
 			g.outline(contentX, card.y(), contentWidth, card.height(), card.featured() ? 0xFF6C5639 : 0xFF2B3A4D);
-			if (card.featured()) { g.fill(contentX, card.y() + 1, contentX + 2, card.y() + card.height() - 1, GOLD); }
+			if (card.featured()) {
+				g.fill(contentX, card.y() + 1, contentX + 2, card.y() + card.height() - 1, GOLD);
+				MenuArt.corners(g, contentX, card.y(), contentWidth, card.height(), GOLD);
+			}
+			if (card.height() > 60) {
+				for (int i = 0; i < 6; i++) {
+					int x = contentX + contentWidth - 12 - i * 6;
+					g.fill(x, card.y() + 7, x + 2, card.y() + 9, card.featured() ? 0xFF655036 : 0xFF354D5E);
+				}
+			}
 		}
+		for (Illustration art : illustrations) { MenuArt.loadout(g, contentX + contentWidth - 12, art.y(), art.uhc()); }
 		for (Label label : labels) { g.text(font, label.text(), label.x(), label.y(), label.color(), false); }
 		g.disableScissor();
 		if (maxScroll() > 0) {

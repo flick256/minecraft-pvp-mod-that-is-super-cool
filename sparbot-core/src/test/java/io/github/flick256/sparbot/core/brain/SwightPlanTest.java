@@ -104,4 +104,37 @@ class SwightPlanTest {
 		assertTrue(longest <= 22, "alternating sword and axe must not reset the shield limit");
 	}
 
+	@Test
+	void circlesForAnAngleWhenAWebTakesTheClickBeforeTheOpponent() {
+		var h = new BrainHarness(TestFixtures.preset("swight"), TestFixtures.inventory(), null);
+		h.target = new TargetState(7, "Target", new Vec3(0, 0, 2.6), Vec3.ZERO, 0, 20, 20, true, 0, false, true, 0, .3, 1.8,
+			ItemKind.SWORD, ItemKind.SHIELD, ItemKind.EMPTY, 15, false, true, false, 0);
+		var b = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 1, true, TestFixtures.flatGround());
+		var blocked = new io.github.flick256.sparbot.core.sense.SelfState(b.position(), b.eyePosition(), b.velocity(), b.yaw(), b.pitch(),
+			b.health(), b.maxHealth(), b.absorption(), b.foodLevel(), b.onGround(), b.sprinting(), b.inWater(), b.horizontalCollision(),
+			b.fallDistance(), b.attackStrength(), b.attackReach(), b.hurtTime(), b.holdingMeleeWeapon(), b.dropDepth(), b.inventory(),
+			b.effects(), false, false, false, 1.5);
+		var c = h.context(blocked); c.memory.reading = true;
+		var move = new SwordPlan.Move(1, 0, true);
+		assertTrue(SwightPlan.meleeOpening(c, 2.3, 2.9, move));
+		assertEquals(0, move.forward, "do not charge into the obstructing trap");
+		assertEquals(c.memory.strafeDirection, move.strafe, "find an angle instead of waiting for the opponent to free us");
+		org.junit.jupiter.api.Assertions.assertFalse(move.sprint);
+	}
+
+	@Test
+	void aimsBelowAHeadHeightWebInsteadOfTryingToHitThroughIt() {
+		var h = new BrainHarness(TestFixtures.preset("swight"), TestFixtures.inventory(), null);
+		h.target = new TargetState(7, "Target", new Vec3(0, 0, 2.6), Vec3.ZERO, 0, 20, 20, true, 0, false, true, 0, .3, 1.8,
+			ItemKind.SWORD, ItemKind.SHIELD, ItemKind.EMPTY, 15, false, true, false, 0);
+		h.world = new io.github.flick256.sparbot.core.sense.Surroundings(java.util.List.of(), java.util.List.of(), java.util.List.of(),
+			java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(),
+			java.util.List.of(new io.github.flick256.sparbot.core.sense.BlockSpot(0, 1, 2)));
+		var c = h.context(TestFixtures.self(Vec3.ZERO, 0, 0, 20, 1, true, TestFixtures.flatGround()));
+		assertTrue(SwightPlan.meleeAim(c, h.target, Vec3.ZERO).y() < 1, "the legs are exposed below the head-height web");
+		h.world = io.github.flick256.sparbot.core.sense.Surroundings.EMPTY;
+		c = h.context(c.self);
+		assertEquals(h.target.chest(), SwightPlan.meleeAim(c, h.target, Vec3.ZERO), "do not invent unseen obstructions");
+	}
+
 }

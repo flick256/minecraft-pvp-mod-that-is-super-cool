@@ -199,6 +199,8 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		context.takeScreenshot("menu-practice");
 		clickMenu(context, "Swight");
 		context.takeScreenshot("menu-practice-swight");
+		clickMenu(context, "Dn");
+		context.takeScreenshot("menu-practice-swight-detail");
 		clickMenu(context, "Spawn");
 		clickMenu(context, "Swight");
 		clickMenu(context, "Choose kit");

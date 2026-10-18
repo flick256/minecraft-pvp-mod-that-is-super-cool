@@ -3,6 +3,8 @@ package io.github.flick256.sparbot.gametest;
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.bot.Bot;
 import io.github.flick256.sparbot.bot.BotPlayer;
+import io.github.flick256.sparbot.bot.BotTestAccess;
+import io.github.flick256.sparbot.core.act.Inputs;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.game.ServerboundAttackPacket;
@@ -76,4 +78,76 @@ public class StunGameTests {
 	public void stunFourTicks(GameTestHelper helper) {
 		stun(helper, 4);
 	}
+	/** Uses a vanilla ServerPlayer defender, rather than only another bot's body. */
+	@GameTest(maxTicks = 90)
+	public void swightsEmulatedClicksCannotDamageAReadyHumanShield(GameTestHelper helper) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.spawnBot(helper, "SwShield", 2.5, 1, 3.5, -90, "swight", "basic_sword");
+		bot.setBrainPaused(true);
+		var human = TestSupport.spawnRealPlayer(helper, 4.5, 1, 3.5);
+		// No attached client sends movement packets to advance ServerPlayer's item-use ticks.
+		helper.onEachTick(() -> { if (!human.isRemoved()) { human.doTick(); } });
+		human.setYRot(90);
+		human.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+		human.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+		helper.runAfterDelay(25, () -> human.connection.handleUseItem(new ServerboundUseItemPacket(InteractionHand.OFF_HAND, 1, 90, 0)));
+		helper.runAfterDelay(35, () -> {
+			helper.assertTrue(human.isBlocking(), "human shield finished raising and faces Swight");
+			float health = human.getHealth();
+			BotTestAccess.press(bot, Inputs.IDLE.withAttack(true));
+			helper.assertValueEqual(human.getHealth(), health, "Swight's sword click does not damage a ready human shield");
+			helper.assertTrue(human.getOffhandItem().getDamageValue() > 0, "the click actually hit the shield");
+			TestSupport.body(bot).getInventory().setItem(0, new ItemStack(Items.DIAMOND_AXE));
+		});
+		helper.runAfterDelay(65, () -> {
+			float health = human.getHealth();
+			BotTestAccess.press(bot, Inputs.IDLE.withAttack(true));
+			helper.assertValueEqual(human.getHealth(), health, "the disabling axe hit is also blocked");
+			helper.assertTrue(human.getCooldowns().isOnCooldown(human.getOffhandItem()), "the axe disabled the shield through vanilla combat");
+		});
+		helper.runAfterDelay(66, () -> {
+			helper.assertFalse(human.isBlocking(), "after an axe disable the human is no longer blocking");
+			TestSupport.remove(bot); TestSupport.removeRealPlayer(human); helper.succeed();
+		});
+	}
+
+	@GameTest(maxTicks = 60)
+	public void aNewlyRaisedHumanShieldHasTheVanillaWarmup(GameTestHelper helper) {
+		humanShieldWindow(helper, false);
+	}
+
+	@GameTest(maxTicks = 60)
+	public void aHumanShieldDoesNotBlockHitsFromBehind(GameTestHelper helper) {
+		humanShieldWindow(helper, true);
+	}
+
+	private static void humanShieldWindow(GameTestHelper helper, boolean behind) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.dummy(helper, "ShieldEdge", 2.5, 1, 3.5, -90, "basic_sword");
+		var human = TestSupport.spawnRealPlayer(helper, 4.5, 1, 3.5);
+		// No attached client sends movement packets to advance ServerPlayer's item-use ticks.
+		helper.onEachTick(() -> { if (!human.isRemoved()) { human.doTick(); } });
+		float yaw = behind ? -90 : 90;
+		human.setYRot(yaw);
+		human.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+		helper.runAfterDelay(25, () -> {
+			human.connection.handleUseItem(new ServerboundUseItemPacket(InteractionHand.OFF_HAND, 1, yaw, 0));
+			if (!behind) {
+				helper.assertTrue(human.isUsingItem() && !human.isBlocking(), "a visible shield raise is not an active block yet");
+				float health = human.getHealth();
+				BotTestAccess.press(bot, Inputs.IDLE.withAttack(true));
+				helper.assertTrue(human.getHealth() < health, "a hit during vanilla's raise delay deals damage");
+			}
+		});
+		helper.runAfterDelay(35, () -> {
+			if (behind) {
+				helper.assertTrue(human.isBlocking(), "the shield is ready but faces away");
+				float health = human.getHealth();
+				BotTestAccess.press(bot, Inputs.IDLE.withAttack(true));
+				helper.assertTrue(human.getHealth() < health, "a ready shield does not cover the back");
+			}
+			TestSupport.remove(bot); TestSupport.removeRealPlayer(human); helper.succeed();
+		});
+	}
+
 }

@@ -40,6 +40,8 @@ public final class DuelMemory {
 	int axeModeTicks;
 	/** Ticks left to see whether the last axe swing brought the opponent's shield down. */
 	int axeConfirmTicks;
+	/** The decision view must have caught up with our axe click before a shield drop confirms it. */
+	long axeClickAt;
 	/** Ticks left to follow an axe hit on a raised shield (a shield stun) with the next weapon. */
 	int stunTicks;
 	/** The follow-up was planned before the axe hit, so the weapon switch is a single key press. */

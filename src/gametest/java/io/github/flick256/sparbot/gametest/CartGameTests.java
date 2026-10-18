@@ -45,6 +45,9 @@ public class CartGameTests {
 		TestSupport.arena(helper);
 		Bot bot = TestSupport.certain(TestSupport.spawnBot(helper, "Defuser", 1.5, 1, 3.5, -90, "pro", "sparbot_cart"));
 		BotPlayer body = TestSupport.body(bot);
+		// Stage the nearby threat before letting the bot move; otherwise it can leave the
+		// drop location during the setup delay and this no longer tests a cart beside it.
+		bot.setBrainPaused(true);
 		Bot target = TestSupport.dummy(helper, "Carter", 6.0, 1, 3.5, 90, "basic_sword");
 		bot.setAssignedTarget(TestSupport.body(target).getUUID());
 		body.getInventory().setItem(2, net.minecraft.world.item.ItemStack.EMPTY); // no rails: only defending here
@@ -57,6 +60,7 @@ public class CartGameTests {
 				net.minecraft.world.entity.EntityTypes.TNT_MINECART, helper.getLevel());
 			cart.setPos(at.x, at.y, at.z);
 			helper.getLevel().addFreshEntity(cart);
+			bot.setBrainPaused(false);
 		});
 		int cartsBefore = body.getInventory().countItem(Items.TNT_MINECART);
 		helper.runAfterDelay(25, () -> helper.succeedWhen(() -> {
