@@ -52,7 +52,8 @@ tasks.register('uhcLab', JavaExec) {
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'io.github.flick256.sparbot.core.sim.UhcLab'
 	args = [project.findProperty('fights') ?: '200', project.findProperty('a') ?: 'pro', project.findProperty('b') ?: 'pro',
-		project.findProperty('kit') ?: 'sparbot_uhc', project.findProperty('terrain') ?: 'false']
+		project.findProperty('kit') ?: 'sparbot_uhc', project.findProperty('terrain') ?: 'false',
+		project.findProperty('maxTicks') ?: '6000', project.findProperty('seed') ?: '1']
 }
 
 // Sword fights between scripted bots in a kit, with how long they last:

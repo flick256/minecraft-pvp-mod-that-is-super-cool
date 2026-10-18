@@ -160,14 +160,21 @@ public final class PracticeWorld {
 		if (player.level() != level) {
 			returns.putIfAbsent(player.getUUID(), new Return(player.level().dimension(), player.position(), player.getYRot(), player.getXRot()));
 		}
-		String name = botName(site);
+		String name = "swight".equals(profile.id()) ? availableSwightName() : botName(site);
 		SparBot.bots().get(name).ifPresent(old -> SparBot.bots().remove(old, "replaced by a new practice fight"));
 		Arena.Spawn spawn = arena.spawnB();
 		Bot bot = SparBot.bots().spawn(server, name, level, new Vec3(spawn.x(), spawn.y(), spawn.z()), spawn.yaw(), profile, kit);
 		bot.setAssignedTarget(player.getUUID());
 		SparBot.matches().start(server, mode, arena, MatchManager.fighterFor(player), MatchManager.fighterFor(bot),
-			match -> SparBot.bots().get(name).ifPresent(b -> SparBot.bots().remove(b, "practice fight over")));
+			match -> SparBot.bots().get(name).filter(b -> b == bot).ifPresent(b -> SparBot.bots().remove(b, "practice fight over")));
 		return mode.displayName() + " against " + profile.displayName() + " in the " + site.displayName() + ", first to " + mode.roundsToWin();
+	}
+
+	private static String availableSwightName() {
+		String name = "Swight";
+		int suffix = 2;
+		while (SparBot.bots().get(name).isPresent()) { name = "Swight" + suffix++; }
+		return name;
 	}
 
 	private static String botName(Site site) {

@@ -28,79 +28,14 @@ public class MenuClientGameTest implements FabricClientGameTest {
 				return;
 			}
 
+			menuSmoke(context, world);
+			if (Boolean.getBoolean("sparbot.menuOnly")) { return; }
 			context.getInput().pressKey(GLFW.GLFW_KEY_B);
 			context.waitForScreen(SparBotMenuScreen.class);
-			context.takeScreenshot("sparbot-menu-bots-empty");
-
-			context.clickScreenButton("Spawn");
-			context.waitTick();
-			context.takeScreenshot("sparbot-menu-spawn");
-			context.clickScreenButton("Spawn bot");
-			world.getServer().waitFor(server -> SparBot.bots().get("Bot1").isPresent());
-
-			context.clickScreenButton("Bots");
-			context.waitTicks(15);
-			context.takeScreenshot("sparbot-menu-bots");
-			context.clickScreenButton("Tech");
-			context.waitTicks(2);
-			context.takeScreenshot("sparbot-menu-techniques");
-			// Switch strafing off.
-			context.clickScreenButton("strafe");
-			world.getServer().waitFor(server -> SparBot.bots().get("Bot1").map(b -> b.disabledTechniques().contains(
-				io.github.flick256.sparbot.core.brain.Technique.STRAFE)).orElse(false));
-			context.waitTicks(10);
-
-			context.clickScreenButton("Kits");
-			context.waitTicks(2);
-			context.takeScreenshot("sparbot-menu-kits");
-			context.clickScreenButton("Equip");
-			boolean equipped = world.getServer().computeOnServer(server -> server.getPlayerList().getPlayers().stream()
-				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !p.getInventory().isEmpty()));
-			for (int i = 0; i < 20 && !equipped; i++) {
-				context.waitTick();
-				equipped = world.getServer().computeOnServer(server -> server.getPlayerList().getPlayers().stream()
-					.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !p.getInventory().isEmpty()));
-			}
-			if (!equipped) {
-				throw new AssertionError("Equip didn't give the player a kit");
-			}
-
-			context.clickScreenButton("Save layout");
-			world.getServer().waitFor(server -> server.getPlayerList().getPlayers().stream()
-				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && !SparBot.playerLayouts().kits(p.getUUID()).isEmpty()));
-
-			context.clickScreenButton("You");
-			context.waitTicks(2);
-			context.takeScreenshot("sparbot-menu-you");
-			world.getServer().runOnServer(server -> server.getPlayerList().getPlayers().stream()
-				.filter(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer)).forEach(p -> p.setHealth(5)));
-			context.clickScreenButton("Full heal");
-			world.getServer().waitFor(server -> server.getPlayerList().getPlayers().stream()
-				.anyMatch(p -> !(p instanceof io.github.flick256.sparbot.bot.BotPlayer) && p.getHealth() >= p.getMaxHealth()));
-
-			context.clickScreenButton("Settings");
-			context.waitTicks(2);
-			context.takeScreenshot("sparbot-menu-settings");
-
-			context.clickScreenButton("Bots");
-			context.waitTicks(2);
-			context.clickScreenButton("Remove");
-			world.getServer().waitFor(server -> SparBot.bots().get("Bot1").isEmpty());
-
-			boolean autoTargetOff = world.getServer().computeOnServer(server -> !SparBot.config().autoTarget);
-			if (!autoTargetOff) {
-				throw new AssertionError("the config command didn't apply");
-			}
-			world.getServer().runCommand("sparbot config set autoTarget true");
-
-			// The practice world: the Practice tab takes you to the hub, which is built on the way.
-			context.clickScreenButton("Practice");
-			context.waitTicks(2);
-			context.takeScreenshot("sparbot-menu-practice");
-			context.clickScreenButton("Hub");
+			clickMenu(context, "Practice");
+			clickMenu(context, "Hub");
 			world.getServer().waitFor(server -> human(server) != null && human(server).level().dimension().equals(
 				io.github.flick256.sparbot.practice.PracticeWorld.DIMENSION), 600);
-			context.clickScreenButton("Done");
 			String pond = world.getServer().computeOnServer(server -> human(server).level().getBlockState(new net.minecraft.core.BlockPos(15, 63, 156)).toString());
 			if (!pond.contains("water")) {
 				throw new AssertionError("the meadow's pond has no water: " + pond);
@@ -252,6 +187,159 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	/** While set, the client presses jump on exactly the client ticks a hit's knockback arrives (see drills()). */
 	private static volatile boolean JUMP_ON_HIT;
 	private static net.minecraft.world.phys.Vec3 jumpLastVelocity;
+	/** Real menu navigation, form persistence, search, server actions, keyboard focus and compact layouts. */
+	private static void menuSmoke(ClientGameTestContext context, TestSingleplayerContext world) {
+		context.getInput().resizeWindow(1280, 800);
+		context.runOnClient(client -> client.options.guiScale().set(2));
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		context.waitTicks(4);
+		context.takeScreenshot("menu-overview");
+		clickMenu(context, "Practice");
+		context.takeScreenshot("menu-practice");
+		clickMenu(context, "Swight");
+		context.takeScreenshot("menu-practice-swight");
+		clickMenu(context, "Spawn");
+		clickMenu(context, "Swight");
+		clickMenu(context, "Choose kit");
+		focusField(context, "Search kits");
+		context.getInput().typeChars("pvphq_uhc");
+		context.waitTicks(4);
+		context.runOnClient(client -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new io.github.flick256.sparbot.menu.MenuRequestPayload(false)));
+		context.waitTicks(8);
+		context.runOnClient(client -> {
+			if (!(client.gui.screen().getFocused() instanceof net.minecraft.client.gui.components.EditBox box) || !box.getValue().equals("pvphq_uhc")) {
+				throw new AssertionError("search value or keyboard focus was lost on refresh");
+			}
+		});
+		context.takeScreenshot("menu-kit-search");
+		clickMenu(context, "Use kit");
+		context.takeScreenshot("menu-spawn");
+		clickMenu(context, "Spawn bot");
+		world.getServer().waitFor(server -> SparBot.bots().get("Swight").isPresent());
+		context.waitTicks(10);
+		context.takeScreenshot("menu-bots");
+		clickMenu(context, "Tech");
+		clickMenu(context, "strafe: On");
+		world.getServer().waitFor(server -> SparBot.bots().get("Swight").map(b -> b.disabledTechniques().contains(io.github.flick256.sparbot.core.brain.Technique.STRAFE)).orElse(false));
+		context.waitTicks(8);
+		context.takeScreenshot("menu-techniques");
+		clickMenu(context, "Kits");
+		clickMenu(context, "Equip");
+		world.getServer().waitFor(server -> human(server) != null && !human(server).getInventory().isEmpty());
+		clickMenu(context, "Save layout");
+		world.getServer().waitFor(server -> human(server) != null && SparBot.playerLayouts().kits(human(server).getUUID()).contains("pvphq_uhc"));
+		clickMenu(context, "You");
+		world.getServer().runOnServer(server -> human(server).setHealth(5));
+		clickMenu(context, "Full heal");
+		world.getServer().waitFor(server -> human(server).getHealth() >= human(server).getMaxHealth());
+		context.takeScreenshot("menu-you");
+		clickMenu(context, "Settings");
+		focusField(context, "Search settings");
+		context.getInput().typeChars("autoTarget");
+		context.waitTicks(4);
+		context.takeScreenshot("menu-settings");
+		clickMenu(context, "Off");
+		world.getServer().waitFor(server -> SparBot.config().autoTarget);
+		world.getServer().runCommand("sparbot config set autoTarget false");
+		focusField(context, "Search settings");
+		selectAll(context);
+		context.runOnClient(client -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new io.github.flick256.sparbot.menu.MenuRequestPayload(false)));
+		context.waitTicks(8); // A selected search range must also survive the snapshot.
+		context.getInput().typeChars("maxBots");
+		context.waitTicks(3);
+		context.takeScreenshot("menu-settings-draft-search");
+		context.runOnClient(client -> {
+			for (var child : client.gui.screen().children()) {
+				if (child instanceof net.minecraft.client.gui.components.EditBox box && box.getMessage().getString().equals("Search settings")) {
+					if (!box.getValue().equals("maxBots")) { throw new AssertionError("search replacement produced: " + box.getValue()); }
+				}
+			}
+		});
+		int maxBotsBefore = world.getServer().computeOnServer(server -> SparBot.config().maxBots);
+		focusField(context, "Max Bots");
+		selectAll(context);
+		context.getInput().typeChars("12");
+		context.runOnClient(client -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new io.github.flick256.sparbot.menu.MenuRequestPayload(false)));
+		context.waitTicks(8);
+		context.runOnClient(client -> {
+			if (!(client.gui.screen().getFocused() instanceof net.minecraft.client.gui.components.EditBox box) || !box.getValue().equals("12")) {
+				throw new AssertionError("unsaved setting edit was lost on refresh");
+			}
+		});
+		clickMenu(context, "Set");
+		world.getServer().waitFor(server -> SparBot.config().maxBots == 12);
+		world.getServer().runCommand("sparbot config set maxBots " + maxBotsBefore);
+		clickMenu(context, "Drills");
+		context.takeScreenshot("menu-drills");
+		clickMenu(context, "Overview");
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(8);
+		context.takeScreenshot("menu-compact");
+		context.runOnClient(client -> {
+			for (var child : client.gui.screen().children()) {
+				if (child instanceof net.minecraft.client.gui.components.AbstractWidget w && w.visible
+					&& (w.getX() < 0 || w.getY() < 0 || w.getRight() > client.gui.screen().width || w.getBottom() > client.gui.screen().height)) {
+					throw new AssertionError("widget outside compact viewport: " + w.getMessage().getString());
+				}
+			}
+		});
+		context.getInput().pressKey(GLFW.GLFW_KEY_TAB);
+		context.runOnClient(client -> { if (client.gui.screen().getFocused() == null) { throw new AssertionError("keyboard navigation has no focus"); } });
+		clickMenu(context, "Practice");
+		clickMenu(context, "Swight");
+		clickMenu(context, "Enter arena");
+		context.runOnClient(client -> { if (client.gui.screen() instanceof SparBotMenuScreen) { throw new AssertionError("fight action must return to the game"); } });
+		world.getServer().waitFor(server -> human(server) != null && human(server).level().dimension().equals(io.github.flick256.sparbot.practice.PracticeWorld.DIMENSION), 1200);
+		world.getServer().runOnServer(server -> {
+			if (SparBot.bots().get("Swight2").isEmpty() || SparBot.bots().get("Swight").isEmpty()) {
+				throw new AssertionError("practice Swight must keep its identity without replacing a user-created Swight");
+			}
+		});
+		world.getServer().runOnServer(server -> server.getCommands().performPrefixedCommand(human(server).createCommandSourceStack(), "sparbot practice leave"));
+		context.waitFor(client -> client.player != null && client.gui.screen() == null
+			&& client.player.level().dimension().equals(net.minecraft.world.level.Level.OVERWORLD), 1200);
+		context.getInput().resizeWindow(1280, 800);
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Bots");
+		clickMenu(context, "Remove");
+		world.getServer().waitFor(server -> SparBot.bots().get("Swight").isEmpty());
+		clickMenu(context, "Done");
+	}
+
+	private static void selectAll(ClientGameTestContext context) {
+		// This Fabric TestInput version injects KeyEvent modifiers=0, even while holdControl is active.
+		// Send the real modified event through Screen so the normal editor shortcut is exercised.
+		context.runOnClient(client -> {
+			var screen = client.gui.screen();
+			if (!(screen.getFocused() instanceof net.minecraft.client.gui.components.EditBox box)
+				|| !screen.keyPressed(new net.minecraft.client.input.KeyEvent(GLFW.GLFW_KEY_A, 0, GLFW.GLFW_MOD_CONTROL))
+				|| !box.getHighlighted().equals(box.getValue())) {
+				throw new AssertionError("Ctrl+A must select the focused field");
+			}
+		});
+	}
+
+	private static void focusField(ClientGameTestContext context, String name) {
+		context.runOnClient(client -> {
+			var box = client.gui.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.EditBox e && e.visible && e.getMessage().getString().equals(name))
+				.map(c -> (net.minecraft.client.gui.components.EditBox) c).findFirst().orElseThrow();
+			client.gui.screen().setFocused(box);
+		});
+	}
+
+	private static void clickMenu(ClientGameTestContext context, String label) {
+		for (int i = 0; i < 50; i++) {
+			boolean visible = context.computeOnClient(client -> client.gui.screen().children().stream().anyMatch(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w
+				&& w.visible && w.active && w.getMessage().getString().equals(label)));
+			if (visible) { context.clickScreenButton(label); context.waitTicks(2); return; }
+			if (!context.tryClickScreenButton("Dn")) { break; }
+			context.waitTick();
+		}
+		throw new AssertionError("menu action not reachable: " + label);
+	}
+
 	private static boolean jumpHookRegistered;
 
 	private static void drills(ClientGameTestContext context, TestSingleplayerContext world) {

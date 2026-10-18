@@ -522,9 +522,10 @@ public final class UhcLab {
 		String kit = args.length > 3 ? args[3] : "sparbot_uhc";
 		boolean terrain = args.length > 4 && Boolean.parseBoolean(args[4]);
 		int maxTicks = args.length > 5 ? Integer.parseInt(args[5]) : 6000;
+		long seed = args.length > 6 ? Long.parseLong(args[6]) : 1;
 		Loadout loadout = Loadout.ofKit(kit);
 		long start = System.nanoTime();
-		Report r = run(entrant(pa, presets), entrant(pb, presets), loadout, terrain ? SimArena.UHC_TERRAIN : SimArena.UHC, fights, 1, maxTicks);
+		Report r = run(entrant(pa, presets), entrant(pb, presets), loadout, terrain ? SimArena.UHC_TERRAIN : SimArena.UHC, fights, seed, maxTicks);
 		double seconds = (System.nanoTime() - start) / 1e9;
 		System.out.printf(Locale.ROOT, "%s vs %s, kit %s%s%n", pa, pb, kit, terrain ? ", uneven ground" : "");
 		System.out.print(r);

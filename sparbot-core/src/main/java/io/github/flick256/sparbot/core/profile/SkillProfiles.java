@@ -16,7 +16,9 @@ import java.util.Map;
 /** Parses skill profiles from JSON and exposes the bundled presets. */
 public final class SkillProfiles {
 	/** Bundled presets, weakest first. */
-	public static final List<String> PRESET_IDS = List.of("beginner", "casual", "intermediate", "advanced", "pro", "demon");
+	public static final List<String> TIER_IDS = List.of("beginner", "casual", "intermediate", "advanced", "pro", "demon");
+	/** General tiers followed by named specialists, whose strength depends on the mode. */
+	public static final List<String> PRESET_IDS = java.util.stream.Stream.concat(TIER_IDS.stream(), java.util.stream.Stream.of("swight")).toList();
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 

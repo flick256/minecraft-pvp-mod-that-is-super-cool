@@ -100,3 +100,10 @@ if (project.hasProperty('gametestFilter')) {
 		jvmArgs "-Dfabric-api.gametest.filter=${project.property('gametestFilter')}"
 	}
 }
+
+// Exercise menu navigation, search, actions and compact GUI layouts without the world tour.
+if (project.hasProperty('menuOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs "-Dsparbot.menuOnly=true"
+	}
+}

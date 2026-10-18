@@ -8,7 +8,7 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 3.1. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
+> Status: 3.2. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
 > and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it, from
 > the keys you really pressed, to the tick; cues that tell you when to act) and a **live coach** in your fights
 > against bots. Every bot fights with
@@ -122,16 +122,18 @@ All commands need the permission level set in the config (default: gamemasters, 
 ## The menu
 
 With SparBot installed on your client too, press **B** (rebindable in Controls) or run `/sparbot menu`:
-- **Bots:** every bot with its profile, style and health, and buttons to fight it, kill or respawn it, or remove it.
-  **Tech** opens the bot's page: an on/off switch per technique
-- **Spawn:** name, profile, kit and playstyle, then *Spawn bot*
-- **Kits:** every kit with an *Equip* button that gives it to you (replacing your inventory)
-- **You:** a full heal, natural regeneration, your saved kit layouts, and your last fight against a bot:
-  your numbers, the coach's lines, and how your full-charge share moved over your last ten fights
-- **Practice:** go to the practice hub (or leave it), the colosseum games (*Waves*, *Hill*), pick the tier to
-  fight, and a *Fight* button per mode that starts a match in that mode's practice arena
-- **Drills:** every skill drill with your best medal and a *Start* button, the training hall, and *Stop drill*
-- **Settings:** every setting from `config/sparbot.json` except `commandPermission`
+- **Overview:** quick access to practice, your bots, drills, and **Challenge Swight**.
+- **Practice:** choose a mode and opponent, then **Enter arena**. The action stays visible while you browse.
+- **Bots:** see each opponent's health, start a fight, respawn it, remove it, or open **Tech** to change its techniques.
+- **Spawn:** enter a name, choose a skill level and playstyle, then pick a kit from the searchable library.
+  **Spawn bot** stays within reach while you choose; Swight starts with the PvPHQ UHC kit.
+- **Kits:** search by name, equip a kit, save your arrangement, or reset it.
+- **You:** heal, change natural regeneration, and review your last fight and coach feedback.
+- **Drills:** browse lessons and medals, visit the training hall, or stop your current drill.
+- **Settings:** search server settings. Unfinished edits, text selection and keyboard focus survive refreshes.
+
+The menu remembers where you were in each section. Scroll with the mouse wheel or the arrow buttons;
+compact GUI sizes retain the same actions. Starting a fight or drill closes the menu so you can play.
 
 Every button just sends a `/sparbot` command, so the server checks permissions and values as if you had
 typed it. Without SparBot on the client, everything still works through commands.
@@ -248,6 +250,19 @@ that sets:
 - reach misjudgement
 - technique skills: crit, W-tap, S-tap, strafe, jump reset and spacing
 - mistake rate and panic threshold
+
+**Swight** (`swight`) is a named UHC specialist above Demon in the measured simulator matchups, with the
+same reaction, turn, click and inventory speed limits. It anticipates utility placement, follows up on
+webs and exposed bucket hands, and saves time for sword pressure instead of repeating lava chains.
+Reach judgement remains imperfect and conservative, and sustained shield use has release windows.
+It is a first version, not a claim that it has reached a measured human ceiling. See [the validation
+and benchmark results](docs/testing-3.2.md).
+
+Choose **Challenge Swight** in Overview, select Swight in Practice, or spawn it directly:
+
+```text
+/sparbot spawn Swight swight pvphq_uhc
+```
 
 To add your own, copy a preset from
 `sparbot-core/src/main/resources/sparbot/profiles/` into `config/sparbot/profiles/`, change it, then run

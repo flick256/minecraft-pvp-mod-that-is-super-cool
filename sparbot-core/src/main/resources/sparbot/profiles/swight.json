@@ -1,0 +1,82 @@
+{
+	"id": "swight",
+	"displayName": "Swight",
+	"description": "UHC specialist: deliberate healing and utility pressure with Demon-level physical limits. Finite resources, imperfect reach judgement and attention costs remain; strength comes from choosing openings, not faster inputs.",
+	"reactionTimeMs": {
+		"mean": 140,
+		"stdDev": 18,
+		"min": 115,
+		"max": 220
+	},
+	"pingMs": {
+		"mean": 20,
+		"stdDev": 8,
+		"min": 5,
+		"max": 60
+	},
+	"aim": {
+		"maxTurnDegPerTick": 45,
+		"smoothing": 0.7,
+		"jitterDeg": 0.35,
+		"overshootChance": 0.06,
+		"overshootFactor": 0.1,
+		"trackingLead": 0.9
+	},
+	"clicking": {
+		"cps": {
+			"mean": 15,
+			"stdDev": 1.5,
+			"min": 12,
+			"max": 19
+		},
+		"cooldownDiscipline": 0.99
+	},
+	"reach": {
+		"rangeErrorBlocks": {
+			"mean": -0.12,
+			"stdDev": 0.12,
+			"min": -0.55,
+			"max": 0.0
+		}
+	},
+	"technique": {
+		"critSkill": 0.95,
+		"wTapSkill": 0.9,
+		"sTapSkill": 0.65,
+		"strafeSkill": 0.5,
+		"jumpResetSkill": 0.85,
+		"spacingSkill": 0.95,
+		"readSkill": 0.95,
+		"feintSkill": 0.7,
+		"comboSkill": 0.95
+	},
+	"items": {
+		"hotbarSwitchMs": {
+			"mean": 70,
+			"stdDev": 15,
+			"min": 50,
+			"max": 120
+		},
+		"inventoryMs": {
+			"mean": 220,
+			"stdDev": 50,
+			"min": 150,
+			"max": 400
+		},
+		"retotemSkill": 0.99,
+		"gappleHealthFraction": 0.6,
+		"eatHungerBelow": 16,
+		"shieldSkill": 0.95,
+		"axeSkill": 0.95,
+		"bowSkill": 0.95,
+		"pearlSkill": 0.85,
+		"potHealthFraction": 0.65,
+		"maceSkill": 0.95,
+		"spearSkill": 0.95,
+		"crystalSkill": 0.95,
+		"cartSkill": 0.95,
+		"uhcSkill": 1.0
+	},
+	"mistakeRate": 0.006,
+	"panicHealthFraction": 0.2
+}

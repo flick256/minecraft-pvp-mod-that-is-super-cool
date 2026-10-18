@@ -118,6 +118,6 @@ public final class WebTactic implements Tactic {
 
 	/** The ground block to put the web on: under them, or under where they will land. */
 	static BlockSpot target(BrainContext c, TargetState t) {
-		return BlockPlay.groundBelow(c, t);
+		return SwightPlan.utilityGround(c, t);
 	}
 }

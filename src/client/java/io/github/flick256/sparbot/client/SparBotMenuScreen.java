@@ -1,457 +1,542 @@
 package io.github.flick256.sparbot.client;
 
 import io.github.flick256.sparbot.core.brain.Technique;
+import io.github.flick256.sparbot.core.drill.Drill;
+import io.github.flick256.sparbot.core.drill.Drills;
 import io.github.flick256.sparbot.core.ui.MenuCommands;
 import io.github.flick256.sparbot.core.ui.MenuState;
 import io.github.flick256.sparbot.menu.MenuRequestPayload;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Consumer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * The SparBot menu: spawn bots, manage the ones that exist, equip yourself with a kit, and change settings. Every button sends an
- * ordinary {@code /sparbot} command, so the server checks permissions and values exactly as if it had
- * been typed, and replies (in chat) the same way. After each action the menu asks for fresh contents.
- */
+/** A scrollable practice workspace. Actions use the same server permission checks as chat commands. */
 public final class SparBotMenuScreen extends Screen {
-	private static final int MAX_ROWS = 7;
-	private static final int ROW_HEIGHT = 24;
-	private static final int TOP = 56;
-	private static final int WHITE = 0xFFFFFFFF;
-	private static final int GREY = 0xFFA0A0A0;
-	private static final int REFRESH_DELAY = 5;
-
+	private static final int TEXT = 0xFFE7EEF6, MUTED = 0xFF9BAEC3, ACCENT = 0xFF73DDCA, GOLD = 0xFFE8BC73;
 	private enum Tab {
-		BOTS,
-		SPAWN,
-		KITS,
-		/** Your own things: a full heal, regeneration, your kit layouts. */
-		YOU,
-		/** The practice world: the hub, and a fight in any mode's arena. */
-		PRACTICE,
-		/** The skill drills: every PvP skill, with your medals. */
-		DRILLS,
-		SETTINGS,
-		/** One bot's techniques (opened from its row in the Bots tab). */
-		TECHNIQUES
+		HOME("Overview", "Your next session", "Choose a fight, build a bot, or sharpen a skill."),
+		PRACTICE("Practice", "Make every fight count", "Choose a mode and an opponent, then step into the arena."),
+		BOTS("Bots", "Your sparring partners", "Fight, customise or manage the bots in this world."),
+		SPAWN("Spawn", "Build your opponent", "A name, a skill level and a kit. Make the fight yours."),
+		KITS("Kits", "Ready for the next round", "Equip a kit or save the arrangement that works for you."),
+		DRILLS("Drills", "One skill at a time", "Short practice, instant feedback, and a medal to work towards."),
+		YOU("You", "Your training journal", "Recover, review your last fight, and see what to improve."),
+		SETTINGS("Settings", "Your practice, your rules", "Changes apply to this server and require permission."),
+		TECHNIQUES("Techniques", "Tune your opponent", "Choose the techniques this bot can use.");
+		final String label, heading, description;
+		Tab(String label, String heading, String description) { this.label = label; this.heading = heading; this.description = description; }
 	}
 
-	/** The tabs along the top, in order. */
-	private static final Tab[] TAB_BAR = {Tab.BOTS, Tab.SPAWN, Tab.KITS, Tab.YOU, Tab.PRACTICE, Tab.DRILLS, Tab.SETTINGS};
-
-	private MenuState state;
-	private Tab tab = Tab.BOTS;
-	private int page;
-	private String spawnName = "Bot1";
-	private String spawnProfile;
-	private String spawnKit;
-	private String spawnStyle;
-	/** The tier the Practice tab's fights are against. */
-	private String practiceProfile;
-	/** The bot whose techniques the TECHNIQUES page shows. */
-	private String techniquesBot;
+	private record Label(String text, int x, int y, int color) { }
+	private record Card(int y, int height, boolean featured) { }
 	private final List<Label> labels = new ArrayList<>();
-	/** Ticks until the menu asks for fresh contents after an action (0: not waiting). */
-	private int refreshIn;
-
-	private record Label(String text, int x, int y, int color) {
-	}
+	private final List<Card> cards = new ArrayList<>();
+	private final Map<Tab, Integer> positions = new EnumMap<>(Tab.class);
+	private final Map<String, String> settingDrafts = new HashMap<>();
+	private final Map<String, EditBox> fields = new HashMap<>();
+	private final Map<String, EditBox> previousFields = new HashMap<>();
+	private final String version = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("sparbot")
+		.map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("");
+	private MenuState state;
+	private Tab tab = Tab.HOME;
+	private String spawnName = "Bot1", spawnProfile, spawnKit, spawnStyle;
+	private String practiceProfile, practiceMode, techniquesBot;
+	private String kitSearch = "", settingsSearch = "", status = "Ready";
+	private boolean choosingKit, rebuildNextTick;
+	private int scroll, totalHeight, cursorY, refreshIn, ticks;
+	private int left, top, panelWidth, panelHeight, sidebar, contentX, contentWidth, contentTop, contentBottom;
 
 	public SparBotMenuScreen(MenuState state) {
-		super(Component.literal("SparBot " + net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("sparbot")
-			.map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("")));
+		super(Component.literal("SparBot"));
 		this.state = state;
 	}
 
-	/** New contents from the server; keeps the tab and page. */
+	/** Preserve the form, focus, scroll position and selection when a server snapshot arrives. */
 	public void update(MenuState newState) {
-		this.state = newState;
-		rebuildWidgets();
+		state = newState;
+		status = "Ready";
+		if (tab == Tab.TECHNIQUES && state.bots().stream().noneMatch(b -> b.name().equals(techniquesBot))) {
+			show(Tab.BOTS);
+		} else { rebuildKeepingFocus(); }
 	}
 
-	/** As many rows as fit between the tabs and the page buttons above Done. */
-	private int rows() {
-		return Math.max(2, Math.min(MAX_ROWS, (height - TOP - 56) / ROW_HEIGHT));
+	private void rebuildKeepingFocus() {
+		String focused = fields.entrySet().stream().filter(e -> e.getValue() == getFocused()).map(Map.Entry::getKey).findFirst().orElse(null);
+		EditBox previous = focused == null ? null : fields.get(focused);
+		int caret = previous == null ? 0 : previous.getCursorPosition();
+		rebuildWidgets();
+		if (focused != null && fields.containsKey(focused) && fields.get(focused).visible) {
+			EditBox box = fields.get(focused);
+			setFocused(box);
+			if (box != previous) { box.setCursorPosition(Math.min(caret, box.getValue().length())); }
+		}
 	}
 
 	@Override
 	protected void init() {
-		labels.clear();
-		int center = width / 2;
-		String[] names = {"Bots", "Spawn", "Kits", "You", "Practice", "Drills", "Settings"};
-		for (int i = 0; i < TAB_BAR.length; i++) {
-			Tab each = TAB_BAR[i];
-			addRenderableWidget(Button.builder(Component.literal(names[i]), b -> show(each)).bounds(center - 203 + i * 58, 28, 56, 20).build()).active = tab != each;
+		labels.clear(); cards.clear();
+		previousFields.clear(); previousFields.putAll(fields); fields.clear();
+		panelWidth = Math.min(760, width - 16);
+		panelHeight = Math.min(480, height - 16);
+		left = (width - panelWidth) / 2; top = (height - panelHeight) / 2;
+		sidebar = width < 560 ? 82 : 112;
+		contentX = left + sidebar + 14;
+		contentWidth = panelWidth - sidebar - 28;
+		contentTop = top + 62; contentBottom = top + panelHeight - 36;
+		int navY = top + 44;
+		for (Tab each : Tab.values()) {
+			if (each == Tab.TECHNIQUES) { continue; }
+			MenuButton button = new MenuButton(each.label, left + 8, navY, sidebar - 16, 20, MenuButton.Tone.NAV,
+				tab == each || each == Tab.BOTS && tab == Tab.TECHNIQUES, b -> show(each));
+			addRenderableWidget(button);
+			navY += 22;
 		}
+		cursorY = contentTop - scroll;
 		switch (tab) {
-			case BOTS -> initBots(center);
-			case SPAWN -> initSpawn(center);
-			case KITS -> initKits(center);
-			case YOU -> initYou(center);
-			case PRACTICE -> initPractice(center);
-			case DRILLS -> initDrills(center);
-			case SETTINGS -> initSettings(center);
-			case TECHNIQUES -> initTechniques(center);
+			case HOME -> overview();
+			case PRACTICE -> practice();
+			case BOTS -> bots();
+			case SPAWN -> spawn();
+			case KITS -> kits();
+			case DRILLS -> drills();
+			case YOU -> you();
+			case SETTINGS -> settings();
+			case TECHNIQUES -> techniques();
 		}
-		addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose()).bounds(center - 50, height - 28, 100, 20).build());
+		totalHeight = cursorY - (contentTop - scroll);
+		int max = maxScroll();
+		if (scroll > max) { scroll = max; rebuildWidgets(); return; }
+		int y = top + panelHeight - 27;
+		boolean actionPage = tab == Tab.PRACTICE || tab == Tab.SPAWN;
+		int actionWidth = actionPage ? 110 : 50;
+		String action = tab == Tab.PRACTICE ? "Enter arena" : tab == Tab.SPAWN ? "Spawn bot" : "Done";
+		MenuButton primary = addRenderableWidget(new MenuButton(action, contentX + contentWidth - actionWidth, y, actionWidth, 20,
+			tab == Tab.PRACTICE && "swight".equals(practiceProfile) ? MenuButton.Tone.GOLD : MenuButton.Tone.PRIMARY, false,
+			b -> { if (tab == Tab.PRACTICE) { runAndClose(MenuCommands.practiceFight(practiceMode, practiceProfile)); }
+				else if (tab == Tab.SPAWN) { spawnBot(); } else { onClose(); } }));
+		if (tab == Tab.SPAWN) { primary.active = validSpawn(); }
+		if (tab == Tab.PRACTICE) { primary.active = !state.modes().isEmpty() && !state.profiles().isEmpty(); }
+		int edge = contentX + contentWidth - actionWidth - 6;
+		if (contentWidth >= actionWidth + 112) {
+			addRenderableWidget(new MenuButton("Refresh", edge - 56, y, 56, 20, MenuButton.Tone.NORMAL, false, b -> requestRefresh()));
+			edge -= 62;
+		}
+		if (max > 0) {
+			addRenderableWidget(new MenuButton("Up", edge - 47, y, 22, 20, MenuButton.Tone.NORMAL, false, b -> moveScroll(-72))).active = scroll > 0;
+			addRenderableWidget(new MenuButton("Dn", edge - 22, y, 22, 20, MenuButton.Tone.NORMAL, false, b -> moveScroll(72))).active = scroll < max;
+		}
+
 	}
 
-	private void initBots(int center) {
-		List<MenuState.BotEntry> bots = state.bots();
-		if (bots.isEmpty()) {
-			labels.add(new Label("No bots yet: spawn one in the Spawn tab", center - 100, TOP + 6, GREY));
+	private void overview() {
+		int y = card(94, false);
+		text("A better fight starts here.", 12, y + 12, TEXT);
+		wrap("Head into practice with a complete kit, or build your own sparring partner.", 12, y + 28, contentWidth - 24, MUTED);
+		button("Start practice", 12, y + 64, Math.min(150, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> show(Tab.PRACTICE));
+		if (state.profiles().contains("swight")) {
+			y = card(112, true);
+			text("SWIGHT  /  UHC SPECIALIST", 12, y + 12, GOLD);
+			wrap("Utility with a plan. A demanding UHC opponent with human limits, built to challenge Demon.", 12, y + 29, contentWidth - 24, MUTED);
+			button("Challenge Swight", 12, y + 82, Math.min(160, contentWidth - 24), MenuButton.Tone.GOLD,
+				() -> runAndClose(MenuCommands.practiceFight(uhcMode(), "swight")));
+		}
+		y = card(74, false);
+		text(state.bots().size() + " sparring partners", 12, y + 12, TEXT);
+		text("Create one, then fine-tune its techniques.", 12, y + 28, MUTED);
+		button("Manage bots", 12, y + 48, Math.min(120, contentWidth - 24), MenuButton.Tone.NORMAL, () -> show(Tab.BOTS));
+		y = card(76, false);
+		long golds = state.myMedals().values().stream().filter(v -> v >= 3).count();
+		text(golds + " / " + Drills.ALL.size() + " gold medals", 12, y + 12, GOLD);
+		button("Find a drill", 12, y + 47, Math.min(120, contentWidth - 24), MenuButton.Tone.NORMAL, () -> show(Tab.DRILLS));
+	}
+
+	private void practice() {
+		practiceProfile = pick(practiceProfile, state.profiles(), setting("defaultProfile"));
+		practiceMode = pick(practiceMode, practiceModes(), uhcMode());
+		section("01  CHOOSE YOUR MODE");
+		choices(practiceModes(), practiceMode, value -> { practiceMode = value; rebuildKeepingFocus(); });
+		section("02  CHOOSE YOUR OPPONENT");
+		choices(profiles(), practiceProfile, value -> { practiceProfile = value; if (value.equals("swight")) { practiceMode = uhcMode(); } rebuildKeepingFocus(); });
+		boolean swight = "swight".equals(practiceProfile);
+		int y = card(swight ? 104 : 76, swight);
+		text(pretty(practiceMode) + "  /  " + pretty(practiceProfile), 12, y + 12, swight ? GOLD : TEXT);
+		if (swight) { wrap("Swight specialises in UHC. Deliberate utility, finite resources and room to punish mistakes.", 12, y + 29, contentWidth - 24, MUTED); }
+
+		section("EXPLORE THE PRACTICE WORLD");
+		flowButtons(List.of("Hub", "Colosseum", "Leave"), List.of(() -> runAndClose(MenuCommands.practiceHub()),
+			() -> runAndClose(MenuCommands.practiceColosseum()), () -> runAndClose(MenuCommands.practiceLeave())));
+		section("GRAND BOWL");
+		flowButtons(List.of("Waves", "Hill", "Stop game"), List.of(() -> runAndClose(MenuCommands.colosseumWaves()),
+			() -> runAndClose(MenuCommands.colosseumHill(practiceProfile)), () -> run(MenuCommands.colosseumStop())));
+	}
+
+	private void bots() {
+		if (state.bots().isEmpty()) {
+			int y = card(96, false);
+			text("Your first opponent awaits.", 12, y + 12, TEXT);
+			wrap("Create a bot, choose its kit, then start a fight here.", 12, y + 30, contentWidth - 24, MUTED);
+			button("Create a bot", 12, y + 66, Math.min(140, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> show(Tab.SPAWN));
 			return;
 		}
-		int first = clampPage(bots.size()) * rows();
 		String me = Minecraft.getInstance().player == null ? null : Minecraft.getInstance().player.getGameProfile().name();
-		for (int i = first; i < Math.min(first + rows(), bots.size()); i++) {
-			MenuState.BotEntry bot = bots.get(i);
-			int y = TOP + (i - first) * ROW_HEIGHT;
-			String status = bot.alive() ? String.format(Locale.ROOT, "%.1f hp", bot.health()) : "dead";
-			labels.add(new Label(font.plainSubstrByWidth(bot.name() + "  " + bot.profile() + " / " + bot.style() + "  " + status, 196), center - 190, y + 6,
-				bot.alive() ? WHITE : GREY));
-			addRenderableWidget(Button.builder(Component.literal("Tech"), b -> {
-				techniquesBot = bot.name();
-				show(Tab.TECHNIQUES);
-			}).bounds(center + 10, y, 40, 20).build());
-			if (me != null && MenuCommands.validName(me)) {
-				addRenderableWidget(Button.builder(Component.literal("Fight"), b -> run(MenuCommands.fight(bot.name(), me))).bounds(center + 54, y, 44, 20)
-					.build()).active = bot.alive();
-			}
-			if (bot.alive()) {
-				addRenderableWidget(Button.builder(Component.literal("Kill"), b -> run(MenuCommands.kill(bot.name()))).bounds(center + 102, y, 50, 20).build());
-			} else {
-				addRenderableWidget(Button.builder(Component.literal("Respawn"), b -> run(MenuCommands.respawn(bot.name()))).bounds(center + 102, y, 50, 20)
-					.build());
-			}
-			addRenderableWidget(Button.builder(Component.literal("Remove"), b -> run(MenuCommands.remove(bot.name()))).bounds(center + 156, y, 48, 20).build());
+		for (MenuState.BotEntry bot : state.bots()) {
+			int y = card(74, "swight".equals(bot.profile()));
+			text(bot.name(), 12, y + 10, TEXT);
+			String hp = bot.alive() ? String.format(Locale.ROOT, "%.1f hp", bot.health()) : "Defeated";
+			text(pretty(bot.profile()) + " / " + hp, 12, y + 26, bot.alive() ? MUTED : 0xFFEE8A89);
+			int bw = Math.min(82, (contentWidth - 36) / 3);
+			button(bot.alive() ? "Fight" : "Respawn", 12, y + 47, bw, MenuButton.Tone.PRIMARY,
+				() -> { if (bot.alive() && me != null) { runAndClose(MenuCommands.fight(bot.name(), me)); } else if (!bot.alive()) { run(MenuCommands.respawn(bot.name())); } }).active = !bot.alive() || me != null && MenuCommands.validName(me);
+			button("Tech", 18 + bw, y + 47, bw, MenuButton.Tone.NORMAL, () -> { techniquesBot = bot.name(); show(Tab.TECHNIQUES); });
+			button("Remove", 24 + bw * 2, y + 47, bw, MenuButton.Tone.DANGER, () -> run(MenuCommands.remove(bot.name())));
 		}
-		pager(center, bots.size());
 	}
 
-	private void initSpawn(int center) {
+	private void spawn() {
 		spawnProfile = pick(spawnProfile, state.profiles(), setting("defaultProfile"));
 		spawnKit = pick(spawnKit, state.kits(), setting("defaultKit"));
 		spawnStyle = pick(spawnStyle, state.styles(), setting("defaultPlaystyle"));
-		int x = center - 100;
-		labels.add(new Label("Name", x - 60, TOP + 6, WHITE));
-		EditBox name = new EditBox(font, x, TOP, 200, 20, Component.literal("Name"));
-		name.setMaxLength(16);
-		name.setValue(spawnName);
-		name.setResponder(value -> spawnName = value);
-		addRenderableWidget(name);
-		addRenderableWidget(cycle("Profile", state.profiles(), spawnProfile, v -> spawnProfile = v, x, TOP + ROW_HEIGHT));
-		addRenderableWidget(cycle("Kit", state.kits(), spawnKit, v -> spawnKit = v, x, TOP + 2 * ROW_HEIGHT));
-		addRenderableWidget(cycle("Style", state.styles(), spawnStyle, v -> spawnStyle = v, x, TOP + 3 * ROW_HEIGHT));
-		addRenderableWidget(Button.builder(Component.literal("Spawn bot"), b -> {
-			if (!MenuCommands.validName(spawnName)) {
-				labels.add(new Label("Names are 1-16 letters, digits or _", x, TOP + 5 * ROW_HEIGHT + 6, 0xFFFF6060));
-				return;
+		section("NAME YOUR OPPONENT");
+		field("spawnName", spawnName, "Name", 0, cursorY, contentWidth, 16, v -> { spawnName = v; rebuildNextTick = true; });
+		cursorY += 34;
+		if (!MenuCommands.validName(spawnName) || state.bots().stream().anyMatch(b -> b.name().equalsIgnoreCase(spawnName))) {
+			String error = MenuCommands.validName(spawnName) ? "That name is already in use." : "Use 1-16 letters, numbers or underscores.";
+			wrap(error, 0, cursorY, contentWidth, 0xFFEE8A89);
+			cursorY += 28;
+		}
+		section("SKILL LEVEL");
+		choices(profiles(), spawnProfile, v -> {
+			spawnProfile = v;
+			if ("swight".equals(v)) {
+				if (spawnName.matches("Bot[0-9]+")) { spawnName = "Swight"; }
+				spawnKit = pick(null, state.kits(), state.kits().contains("pvphq_uhc") ? "pvphq_uhc" : "sparbot_uhc");
 			}
-			run(MenuCommands.spawn(spawnName, spawnProfile, spawnKit), MenuCommands.style(spawnName, spawnStyle));
-			spawnName = nextName(spawnName);
-		}).bounds(x, TOP + 4 * ROW_HEIGHT, 200, 20).build());
+			rebuildKeepingFocus();
+		});
+		section("LOADOUT");
+		int y = card(70, false);
+		String kitName = state.kitInfo().stream().filter(k -> k.id().equals(spawnKit)).map(MenuState.KitEntry::displayName).findFirst().orElse(spawnKit);
+		text(kitName, 12, y + 12, TEXT);
+		button("Choose kit", 12, y + 42, Math.min(140, contentWidth - 24), MenuButton.Tone.NORMAL, () -> { choosingKit = true; show(Tab.KITS); });
+		section("PLAYSTYLE");
+		choices(state.styles(), spawnStyle, v -> { spawnStyle = v; rebuildKeepingFocus(); });
+		wrap(validSpawn() ? "Ready when you are." : "Use a unique name: 1-16 letters, numbers or underscores.", 0, cursorY, contentWidth, validSpawn() ? MUTED : 0xFFEE8A89);
+		cursorY += 32;
 	}
 
-	/** Every kit with an Equip button: it replaces your inventory with the kit, like a server's kit menu. */
-	private void initKits(int center) {
-		List<MenuState.KitEntry> kits = state.kitInfo();
-		if (kits.isEmpty()) {
-			labels.add(new Label("No kits loaded", center - 40, TOP + 6, GREY));
-			return;
-		}
-		int first = clampPage(kits.size()) * rows();
-		List<String> mine = state.myLayouts() == null ? List.of() : state.myLayouts();
-		for (int i = first; i < Math.min(first + rows(), kits.size()); i++) {
-			MenuState.KitEntry kit = kits.get(i);
-			int y = TOP + (i - first) * ROW_HEIGHT;
-			String name = kit.displayName();
-			int nameWidth = 150;
-			if (!kit.verified() && !name.toLowerCase(Locale.ROOT).contains("unverified")) {
-				labels.add(new Label("unverified", center - 48, y + 6, GREY));
-				nameWidth = 136;
-			}
-			String shown = font.plainSubstrByWidth(name, nameWidth);
-			labels.add(new Label(shown.length() < name.length() ? font.plainSubstrByWidth(name, nameWidth - font.width("...")) + "..." : name, center - 190, y + 6,
-				WHITE));
-			boolean saved = mine.contains(kit.id());
-			addRenderableWidget(Button.builder(Component.literal("Equip"), b -> run(MenuCommands.giveKit(kit.id()))).bounds(center + 10, y, 50, 20).build());
-			addRenderableWidget(Button.builder(Component.literal(saved ? "Save layout*" : "Save layout"), b -> run(MenuCommands.saveLayout(kit.id())))
-				.bounds(center + 64, y, 84, 20).build());
-			addRenderableWidget(Button.builder(Component.literal("Reset"), b -> run(MenuCommands.resetLayout(kit.id()))).bounds(center + 152, y, 44, 20)
-				.build()).active = saved;
-		}
-		pager(center, kits.size());
+	private boolean validSpawn() {
+		return MenuCommands.validName(spawnName) && !state.profiles().isEmpty() && !state.kits().isEmpty()
+			&& state.bots().stream().noneMatch(b -> b.name().equalsIgnoreCase(spawnName));
 	}
 
-	/** Your own things: a full heal, natural regeneration, and how kit layouts work. */
-	private void initYou(int center) {
-		labels.add(new Label("Health, hunger, fire", center - 190, TOP + 6, WHITE));
-		addRenderableWidget(Button.builder(Component.literal("Full heal"), b -> run(MenuCommands.heal())).bounds(center + 20, TOP, 120, 20).build());
-		labels.add(new Label("Natural regeneration", center - 190, TOP + ROW_HEIGHT + 6, WHITE));
-		boolean regen = !"false".equals(setting("naturalRegeneration"));
-		addRenderableWidget(CycleButton.onOffBuilder(regen).displayOnlyValue().create(center + 20, TOP + ROW_HEIGHT, 120, 20,
-			Component.literal("naturalRegeneration"), (button, value) -> run(MenuCommands.setConfig("naturalRegeneration", value.toString()))));
-		labels.add(new Label("(off: UHC rules outside matches, for you and the bots)", center - 190, TOP + 2 * ROW_HEIGHT + 6, GREY));
-		labels.add(new Label("Kit layouts: equip a kit, arrange it, then Save layout in the Kits tab (* = saved).", center - 190, TOP + 2 * ROW_HEIGHT + 18,
-			GREY));
-		// Your last fight against a bot: the numbers, the coach's lines, and how one number moved over your last fights.
-		List<io.github.flick256.sparbot.core.drill.FightReport> fights = state.myFights() == null ? List.of() : state.myFights();
-		int y = TOP + 3 * ROW_HEIGHT + 10;
-		if (fights.isEmpty()) {
-			labels.add(new Label("Your fights: none yet. Fight a bot (Practice tab) for a report and coach lines.", center - 190, y, GREY));
-			return;
-		}
-		io.github.flick256.sparbot.core.drill.FightReport last = fights.get(fights.size() - 1);
-		labels.add(new Label(font.plainSubstrByWidth("Last fight: " + last.mode() + " vs " + last.opponent() + ", " + last.result(), 380), center - 190, y,
-			WHITE));
-		StringBuilder numbers = new StringBuilder();
-		last.numbers().forEach((k, v) -> numbers.append(numbers.length() == 0 ? "" : "  ").append(k).append(" ").append(v));
-		for (String line : font.getSplitter().splitLines(numbers.toString(), 380, net.minecraft.network.chat.Style.EMPTY).stream()
-			.map(net.minecraft.network.chat.FormattedText::getString).limit(2).toList()) {
-			y += 11;
-			labels.add(new Label(line, center - 190, y, GREY));
-		}
-		for (String coach : last.coach()) {
-			for (String line : font.getSplitter().splitLines(coach, 380, net.minecraft.network.chat.Style.EMPTY).stream()
-				.map(net.minecraft.network.chat.FormattedText::getString).limit(2).toList()) {
-				y += 11;
-				labels.add(new Label(line, center - 190, y, 0xFF55FFFF));
-			}
-		}
-		StringBuilder trend = new StringBuilder();
-		for (io.github.flick256.sparbot.core.drill.FightReport f : fights) {
-			String v = f.numbers().get("Full charge");
-			if (v != null) {
-				trend.append(trend.length() == 0 ? "" : " > ").append(v);
-			}
-		}
-		if (trend.length() > 0 && fights.size() > 1) {
-			labels.add(new Label(font.plainSubstrByWidth("Full charge over your last fights: " + trend, 380), center - 190, y + 14, 0xFFFFD966));
-		}
+	private void spawnBot() {
+		if (!validSpawn()) { return; }
+		run(MenuCommands.spawn(spawnName, spawnProfile, spawnKit), MenuCommands.style(spawnName, spawnStyle));
+		spawnName = nextName(spawnName);
+		show(Tab.BOTS);
 	}
 
-	/** The practice world: go to the hub or back, and a Fight button per mode (in that mode's arena) against the chosen tier. */
-	private void initPractice(int center) {
-		practiceProfile = pick(practiceProfile, state.profiles(), setting("defaultProfile"));
-		addRenderableWidget(Button.builder(Component.literal("Hub"), b -> run(MenuCommands.practiceHub())).bounds(center - 190, TOP, 50, 20).build());
-		addRenderableWidget(Button.builder(Component.literal("Colosseum"), b -> run(MenuCommands.practiceColosseum())).bounds(center - 136, TOP, 80, 20)
-			.build());
-		addRenderableWidget(Button.builder(Component.literal("Leave"), b -> run(MenuCommands.practiceLeave())).bounds(center - 52, TOP, 50, 20).build());
-		addRenderableWidget(cycle("Against", state.profiles(), practiceProfile, v -> practiceProfile = v, center + 2, TOP, 188));
-		labels.add(new Label("Grand Bowl games", center - 190, TOP + ROW_HEIGHT + 6, WHITE));
-		addRenderableWidget(Button.builder(Component.literal("Waves"), b -> run(MenuCommands.colosseumWaves())).bounds(center - 60, TOP + ROW_HEIGHT, 60, 20)
-			.build());
-		addRenderableWidget(Button.builder(Component.literal("Hill"), b -> run(MenuCommands.colosseumHill(practiceProfile)))
-			.bounds(center + 4, TOP + ROW_HEIGHT, 60, 20).build());
-		addRenderableWidget(Button.builder(Component.literal("Stop game"), b -> run(MenuCommands.colosseumStop())).bounds(center + 68, TOP + ROW_HEIGHT, 80, 20)
-			.build());
-		List<String> modes = state.modes();
-		int perPage = Math.max(1, rows() - 2);
-		int pages = Math.max(1, (modes.size() + perPage - 1) / perPage);
-		page = Math.max(0, Math.min(page, pages - 1));
-		int first = page * perPage;
-		for (int i = first; i < Math.min(first + perPage, modes.size()); i++) {
-			String mode = modes.get(i);
-			int y = TOP + (i - first + 2) * ROW_HEIGHT;
-			labels.add(new Label(mode, center - 190, y + 6, WHITE));
-			labels.add(new Label(io.github.flick256.sparbot.core.practice.PracticeLayout.siteFor(mode).displayName(), center - 60, y + 6, GREY));
-			addRenderableWidget(Button.builder(Component.literal("Fight"), b -> run(MenuCommands.practiceFight(mode, practiceProfile)))
-				.bounds(center + 110, y, 80, 20).build());
-		}
-		if (pages > 1) {
-			int y = TOP + rows() * ROW_HEIGHT + 4;
-			addRenderableWidget(Button.builder(Component.literal("<"), b -> turn(-1)).bounds(center - 60, y, 20, 20).build()).active = page > 0;
-			labels.add(new Label((page + 1) + " / " + pages, center - 14, y + 6, GREY));
-			addRenderableWidget(Button.builder(Component.literal(">"), b -> turn(1)).bounds(center + 40, y, 20, 20).build()).active = page < pages - 1;
-		}
+	private List<String> profiles() {
+		List<String> result = new ArrayList<>();
+		for (String id : io.github.flick256.sparbot.core.profile.SkillProfiles.PRESET_IDS) { if (state.profiles().contains(id)) { result.add(id); } }
+		for (String id : state.profiles()) { if (!result.contains(id)) { result.add(id); } }
+		return result;
 	}
 
-	/**
-	 * Every skill drill with your best medal and a Start button (it takes you to a free bay in the training
-	 * hall), and buttons to visit the hall or stop the drill you are in.
-	 */
-	private void initDrills(int center) {
-		addRenderableWidget(Button.builder(Component.literal("Training hall"), b -> run(MenuCommands.practiceHall())).bounds(center - 190, TOP, 100, 20)
-			.build());
-		addRenderableWidget(Button.builder(Component.literal("Stop drill"), b -> run(MenuCommands.drillStop())).bounds(center - 86, TOP, 80, 20).build());
-		java.util.Map<String, Integer> medals = state.myMedals() == null ? java.util.Map.of() : state.myMedals();
-		long golds = medals.values().stream().filter(v -> v >= 3).count();
-		labels.add(new Label(golds + " of " + io.github.flick256.sparbot.core.drill.Drills.ALL.size() + " gold", center + 10, TOP + 6, 0xFFFFD700));
-		List<io.github.flick256.sparbot.core.drill.Drill> drills = io.github.flick256.sparbot.core.drill.Drills.ALL;
-		int perPage = Math.max(1, rows() - 1);
-		int pages = Math.max(1, (drills.size() + perPage - 1) / perPage);
-		page = Math.max(0, Math.min(page, pages - 1));
-		int first = page * perPage;
-		for (int i = first; i < Math.min(first + perPage, drills.size()); i++) {
-			io.github.flick256.sparbot.core.drill.Drill drill = drills.get(i);
-			int y = TOP + (i - first + 1) * ROW_HEIGHT;
-			labels.add(new Label(drill.discipline(), center - 190, y + 6, GREY));
-			labels.add(new Label(font.plainSubstrByWidth(drill.name(), 120), center - 130, y + 6, WHITE));
-			int passed = medals.getOrDefault(drill.id(), 0);
-			int color = passed >= 3 ? 0xFFFFD700 : passed == 2 ? 0xFFC0C0C0 : passed == 1 ? 0xFFCD7F32 : GREY;
-			labels.add(new Label(passed == 0 ? "-" : io.github.flick256.sparbot.core.drill.Drill.medal(passed), center + 10, y + 6, color));
-			addRenderableWidget(Button.builder(Component.literal("Start"), b -> run(MenuCommands.drill(drill.id()))).bounds(center + 110, y, 80, 20)
-				.build());
+	private List<String> practiceModes() {
+		List<String> result = new ArrayList<>();
+		for (String id : List.of("uhc_duel", "sword_pvphq", "sword_duel", "cart_low", "cart_high", "crystal_pvphq", "mace_pvphq")) {
+			if (state.modes().contains(id)) { result.add(id); }
 		}
-		if (pages > 1) {
-			int y = TOP + rows() * ROW_HEIGHT + 4;
-			addRenderableWidget(Button.builder(Component.literal("<"), b -> turn(-1)).bounds(center - 60, y, 20, 20).build()).active = page > 0;
-			labels.add(new Label((page + 1) + " / " + pages, center - 14, y + 6, GREY));
-			addRenderableWidget(Button.builder(Component.literal(">"), b -> turn(1)).bounds(center + 40, y, 20, 20).build()).active = page < pages - 1;
-		}
+		for (String id : state.modes()) { if (!result.contains(id)) { result.add(id); } }
+		return result;
 	}
 
-	/** The melee (scripted or a learned model) and on/off switches for each of one bot's techniques. */
-	private void initTechniques(int center) {
-		MenuState.BotEntry bot = state.bots().stream().filter(b -> b.name().equals(techniquesBot)).findFirst().orElse(null);
-		if (bot == null) {
-			labels.add(new Label("That bot is gone", center - 40, TOP + 6, GREY));
-			return;
-		}
-		Technique[] all = Technique.values();
-		int rowsTotal = all.length;
-		int first = clampPage(rowsTotal) * rows();
-		for (int row = first; row < Math.min(first + rows(), rowsTotal); row++) {
-			int y = TOP + (row - first) * ROW_HEIGHT;
-			Technique technique = all[row];
-			labels.add(new Label(bot.name() + ": " + technique.id(), center - 190, y + 6, WHITE));
-			boolean on = !bot.disabledTechniques().contains(technique.id());
-			addRenderableWidget(CycleButton.onOffBuilder(on).displayOnlyValue().create(center + 20, y, 120, 20, Component.literal(technique.id()),
-				(button, value) -> run(MenuCommands.technique(bot.name(), technique.id(), value))));
-		}
-		pager(center, rowsTotal);
-	}
+	private String uhcMode() { return state.modes().contains("uhc_duel") ? "uhc_duel" : pick(null, state.modes(), "uhc"); }
 
-	private void initSettings(int center) {
-		List<MenuState.Setting> settings = state.settings();
-		int first = clampPage(settings.size()) * rows();
-		for (int i = first; i < Math.min(first + rows(), settings.size()); i++) {
-			MenuState.Setting setting = settings.get(i);
-			int y = TOP + (i - first) * ROW_HEIGHT;
-			labels.add(new Label(setting.key(), center - 190, y + 6, WHITE));
-			if (setting.type().equals("boolean")) {
-				addRenderableWidget(CycleButton.onOffBuilder(Boolean.parseBoolean(setting.value())).displayOnlyValue()
-					.create(center + 20, y, 120, 20, Component.literal(setting.key()), (button, value) -> run(MenuCommands.setConfig(setting.key(), value.toString()))));
+	private void kits() {
+		if (choosingKit) {
+			button("Back to spawn", 0, cursorY, Math.min(140, contentWidth), MenuButton.Tone.NORMAL, () -> { choosingKit = false; show(Tab.SPAWN); });
+			cursorY += 32;
+		}
+		field("kitSearch", kitSearch, "Search kits", 0, cursorY, contentWidth, 64, v -> { kitSearch = v; scroll = 0; rebuildNextTick = true; });
+		cursorY += 34;
+		List<MenuState.KitEntry> kits = state.kitInfo().stream().filter(k -> matches(kitSearch, k.id() + " " + k.displayName())).toList();
+		if (kits.isEmpty()) { empty("No matching kits", "Try a shorter name or clear the search."); }
+		for (MenuState.KitEntry kit : kits) {
+			int y = card(78, choosingKit && kit.id().equals(spawnKit));
+			text(kit.displayName(), 12, y + 10, TEXT);
+			text(kit.verified() ? "Verified layout" : "Layout details unverified", 12, y + 27, kit.verified() ? ACCENT : MUTED);
+			if (choosingKit) {
+				button("Use kit", 12, y + 50, Math.min(130, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> { spawnKit = kit.id(); choosingKit = false; show(Tab.SPAWN); });
 			} else {
-				EditBox box = new EditBox(font, center + 20, y, 116, 20, Component.literal(setting.key()));
-				box.setMaxLength(128);
-				box.setValue(setting.value());
-				addRenderableWidget(box);
-				addRenderableWidget(Button.builder(Component.literal("Set"), b -> run(MenuCommands.setConfig(setting.key(), box.getValue())))
-					.bounds(center + 140, y, 50, 20).build());
+				int bw = Math.min(88, (contentWidth - 36) / 3);
+				boolean saved = state.myLayouts().contains(kit.id());
+				button("Equip", 12, y + 50, bw, MenuButton.Tone.PRIMARY, () -> run(MenuCommands.giveKit(kit.id())));
+				button(saved ? "Save layout*" : "Save layout", 18 + bw, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.saveLayout(kit.id())))
+					.setTooltip(Tooltip.create(Component.literal("Save your current inventory arrangement for this kit.")));
+				button("Reset", 24 + bw * 2, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.resetLayout(kit.id()))).active = saved;
 			}
 		}
-		pager(center, settings.size());
 	}
 
-	private void pager(int center, int items) {
-		int pages = Math.max(1, (items + rows() - 1) / rows());
-		if (pages <= 1) {
-			return;
+	private void drills() {
+		flowButtons(List.of("Training hall", "Stop drill"), List.of(() -> runAndClose(MenuCommands.practiceHall()), () -> run(MenuCommands.drillStop())));
+		for (Drill drill : Drills.ALL) {
+			int medal = state.myMedals().getOrDefault(drill.id(), 0);
+			int y = card(76, medal >= 3);
+			text(drill.name(), 12, y + 10, TEXT);
+			text(drill.discipline() + " / " + (medal == 0 ? "Not completed" : Drill.medal(medal)), 12, y + 27, medal >= 3 ? GOLD : MUTED);
+			button("Start", 12, y + 48, Math.min(110, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> runAndClose(MenuCommands.drill(drill.id())));
 		}
-		int y = TOP + rows() * ROW_HEIGHT + 4;
-		addRenderableWidget(Button.builder(Component.literal("<"), b -> turn(-1)).bounds(center - 60, y, 20, 20).build()).active = page > 0;
-		labels.add(new Label((page + 1) + " / " + pages, center - 14, y + 6, GREY));
-		addRenderableWidget(Button.builder(Component.literal(">"), b -> turn(1)).bounds(center + 40, y, 20, 20).build()).active = page < pages - 1;
 	}
 
-	private CycleButton<String> cycle(String name, List<String> values, String initial, java.util.function.Consumer<String> onChange, int x, int y) {
-		return cycle(name, values, initial, onChange, x, y, 200);
+	private void you() {
+		int y = card(100, false);
+		text("Reset. Refocus. Go again.", 12, y + 12, TEXT);
+		button("Full heal", 12, y + 35, Math.min(130, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> run(MenuCommands.heal()));
+		boolean regen = !"false".equals(setting("naturalRegeneration"));
+		button("Natural regen: " + (regen ? "On" : "Off"), 12, y + 66, Math.min(210, contentWidth - 24), MenuButton.Tone.NORMAL,
+			() -> run(MenuCommands.setConfig("naturalRegeneration", Boolean.toString(!regen))));
+		section("YOUR LAST FIGHT");
+		if (state.myFights().isEmpty()) { empty("A fresh page", "Finish a practice fight to see your report and coach feedback here."); return; }
+		var last = state.myFights().getLast();
+		y = card(48, false);
+		text(pretty(last.mode()) + " vs " + last.opponent(), 12, y + 10, TEXT);
+		text(last.result(), 12, y + 27, ACCENT);
+		for (var number : last.numbers().entrySet()) {
+			y = card(32, false);
+			text(number.getKey() + ": " + number.getValue(), 12, y + 12, TEXT);
+		}
+		for (String line : last.coach()) {
+			int lines = font.getSplitter().splitLines(line, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+			y = card(24 + lines * 12, false);
+			wrap(line, 12, y + 12, contentWidth - 24, ACCENT);
+		}
+		String trend = state.myFights().stream().map(f -> f.numbers().get("Full charge")).filter(java.util.Objects::nonNull).reduce((a, b) -> a + " > " + b).orElse("");
+		if (state.myFights().size() > 1 && !trend.isEmpty()) {
+			section("FULL CHARGE OVER RECENT FIGHTS");
+			wrap(trend, 0, cursorY, contentWidth, GOLD);
+			cursorY += 12 * font.getSplitter().splitLines(trend, contentWidth, net.minecraft.network.chat.Style.EMPTY).size() + 12;
+		}
 	}
 
-	private CycleButton<String> cycle(String name, List<String> values, String initial, java.util.function.Consumer<String> onChange, int x, int y,
-		int width) {
-		List<String> options = values.isEmpty() ? List.of("-") : values;
-		return CycleButton.builder(Component::literal, options.contains(initial) ? initial : options.get(0)).withValues(options)
-			.create(x, y, width, 20, Component.literal(name), (button, value) -> onChange.accept(value));
+	private void techniques() {
+		MenuState.BotEntry bot = state.bots().stream().filter(b -> b.name().equals(techniquesBot)).findFirst().orElse(null);
+		if (bot == null) { empty("Bot removed", "Choose another opponent in Bots."); return; }
+		section(bot.name().toUpperCase(Locale.ROOT) + " / " + pretty(bot.style()));
+		flowButtons(List.of("Back to bots", bot.alive() ? "Kill" : "Respawn"), List.of(() -> show(Tab.BOTS),
+			() -> run(bot.alive() ? MenuCommands.kill(bot.name()) : MenuCommands.respawn(bot.name()))));
+		for (Technique technique : Technique.values()) {
+			boolean on = !bot.disabledTechniques().contains(technique.id());
+			int y = card(56, false);
+			text(techniqueName(technique), 12, y + 10, TEXT);
+			button(technique.id() + ": " + (on ? "On" : "Off"), 12, y + 28, Math.min(150, contentWidth - 24), MenuButton.Tone.NORMAL,
+				() -> run(MenuCommands.technique(bot.name(), technique.id(), !on)));
+		}
+	}
+
+	private void settings() {
+		field("settingsSearch", settingsSearch, "Search settings", 0, cursorY, contentWidth, 64, v -> { settingsSearch = v; scroll = 0; rebuildNextTick = true; });
+		cursorY += 34;
+		List<MenuState.Setting> settings = state.settings().stream().filter(s -> matches(settingsSearch, s.key())).toList();
+		if (settings.isEmpty()) { empty("No matching settings", "Try a shorter search."); }
+		for (MenuState.Setting s : settings) {
+			int y = card(62, false);
+			text(pretty(s.key()), 12, y + 10, TEXT);
+			if (s.type().equals("boolean")) {
+				boolean value = Boolean.parseBoolean(s.value());
+				button(value ? "On" : "Off", 12, y + 33, Math.min(110, contentWidth - 24), MenuButton.Tone.NORMAL,
+					() -> run(MenuCommands.setConfig(s.key(), Boolean.toString(!value))));
+			} else {
+				EditBox box = field("setting:" + s.key(), settingDrafts.getOrDefault(s.key(), s.value()), pretty(s.key()), 12, y + 33,
+					contentWidth - 86, 128, v -> settingDrafts.put(s.key(), v));
+				button("Set", contentWidth - 66, y + 32, 54, MenuButton.Tone.NORMAL, () -> {
+					if (box.getValue().isBlank()) { status = "Enter a value"; return; }
+					run(MenuCommands.setConfig(s.key(), box.getValue()));
+					settingDrafts.remove(s.key());
+				});
+			}
+		}
+	}
+
+	private void choices(List<String> values, String chosen, Consumer<String> select) {
+		int columns = contentWidth >= 360 ? 4 : contentWidth >= 240 ? 3 : 2;
+		int w = (contentWidth - (columns - 1) * 6) / columns;
+		for (int i = 0; i < values.size(); i++) {
+			String value = values.get(i);
+			MenuButton button = new MenuButton(pretty(value), contentX + i % columns * (w + 6), cursorY + i / columns * 28, w, 22,
+				"swight".equals(value) ? MenuButton.Tone.GOLD : MenuButton.Tone.NORMAL, value.equals(chosen), b -> select.accept(value));
+			button.setTooltip(Tooltip.create(Component.literal(value)));
+			addContent(button);
+		}
+		cursorY += ((values.size() + columns - 1) / columns) * 28 + 8;
+	}
+
+	private void flowButtons(List<String> names, List<Runnable> actions) {
+		int columns = contentWidth < 260 ? 2 : 3;
+		int w = (contentWidth - (columns - 1) * 6) / columns;
+		for (int i = 0; i < names.size(); i++) { button(names.get(i), i % columns * (w + 6), cursorY + i / columns * 28, w, MenuButton.Tone.NORMAL, actions.get(i)); }
+		cursorY += ((names.size() + columns - 1) / columns) * 28 + 8;
+	}
+
+	private int card(int height, boolean featured) {
+		int y = cursorY;
+		cards.add(new Card(y, height, featured));
+		cursorY += height + 10;
+		return y;
+	}
+
+	private void section(String title) { text(title, 0, cursorY + 4, MUTED); cursorY += 24; }
+	private void text(String text, int dx, int y, int color) { labels.add(new Label(font.plainSubstrByWidth(text, contentWidth - dx - 10), contentX + dx, y, color)); }
+	private void wrap(String text, int dx, int y, int w, int color) {
+		for (var line : font.getSplitter().splitLines(text, w, net.minecraft.network.chat.Style.EMPTY)) {
+			labels.add(new Label(line.getString(), contentX + dx, y, color)); y += 12;
+		}
+	}
+	private void empty(String title, String hint) {
+		int n = font.getSplitter().splitLines(hint, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+		int y = card(44 + n * 12, false); text(title, 12, y + 12, TEXT); wrap(hint, 12, y + 32, contentWidth - 24, MUTED);
+	}
+
+	private MenuButton button(String name, int dx, int y, int w, MenuButton.Tone tone, Runnable action) {
+		return addContent(new MenuButton(name, contentX + dx, y, w, 22, tone, false, b -> action.run()));
+	}
+
+	private EditBox field(String id, String value, String hint, int dx, int y, int w, int maxLength, Consumer<String> responder) {
+		// Reuse editors so snapshots and live search preserve selection, caret, and in-progress text input.
+		EditBox field = previousFields.get(id);
+		if (field == null) { field = new EditBox(font, contentX + dx + 7, y + 5, w - 14, 18, Component.literal(hint)); }
+		field.setResponder(v -> { });
+		field.setX(contentX + dx + 7); field.setY(y + 5); field.setWidth(w - 14);
+		field.setMaxLength(maxLength);
+		if (!field.getValue().equals(value)) { field.setValue(value); }
+		field.setBordered(false); field.setTextColor(TEXT);
+		field.setHint(Component.literal(hint));
+		field.setResponder(responder);
+		fields.put(id, field);
+		addContent(field);
+		// Keep fields visually distinct from action buttons.
+		cards.add(new Card(y, 26, false));
+		return field;
+	}
+
+	private <T extends AbstractWidget> T addContent(T widget) {
+		widget.visible = widget.getY() >= contentTop && widget.getBottom() <= contentBottom;
+		return addRenderableWidget(widget);
 	}
 
 	private void show(Tab next) {
-		tab = next;
-		page = 0;
-		rebuildWidgets();
+		positions.put(tab, scroll);
+		if (tab == Tab.KITS && next != Tab.SPAWN && next != Tab.KITS) { choosingKit = false; }
+		tab = next; scroll = positions.getOrDefault(next, 0); setFocused(null); rebuildWidgets();
 	}
 
-	private void turn(int delta) {
-		page += delta;
-		rebuildWidgets();
+	private int maxScroll() { return Math.max(0, totalHeight - (contentBottom - contentTop)); }
+	private void moveScroll(int delta) {
+		int next = Math.max(0, Math.min(maxScroll(), scroll + delta));
+		if (next != scroll) { scroll = next; rebuildKeepingFocus(); }
 	}
 
-	private int clampPage(int items) {
-		int pages = Math.max(1, (items + rows() - 1) / rows());
-		page = Math.max(0, Math.min(page, pages - 1));
-		return page;
+	@Override
+	public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+		if (x >= contentX && x < contentX + contentWidth + 8 && y >= contentTop && y < contentBottom) {
+			moveScroll((int) Math.round(-vertical * 28)); return true;
+		}
+		return super.mouseScrolled(x, y, horizontal, vertical);
 	}
 
-	/**
-	 * Sends commands in order, then asks for fresh contents a few ticks later: the client sends commands
-	 * through its chat pipeline, so a request sent at once could overtake them.
-	 */
 	private void run(String... commands) {
 		Minecraft minecraft = Minecraft.getInstance();
-		if (minecraft.player == null) {
-			return;
-		}
-		for (String command : commands) {
-			minecraft.player.connection.sendCommand(command);
-		}
-		refreshIn = REFRESH_DELAY;
+		if (minecraft.player == null) { return; }
+		for (String command : commands) { minecraft.player.connection.sendCommand(command); }
+		refreshIn = 5; status = "Updating...";
+	}
+	private void runAndClose(String command) { run(command); onClose(); }
+	private void requestRefresh() {
+		if (ClientPlayNetworking.canSend(MenuRequestPayload.TYPE)) { ClientPlayNetworking.send(new MenuRequestPayload(false)); status = "Updating..."; }
 	}
 
 	@Override
 	public void tick() {
-		super.tick();
-		if (refreshIn > 0 && --refreshIn == 0 && ClientPlayNetworking.canSend(MenuRequestPayload.TYPE)) {
-			ClientPlayNetworking.send(new MenuRequestPayload(false));
+		super.tick(); ticks++;
+		if (rebuildNextTick) { rebuildNextTick = false; rebuildKeepingFocus(); }
+		if (refreshIn > 0 && --refreshIn == 0) { requestRefresh(); }
+		if (ticks % 60 == 0 && refreshIn == 0 && !(getFocused() instanceof EditBox)) { requestRefresh(); }
+	}
+
+	@Override
+	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		g.fillGradient(0, 0, width, height, 0xEF101B2A, 0xF5080E19);
+		g.fill(left + 3, top + 4, left + panelWidth + 3, top + panelHeight + 4, 0x70000000);
+		g.fill(left, top, left + panelWidth, top + panelHeight, 0xFF111A28);
+		g.outline(left, top, panelWidth, panelHeight, 0xFF314153);
+		g.fill(left + 1, top + 1, left + sidebar, top + panelHeight - 1, 0xFF171E2B);
+		g.fill(left + 10, top + 14, left + 12, top + 30, ACCENT);
+		g.text(font, "SPARBOT", left + 18, top + 13, TEXT, false);
+		g.text(font, "PRACTICE", left + 18, top + 26, MUTED, false);
+		if (panelHeight > 250) { g.text(font, "v" + version, left + 18, top + panelHeight - 18, MUTED, false); }
+		g.text(font, font.plainSubstrByWidth(tab.heading, contentWidth), contentX, top + 16, TEXT, false);
+		g.text(font, font.plainSubstrByWidth(tab.description, contentWidth), contentX, top + 34, MUTED, false);
+		g.horizontalLine(contentX, contentX + contentWidth, top + 51, 0xFF293747);
+		g.enableScissor(contentX, contentTop, contentX + contentWidth, contentBottom);
+		for (Card card : cards) {
+			g.fill(contentX, card.y(), contentX + contentWidth, card.y() + card.height(), card.featured() ? 0xFF2C2926 : 0xFF1B2635);
+			g.outline(contentX, card.y(), contentWidth, card.height(), card.featured() ? 0xFF6C5639 : 0xFF2B3A4D);
+			if (card.featured()) { g.fill(contentX, card.y() + 1, contentX + 2, card.y() + card.height() - 1, GOLD); }
 		}
+		for (Label label : labels) { g.text(font, label.text(), label.x(), label.y(), label.color(), false); }
+		g.disableScissor();
+		if (maxScroll() > 0) {
+			int track = contentBottom - contentTop;
+			int thumb = Math.max(18, track * track / Math.max(1, totalHeight));
+			int y = contentTop + (track - thumb) * scroll / maxScroll();
+			g.fill(contentX + contentWidth + 4, contentTop, contentX + contentWidth + 6, contentBottom, 0xFF253344);
+			g.fill(contentX + contentWidth + 4, y, contentX + contentWidth + 6, y + thumb, ACCENT);
+		}
+		if (contentWidth > 370) { g.text(font, status, contentX, top + panelHeight - 20, MUTED, false); }
 	}
 
-	private String setting(String key) {
-		return state.settings().stream().filter(s -> s.key().equals(key)).map(MenuState.Setting::value).findFirst().orElse("");
-	}
-
+	private String setting(String key) { return state.settings().stream().filter(s -> s.key().equals(key)).map(MenuState.Setting::value).findFirst().orElse(""); }
 	private static String pick(String current, List<String> options, String fallback) {
-		if (current != null && options.contains(current)) {
-			return current;
-		}
-		if (options.contains(fallback)) {
-			return fallback;
-		}
-		return options.isEmpty() ? "-" : options.get(0);
+		if (current != null && options.contains(current)) { return current; }
+		return options.contains(fallback) ? fallback : options.isEmpty() ? "-" : options.getFirst();
 	}
-
-	/** Bot1 -> Bot2, Steve -> Steve2. */
+	private static boolean matches(String query, String text) { return text.toLowerCase(Locale.ROOT).contains(query.strip().toLowerCase(Locale.ROOT)); }
+	private static String pretty(String id) {
+		if (id.equals("uhc") || id.equals("uhc_duel")) { return "UHC"; }
+		if (id.equals("sword_pvphq")) { return "Sword PvPHQ"; }
+		if (id.equals("crystal_pvphq")) { return "Crystal PvPHQ"; }
+		if (id.equals("mace_pvphq")) { return "Mace PvPHQ"; }
+		if (id.equals("smp")) { return "SMP"; }
+		String[] words = id.replaceAll("([a-z])([A-Z])", "$1 $2").replace('_', ' ').split(" ");
+		return java.util.Arrays.stream(words).filter(w -> !w.isEmpty()).map(w -> Character.toUpperCase(w.charAt(0)) + w.substring(1)).reduce((a, b) -> a + " " + b).orElse(id);
+	}
+	private static String techniqueName(Technique t) {
+		return switch (t) { case W_TAP -> "W-tap"; case S_TAP -> "S-tap"; case JUMP_RESET -> "Jump reset"; case BLOCK_HIT -> "Block hitting";
+			case SHIELD_STUN -> "Shield follow-up"; default -> pretty(t.id()); };
+	}
+	/** Bot1 -> Bot2; large numeric suffixes cannot overflow or trap the form. */
 	static String nextName(String name) {
-		int i = name.length();
-		while (i > 0 && Character.isDigit(name.charAt(i - 1))) {
-			i--;
-		}
+		int i = name.length(); while (i > 0 && Character.isDigit(name.charAt(i - 1))) { i--; }
 		String base = name.substring(0, i);
-		int n = i == name.length() ? 1 : Integer.parseInt(name.substring(i));
-		String next = base + (n + 1);
-		return next.length() <= 16 ? next : name;
+		try {
+			long n = i == name.length() ? 1 : Long.parseLong(name.substring(i));
+			String next = base + Math.addExact(n, 1);
+			return next.length() <= 16 ? next : "Bot1";
+		} catch (ArithmeticException | NumberFormatException e) { return "Bot1"; }
 	}
-
-	@Override
-	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-		super.extractRenderState(graphics, mouseX, mouseY, a);
-		graphics.centeredText(font, title, width / 2, 10, WHITE);
-		for (Label label : labels) {
-			graphics.text(font, label.text(), label.x(), label.y(), label.color());
-		}
-	}
-
-	@Override
-	public boolean isPauseScreen() {
-		return false;
-	}
+	@Override public boolean isPauseScreen() { return false; }
 }

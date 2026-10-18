@@ -41,6 +41,7 @@ public final class DuelBrain implements Policy {
 	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
 	private int focusDelayTicks;
+	private final SwightPlan swightPlan = new SwightPlan();
 	private DecisionTrace trace = DecisionTrace.NONE;
 
 	public DuelBrain(SkillProfile profile, long seed) {
@@ -124,7 +125,7 @@ public final class DuelBrain implements Policy {
 			// The playstyle reshapes priorities; "search" is the idle fallback and is never weighted.
 			double score = tactic.score(context);
 			if (score > 0 && !(tactic instanceof SearchTactic)) {
-				score *= style.weight(tactic.name());
+				score *= style.weight(tactic.name()) * SwightPlan.weight(context, tactic.name());
 				// A clear opening (scored as high as a webbed or eating opponent gives) is taken whatever the restraint.
 				// Nor is a play already under way: dropping it half done (a web half placed) is the worst of both.
 				if (restrained && score < RESTRAINT_ABOVE && tactic != active) {
@@ -153,7 +154,7 @@ public final class DuelBrain implements Policy {
 			active = best;
 		}
 
-		Inputs inputs = Unstuck.apply(context, Reflexes.apply(context, active, active.act(context)));
+		Inputs inputs = swightPlan.limitShield(context, Unstuck.apply(context, Reflexes.apply(context, active, active.act(context))));
 
 		memory.ticksSinceOwnClick++;
 		if (memory.retreatCooldown > 0) {
@@ -178,6 +179,7 @@ public final class DuelBrain implements Policy {
 		memory = new DuelMemory();
 		tactics.forEach(Tactic::reset);
 		perception.clear();
+		swightPlan.reset();
 		active = null;
 		focusDelayTicks = 0;
 		trace = DecisionTrace.NONE;

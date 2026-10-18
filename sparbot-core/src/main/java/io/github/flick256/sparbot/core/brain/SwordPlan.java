@@ -117,6 +117,7 @@ final class SwordPlan {
 	static void plan(BrainContext c, double distance, double reach, Move mv) {
 		DuelMemory m = c.memory;
 		int ready = ticksToReady(c);
+		if (SwightPlan.meleeOpening(c, distance, reach, mv)) { return; }
 		if (ready <= 1) {
 			// Ready: go in and hit.
 			return;

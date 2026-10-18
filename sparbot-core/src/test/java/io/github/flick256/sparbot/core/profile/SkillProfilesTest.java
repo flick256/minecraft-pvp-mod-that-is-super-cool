@@ -20,7 +20,7 @@ class SkillProfilesTest {
 
 	@Test
 	void presetsGetStrictlyStrongerFromBeginnerToPro() {
-		List<SkillProfile> ordered = new ArrayList<>(SkillProfiles.loadPresets().values());
+		List<SkillProfile> ordered = SkillProfiles.TIER_IDS.stream().map(SkillProfiles.loadPresets()::get).toList();
 		for (int i = 1; i < ordered.size(); i++) {
 			SkillProfile weaker = ordered.get(i - 1);
 			SkillProfile stronger = ordered.get(i);

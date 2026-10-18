@@ -124,7 +124,7 @@ public final class LavaTactic implements Tactic {
 			phase = Phase.PLACE;
 			ticks = 0;
 			pours = 0;
-			poursPlanned = 1 + (int) Math.round(skill * (webbed ? 3 : 2));
+			poursPlanned = "swight".equals(c.profile.id()) ? 1 : 1 + (int) Math.round(skill * (webbed ? 3 : 2));
 			bucketSlot = c.self.inventory().hotbarSlot(ItemKind.LAVA_BUCKET);
 		}
 	}
@@ -162,6 +162,7 @@ public final class LavaTactic implements Tactic {
 					double skill = c.profile.items().uhcSkill();
 					boolean webbed = t != null && t.inWeb();
 					holdTicks = (int) Math.round((webbed ? 14 : 7) - 4 * skill) + c.rng.nextInt(0, 2);
+					if ("swight".equals(c.profile.id())) { holdTicks = Math.min(holdTicks, 5); }
 					return aimAtLava(c, inv);
 				}
 				if (t == null || ticks > PLACE_TIMEOUT || !inv.slot(bucketSlot).is(ItemKind.LAVA_BUCKET) || !inRange(c, t)
@@ -172,7 +173,7 @@ public final class LavaTactic implements Tactic {
 					return finish(c);
 				}
 				// On a webbed opponent the bucket is emptied onto the web: the lava lands above it, on their head.
-				BlockSpot ground = BlockPlay.groundBelow(c, t);
+				BlockSpot ground = SwightPlan.utilityGround(c, t);
 				BlockSpot clicked = t.inWeb() ? new BlockSpot(ground.x(), ground.y() + 1, ground.z()) : ground;
 				lava = new BlockSpot(clicked.x(), clicked.y() + 1, clicked.z());
 				return BlockPlay.clickTop(c, clicked, 1.0, bucketSlot);

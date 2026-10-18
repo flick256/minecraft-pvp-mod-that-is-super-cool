@@ -1,6 +1,24 @@
 # Changelog
 
-The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
+The version is in the jar's name, the menu sidebar and the server log.
+
+## 3.2.0
+
+- Rebuilt the menu around persistent sidebar navigation, readable cards and a guided mode/opponent
+  picker. Added an overview, searchable kits and settings, an explicit kit picker for spawning, and
+  always-visible spawn/fight actions. Forms retain focus, text selection and drafts during refreshes;
+  each section remembers its scroll position. Mouse wheel, keyboard and compact GUI sizes are supported.
+- Added **Swight**, a named UHC specialist. Its physical input and reaction limits match Demon, with
+  more conservative reach judgement. It leads grounded web/lava placements approximately, uses shorter
+  lava chains, and follows up on trapped or visibly occupied opponents rather than wasting the opening.
+  Sustained shielding has release windows; food and potion use are unaffected.
+- Overview's **Challenge Swight** and Practice's Swight selection use the UHC arena. Practice bots are
+  named Swight (or Swight2, etc. if the name is already taken), preserving existing user-created bots.
+- Added a live Swight/Demon Minecraft fight check and client tests for navigation, search, editing,
+  inventory actions, compact layouts and starting the named UHC opponent. The UHC lab accepts separate
+  seed and time-limit properties so benchmark comparisons can be reproduced.
+- Swight won 453, lost 305 and timed out 42 times in 800 held-out simulator fights over two UHC kits
+  and flat/uneven arenas. These results do not establish a win rate against real players or in Lunar.
 
 ## 3.1.0
 
