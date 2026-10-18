@@ -56,6 +56,11 @@ public final class LavaTactic implements Tactic {
 	private static final int FAILED_COOLDOWN = 60;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "lava";
 	}

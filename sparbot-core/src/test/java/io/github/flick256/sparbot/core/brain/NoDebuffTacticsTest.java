@@ -96,4 +96,63 @@ class NoDebuffTacticsTest {
 		assertEquals(1, h.slots[2].count(), "the second is kept while speed is up");
 		assertTrue(!"buff".equals(h.brain.lastTrace().tactic()), "no more drinking once the effect is up");
 	}
+	@Test
+	void usesAnInventoryBuffWithAFullHotbarAndRestoresEveryOriginalStack() {
+		BrainHarness h = fullHotbarWithInventorySpeed(null);
+		ItemInfo[] before = h.slots.clone();
+		for (int i = 0; i < 160; i++) {
+			h.tick();
+			if (h.slots[8].isEmpty() && h.slots[16].equals(before[8])) {
+				h.effects.add(new io.github.flick256.sparbot.core.sense.EffectInfo("minecraft:speed", 1, 3600));
+			}
+		}
+		assertTrue(h.any(Inputs::inventoryOpen), "opened inventory to stage the buff");
+		for (int i = 0; i < 9; i++) {
+			assertEquals(before[i], h.slots[i], "original hotbar stack restored at " + i);
+		}
+		assertTrue(h.slots[16].isEmpty(), "one carried potion consumed");
+		assertFalse(h.history.getLast().inventoryOpen(), "screen closed after restoring the layout");
+	}
+
+	@Test
+	void inventoryBuffWaitsUntilThereIsRoomToPrepare() {
+		BrainHarness h = fullHotbarWithInventorySpeed(TestFixtures.target(new Vec3(0, 0, 2.5), 0));
+		for (int i = 0; i < 60; i++) { h.tick(); }
+		assertFalse(h.any(Inputs::inventoryOpen));
+		assertEquals(SPEED, h.slots[16], "keeps the potion while pressured");
+	}
+
+	@Test
+	void interruptedPreparationRestoresTheLayoutOnceTheOpponentLeaves() {
+		BrainHarness h = fullHotbarWithInventorySpeed(null);
+		ItemInfo original = h.slots[8];
+		for (int i = 0; i < 80 && h.useTicks < 10; i++) { h.tick(); }
+		assertTrue(h.useTicks >= 10, "started drinking the staged potion");
+		h.target = TestFixtures.target(new Vec3(0, 0, 2.5), 0);
+		for (int i = 0; i < 60; i++) { h.tick(); }
+		assertEquals(original, h.slots[16], "displaced bow remains safe while pressured");
+		assertFalse(h.history.getLast().inventoryOpen(), "does not restore through an open screen in melee");
+		h.effects.add(new io.github.flick256.sparbot.core.sense.EffectInfo("minecraft:speed", 1, 3600));
+		h.target = null;
+		for (int i = 0; i < 80; i++) { h.tick(); }
+		assertEquals(original, h.slots[8], "resumed restoration when safe");
+		assertTrue(h.slots[16].isEmpty());
+	}
+
+	@Test
+	void keepsInventoryBuffsWhileTheirEffectIsActive() {
+		BrainHarness h = fullHotbarWithInventorySpeed(null);
+		h.effects.add(new io.github.flick256.sparbot.core.sense.EffectInfo("minecraft:speed", 1, 3600));
+		for (int i = 0; i < 80; i++) { h.tick(); }
+		assertEquals(SPEED, h.slots[16]);
+		assertFalse(h.any(Inputs::inventoryOpen));
+	}
+
+	private static BrainHarness fullHotbarWithInventorySpeed(io.github.flick256.sparbot.core.sense.TargetState target) {
+		return new BrainHarness(TestFixtures.flawless("pro"), TestFixtures.inventory(
+			0, TestFixtures.SWORD, 1, TestFixtures.SWORD, 2, TestFixtures.SWORD,
+			3, TestFixtures.SWORD, 4, TestFixtures.SWORD, 5, TestFixtures.SWORD,
+			6, TestFixtures.SWORD, 7, TestFixtures.SWORD, 8, TestFixtures.item(ItemKind.BOW, "minecraft:bow", 1, 1), 16, SPEED), target);
+	}
+
 }

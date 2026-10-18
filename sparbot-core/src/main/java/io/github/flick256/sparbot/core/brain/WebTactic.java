@@ -27,6 +27,11 @@ public final class WebTactic implements Tactic {
 	private long lastWeb = Long.MIN_VALUE / 2;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "web";
 	}

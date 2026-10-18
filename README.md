@@ -8,7 +8,7 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 3.0. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
+> Status: 3.1. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
 > and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it, from
 > the keys you really pressed, to the tick; cues that tell you when to act) and a **live coach** in your fights
 > against bots. Every bot fights with
@@ -21,7 +21,7 @@ their client too** to join a server that has it.
 |---|---|
 | Melee | Times hits to the attack cooldown, crits (falling, not sprinting, more than 90% charge; skilled players jump in at full charge), W-tap, S-tap, strafing, jump reset. Reads your swings to judge your charge: stays just outside your reach while you are charged, feints in and out to draw a swing, rushes in when you miss, combos only while you are recharging. See [docs/sword-tiers.md](docs/sword-tiers.md) for what each level does |
 | Seeing like a player | A bot sees you the way a client shows you: a ping late and two ticks behind (a client eases other players into place), and its clicks land on the body its client shows, as yours do. Its aim point wanders over your body as a hand's does, and it judges an arrow's distance and lead by eye, off by more over a longer shot and for a lower tier |
-| Reflexes | Busy with a bucket, blocks or crystals, a bot still takes the free hit when you walk into reach, jump-resets the knockback and sidesteps instead of standing still |
+| Attention and reflexes | Precise placement and inventory tasks slow recognition and tracking of opponent changes, with gradual recovery after switching back. These tasks cannot add automatic melee hits or jump resets; basic defensive movement remains available |
 | Shield | Block-hits (raises the shield while recharging, lowers it in time to swing); guards against a drawn bow; avoids blocking an axe user when skilled |
 | Axe | Switches to the axe when the opponent raises a shield (an axe hit disables it for 5 s); circles a shield if it has no axe |
 | Bow / crossbow | Used at 8-30 blocks; full 20-tick draw; crossbow charged in 25 ticks, then fired; each shot's distance and lead are estimated by eye (misjudged by more for a lower tier and a longer shot), not solved |
@@ -30,8 +30,8 @@ their client too** to join a server that has it.
 | Totems | After a pop, puts a new totem in the offhand: the swap key from the hotbar, or opening the inventory (taking human time) |
 | Retreat | Disengages below the panic threshold (earlier with worn-out armor), eats while running, then re-engages |
 | Splash healing (NoDebuff) | Pots down at its own feet below the profile's pot threshold, and double-pots if still low (26.2: the heal scales with distance from the impact) |
-| Hotbar refill | When safe, opens the inventory and number-keys pots, pearls and golden apples into empty hotbar slots; gives up if the opponent closes in |
-| Buffs | Drinks or splashes Speed, Fire Resistance and Strength again when they wear off and the opponent is not close |
+| Hotbar refill | When safe, opens the inventory and number-keys pots, pearls, golden apples, carts, rails and webs into empty hotbar slots; gives up if the opponent closes in |
+| Buffs | Drinks or splashes missing Speed, Fire Resistance and Strength when safe, including potions carried in the main inventory. Temporarily swaps a potion onto a full hotbar and restores the displaced stack afterward |
 | Spear | Keeps about 3 blocks away and jabs on a full charge (26.2: a jab hits only from 2 to 4.5 blocks); from a gap, sprints in holding a charge (damage 1 + closing speed x the spear's multiplier), but not at an opponent running straight away; falls back to the sword when the opponent gets inside 2 blocks |
 | End crystals | Puts obsidian down next to the opponent, a crystal on it, and hits the crystal (26.2: power-6 blast, damage falls off over 12 blocks); only uses spots it can reach to hit (blocks reach 4.5, crystals only 3) and, when skilled, only crystals closer to the opponent than to itself |
 | Respawn anchors | Puts an anchor down next to the opponent, charges it with glowstone and sets it off with the sword in hand (26.2: outside the Nether a charged anchor blows up with power 5 and fire); only when the opponent takes more of the blast than the bot |

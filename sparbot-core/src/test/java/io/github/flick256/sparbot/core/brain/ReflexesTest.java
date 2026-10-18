@@ -108,4 +108,19 @@ class ReflexesTest {
 		}
 		assertFalse(h.any(in -> in.strafe() != 0), "no strafing at all");
 	}
+	@Test
+	void precisePlacementDoesNotAlsoGetAnAutomaticMeleeHit() {
+		BrainHarness h = harness(Surroundings.EMPTY);
+		BrainContext initial = h.context(swordReady());
+		boolean moved = false;
+		for (int tick = 0; tick < 40; tick++) {
+			BrainContext c = new BrainContext(new io.github.flick256.sparbot.core.sense.Observation(tick, swordReady(), h.target),
+				h.target, 0, initial.profile, initial.style, initial.rng, initial.aim, initial.memory);
+			Inputs in = Reflexes.apply(c, new WebTactic(), Inputs.IDLE);
+			assertFalse(in.attack(), "placing a web cannot add a simultaneous automatic sword hit");
+			moved |= in.strafe() != 0;
+		}
+		assertTrue(moved, "basic defensive movement remains available");
+	}
+
 }

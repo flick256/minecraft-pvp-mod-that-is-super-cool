@@ -50,6 +50,11 @@ public final class WaterTactic implements Tactic {
 	private long reactAt = -1;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "water";
 	}

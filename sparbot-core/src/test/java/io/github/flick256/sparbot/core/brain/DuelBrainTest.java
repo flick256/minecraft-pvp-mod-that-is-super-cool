@@ -96,4 +96,33 @@ class DuelBrainTest {
 			assertTrue(Movement.isSafe(self, self.yaw() + in.yawDelta(), in.forward(), in.strafe()), "tick " + t + " walked off the cliff");
 		}
 	}
+	@Test
+	void placingUtilityDelaysNoticingOpponentMotionAndAttentionRecovers() {
+		class Watching implements Tactic {
+			boolean focused;
+			double lastSeenX;
+			public String name() { return "watching"; }
+			public boolean requiresFocus() { return focused; }
+			public double score(BrainContext c) { return 2; }
+			public Inputs act(BrainContext c) { lastSeenX = c.seen().position().x(); return Inputs.IDLE; }
+		}
+		Watching busy = new Watching();
+		Watching free = new Watching();
+		busy.focused = true;
+		DuelBrain occupied = new DuelBrain(TestFixtures.flawless("pro"), io.github.flick256.sparbot.core.style.Playstyle.BALANCED, 42, busy);
+		DuelBrain watching = new DuelBrain(TestFixtures.flawless("pro"), io.github.flick256.sparbot.core.style.Playstyle.BALANCED, 42, free);
+		SelfState self = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 1, true, TestFixtures.flatGround());
+		for (int t = 0; t < 30; t++) {
+			Observation o = new Observation(t, self, TestFixtures.target(new Vec3(t * 0.1, 0, 8), 0));
+			occupied.act(o); watching.act(o);
+		}
+		assertTrue(busy.lastSeenX < free.lastSeenX, "attention on placement notices movement later");
+		busy.focused = false;
+		for (int t = 30; t < 50; t++) {
+			Observation o = new Observation(t, self, TestFixtures.target(new Vec3(t * 0.1, 0, 8), 0));
+			occupied.act(o); watching.act(o);
+		}
+		assertEquals(free.lastSeenX, busy.lastSeenX, 0.001, "tracking recovers after returning attention to the opponent");
+	}
+
 }

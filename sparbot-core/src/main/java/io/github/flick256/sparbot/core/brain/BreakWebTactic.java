@@ -22,6 +22,11 @@ public final class BreakWebTactic implements Tactic {
 	private final Decision willBreak = new Decision();
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "breakweb";
 	}

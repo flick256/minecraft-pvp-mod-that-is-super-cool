@@ -2,6 +2,24 @@
 
 The version is in the jar's name, the menu's title and the server log ("SparBot 0.4.0 initialised").
 
+## 3.1.0
+
+- Precise UHC utility, cart setup and inventory work occupy attention: opponent changes take longer to
+  notice and tracking recovers gradually after returning to combat. These tasks no longer receive
+  simultaneous automatic melee hits or jump resets. This is a behavioral constraint, not calibration
+  against recorded human fights.
+- Buff potions in the main inventory are usable even with a full hotbar. The bot waits until safe,
+  temporarily swaps a potion into the hotbar, consumes it, then restores the displaced stack. Inventory
+  clicks wait for acknowledgement; interrupted preparation resumes when safe. Both bundled PvPHQ cart
+  kits are covered by Minecraft tests for all three buffs and the restored layout.
+- Cart setup falls back to melee when it has no rails or cannot find a usable placement surface.
+  Cart ownership is recorded after item consumption confirms placement, rather than when merely aiming.
+- Restocking supports spare rails and webs. Emergency walls preserve shulkers and other storage blocks.
+- Corrected contradictory provenance labels in the non-sword/UHC PvPHQ kits. Exact hidden slots,
+  enchantments, potion details and shulker contents still need primary-source confirmation. No kit item
+  layouts were changed.
+- Configured Loom for Minecraft 26.2's unobfuscated classes so builds do not request legacy mappings.
+
 ## 3.0.1
 
 - Melee clicks use one displayed position for the opponent. Previously a click could hit either the

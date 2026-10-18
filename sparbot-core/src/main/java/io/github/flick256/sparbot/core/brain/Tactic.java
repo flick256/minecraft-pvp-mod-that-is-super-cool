@@ -10,6 +10,11 @@ public interface Tactic {
 
 	Inputs act(BrainContext context);
 
+	/** Precise placement or inventory work occupies attention that would otherwise track the opponent. */
+	default boolean requiresFocus() {
+		return false;
+	}
+
 	default void onEnter(BrainContext context) {
 	}
 

@@ -12,7 +12,7 @@
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
     "notes": "PvPHQ's SMP kit. The netherite axe's enchantments are from its tooltip. Uncertain (please confirm): armor and sword enchantments are not visible and are left out; potions are read by colour: yellow = Strength II, orange = Fire Resistance, light blue = Swiftness II, red = Healing II, dark grey = Weakness (could be Slowness); potion levels (II or long) are guesses; the cobweb count is assumed to be 64; the wood is read as oak logs. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on swords; the exact set (Fire Aspect on the sword above all) is SparBot's reading of 'maxed', please confirm.",
     "deviations": [
-      "none: transcribed from a 26.2 server"
+      "Screenshot transcription is incomplete: uncertain items, potion details and enchantments are documented in notes; this is not a verified server export."
     ]
   },
   "armor": {

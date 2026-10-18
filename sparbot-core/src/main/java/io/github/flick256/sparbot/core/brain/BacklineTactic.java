@@ -37,6 +37,11 @@ public final class BacklineTactic implements Tactic {
 	private long last = Long.MIN_VALUE / 2;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "backline";
 	}

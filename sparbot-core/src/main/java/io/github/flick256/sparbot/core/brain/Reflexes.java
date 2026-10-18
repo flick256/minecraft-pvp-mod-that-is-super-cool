@@ -25,15 +25,15 @@ final class Reflexes {
 		DuelMemory m = c.memory;
 		boolean justHurt = self.hurtTime() > m.lastSelfHurtTime;
 
-		// Jump the moment the knockback lands: cancels part of it, as in melee.
-		if (justHurt && self.onGround() && !in.jump() && c.rng.chance(c.skill(Technique.JUMP_RESET))) {
+		// Precision utility occupies the hands and attention; it cannot also get automatic melee reflexes.
+		if (!active.requiresFocus() && justHurt && self.onGround() && !in.jump() && c.rng.chance(c.skill(Technique.JUMP_RESET))) {
 			in = in.withJump(true);
 		}
 
 		// The free hit: weapon in hand, charged, crosshair on them, in reach.
 		double distance = c.targetDistance();
 		double reach = self.attackReach() + m.reachError;
-		if (SwingTiming.ready(c, !in.attack() && !in.use() && !self.inventory().usingItem() && self.holdingMeleeWeapon() && in.hotbarSlot() < 0
+		if (SwingTiming.ready(c, !active.requiresFocus() && !in.attack() && !in.use() && !self.inventory().usingItem() && self.holdingMeleeWeapon() && in.hotbarSlot() < 0
 			&& self.attackStrength() >= m.cooldownThreshold && distance <= reach && c.clickHitsTarget(reach + 0.5))) {
 			in = in.withAttack(true);
 			SwingTiming.clicked(c);

@@ -40,6 +40,7 @@ public final class DuelBrain implements Policy {
 	private DuelMemory memory = new DuelMemory();
 	private java.util.Set<Technique> disabled = java.util.EnumSet.noneOf(Technique.class);
 	private Tactic active;
+	private int focusDelayTicks;
 	private DecisionTrace trace = DecisionTrace.NONE;
 
 	public DuelBrain(SkillProfile profile, long seed) {
@@ -97,8 +98,13 @@ public final class DuelBrain implements Policy {
 			memory.trackingDelayTicks = INTERPOLATION_TICKS + TRACKING_BASE_DELAY_TICKS + (int) Math.round(networkMs / 50.0);
 			memory.ticksUntilReactionResample = REACTION_RESAMPLE_TICKS;
 		}
-		TargetState seen = perception.delayed(memory.reactionDelayTicks);
-		TargetState tracked = perception.delayed(memory.trackingDelayTicks);
+		// While looking down to place utility, noticing an opponent change takes another reaction.
+		// Build and release this cost gradually so switching tactics cannot instantly restore tracking.
+		int focusGoal = active != null && active.requiresFocus() ? Math.max(1, memory.reactionDelayTicks - memory.trackingDelayTicks) : 0;
+		focusDelayTicks += Integer.compare(focusGoal, focusDelayTicks);
+		int trackingTicks = memory.trackingDelayTicks + focusDelayTicks;
+		TargetState seen = perception.delayed(memory.reactionDelayTicks + focusDelayTicks);
+		TargetState tracked = perception.delayed(trackingTicks);
 		Observation observation = new Observation(raw.tick(), raw.self(), seen, raw.surroundings());
 		if (seen != null && seen.onGround()) {
 			memory.targetGroundY = seen.position().y();
@@ -110,7 +116,7 @@ public final class DuelBrain implements Policy {
 		}
 
 		memory.wanderAim(rng, profile.aim());
-		BrainContext context = new BrainContext(observation, tracked, memory.trackingDelayTicks, profile, style, rng, aim, memory, disabled);
+		BrainContext context = new BrainContext(observation, tracked, trackingTicks, profile, style, rng, aim, memory, disabled);
 		Map<String, Double> scores = new LinkedHashMap<>();
 		double[] tacticScores = new double[tactics.size()];
 		for (int i = 0; i < tacticScores.length; i++) {
@@ -173,6 +179,7 @@ public final class DuelBrain implements Policy {
 		tactics.forEach(Tactic::reset);
 		perception.clear();
 		active = null;
+		focusDelayTicks = 0;
 		trace = DecisionTrace.NONE;
 	}
 
@@ -209,6 +216,6 @@ public final class DuelBrain implements Policy {
 
 	private String describe() {
 		return "style=" + style.id() + " mistake=" + memory.mistake + " crit=" + memory.critPhase + " reactionTicks=" + memory.reactionDelayTicks + " trackTicks=" + memory.trackingDelayTicks
-			+ " clickAt=" + String.format("%.2f", memory.cooldownThreshold) + (active == null || active.detail().isEmpty() ? "" : " step=" + active.detail());
+			+ " focusTicks=" + focusDelayTicks + " clickAt=" + String.format("%.2f", memory.cooldownThreshold) + (active == null || active.detail().isEmpty() ? "" : " step=" + active.detail());
 	}
 }

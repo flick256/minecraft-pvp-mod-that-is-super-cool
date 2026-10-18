@@ -94,7 +94,7 @@ if (project.hasProperty('shutdownOnly')) {
 	}
 }
 
-// Run only some GameTests: ./gradlew runGameTest -PgametestFilter=learned
+// Run a subset with a namespaced selector: ./gradlew runGameTest '-PgametestFilter=sparbot-gametest:*cart*'
 if (project.hasProperty('gametestFilter')) {
 	tasks.named('runGameTest') {
 		jvmArgs "-Dfabric-api.gametest.filter=${project.property('gametestFilter')}"

@@ -29,6 +29,11 @@ public final class RetotemTactic implements Tactic {
 	private int totemSlot = -1;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "retotem";
 	}

@@ -103,4 +103,32 @@ public class NoDebuffGameTests {
 			TestSupport.remove(a, b);
 		});
 	}
+	@GameTest(maxTicks = 600)
+	public void pvphqLowCartPreparesInventoryBuffsAndRestoresItsHotbar(GameTestHelper helper) {
+		checkCartBuffs(helper, "pvphq_cart_low");
+	}
+
+	@GameTest(maxTicks = 600)
+	public void pvphqHighCartPreparesInventoryBuffsAndRestoresItsHotbar(GameTestHelper helper) {
+		checkCartBuffs(helper, "pvphq_cart_high");
+	}
+
+	private static void checkCartBuffs(GameTestHelper helper, String kit) {
+		TestSupport.arena(helper);
+		Bot bot = TestSupport.spawnBot(helper, "CartBuff", 3.5, 1, 3.5, 0, "pro", kit);
+		BotPlayer body = TestSupport.body(bot);
+		ItemStack[] original = new ItemStack[9];
+		for (int i = 0; i < 9; i++) { original[i] = body.getInventory().getItem(i).copy(); }
+		helper.succeedWhen(() -> {
+			helper.assertTrue(body.hasEffect(MobEffects.SPEED), "used carried Speed");
+			helper.assertTrue(body.hasEffect(MobEffects.FIRE_RESISTANCE), "used carried Fire Resistance");
+			helper.assertTrue(body.hasEffect(MobEffects.STRENGTH), "used carried Strength");
+			for (int i = 0; i < 9; i++) {
+				ItemStack now = body.getInventory().getItem(i);
+				helper.assertTrue(ItemStack.isSameItemSameComponents(original[i], now) && original[i].getCount() == now.getCount(), "hotbar restored at " + i);
+			}
+			TestSupport.remove(bot);
+		});
+	}
+
 }

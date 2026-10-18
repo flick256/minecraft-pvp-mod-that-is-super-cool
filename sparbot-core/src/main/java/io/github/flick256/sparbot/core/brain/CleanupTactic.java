@@ -49,6 +49,11 @@ public final class CleanupTactic implements Tactic {
 	private int bucketsBefore;
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "cleanup";
 	}

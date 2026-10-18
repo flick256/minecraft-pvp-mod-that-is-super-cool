@@ -260,4 +260,11 @@ class UhcTacticsTest {
 		assertTrue(scoops.get(0) >= 6, "noticed the water first, scooped on tick " + scoops.get(0));
 		assertTrue(scoops.get(1) - scoops.get(0) >= 10, "a moment between scoops, " + (scoops.get(1) - scoops.get(0)) + " ticks");
 	}
+	@Test
+	void neverBuildsWallsWithKitStorage() {
+		for (String id : java.util.List.of("shulker_box", "red_shulker_box", "barrel", "chest", "trapped_chest", "ender_chest")) {
+			assertTrue(!WallTactic.wallBlock(TestFixtures.item(ItemKind.BLOCK, "minecraft:" + id, 1, 1)), id);
+		}
+	}
+
 }

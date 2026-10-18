@@ -12,7 +12,7 @@
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-04",
     "notes": "PvPHQ's mace kit (spawns with Strength II and Speed II active, which come from the potions). Uncertain (please confirm): armor and weapon enchantments are not visible in the screenshots and are left out (the two maces are probably Density and Breach); the grey item in hotbar slot 4 is read as an elytra; hotbar slot 1 is read as a netherite axe; hotbar slot 8 (a tall purple item) and inventory slot 26 (a purple block) are not identified and are left out; yellow splash potions are read as Strength II and light blue as Swiftness II.",
     "deviations": [
-      "none: transcribed from a 26.2 server"
+      "Screenshot transcription is incomplete: uncertain items, potion details and enchantments are documented in notes; this is not a verified server export."
     ]
   },
   "armor": {

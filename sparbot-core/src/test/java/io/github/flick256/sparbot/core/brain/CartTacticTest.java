@@ -174,4 +174,50 @@ class CartTacticTest {
 		}
 		assertTrue(loading, "held right click on the crossbow, now " + h.brain.lastTrace().tactic() + " " + h.brain.lastTrace().note());
 	}
+	@Test
+	void fallsBackToMeleeWhenRailsRunOut() {
+		BrainHarness h = harness(FLAME_BOW, Surroundings.EMPTY);
+		h.slots[2] = ItemInfo.EMPTY;
+		for (int i = 0; i < 30; i++) { h.tick(); }
+		assertEquals("engage", h.brain.lastTrace().tactic(), "a cart without rails cannot start a combo");
+	}
+
+	@Test
+	void attemptedCartPlacementDoesNotClaimAnEnemyCart() {
+		BrainHarness h = harness(FLAME_BOW, new Surroundings(List.of(), List.of(), List.of(), List.of(), List.of(new BlockSpot(1, 0, 3))));
+		for (int i = 0; i < 35; i++) {
+			h.tick(); // The harness never actually places a cart or consumes its item.
+			assertEquals(null, h.brain.memory().ownCart, "aiming and rejected use do not establish ownership");
+		}
+		h.slots[3] = ItemInfo.EMPTY; // Acknowledged consumption from a successful placement.
+		h.tick();
+		assertTrue(h.brain.memory().ownCart != null, "ownership begins after the placement is acknowledged");
+	}
+
+	@Test
+	void givesUpAnImpossibleCartSetupInsteadOfStandingStill() {
+		BrainHarness h = harness(FLAME_BOW, Surroundings.EMPTY);
+		h.target = TestFixtures.target(new Vec3(0, 0, 4), 0);
+		h.brain.setDisabledTechniques(Set.of(Technique.STRAFE));
+		boolean fought = false;
+		for (int i = 0; i < 40; i++) {
+			h.tick();
+			fought |= "engage".equals(h.brain.lastTrace().tactic());
+		}
+		assertTrue(fought, "returns to melee when no placement surface can be used");
+	}
+
+	@Test
+	void restocksSpentRailsAndWebsWithoutChangingOtherHotbarItems() {
+		ItemInfo webs = TestFixtures.item(ItemKind.COBWEB, "minecraft:cobweb", 64, 1);
+		BrainHarness h = new BrainHarness(cartPro(), TestFixtures.inventory(0, TestFixtures.SWORD, 12, RAILS, 13, webs), null);
+		for (int tick = 0; tick < 60; tick++) { h.tick(); }
+		assertEquals(TestFixtures.SWORD, h.slots[0]);
+		assertTrue(h.inventory().hotbarSlot(i -> "minecraft:rail".equals(i.id())) >= 0);
+		assertTrue(h.inventory().hotbarSlot(ItemKind.COBWEB) >= 0);
+		assertEquals(64, h.inventory().count(i -> "minecraft:rail".equals(i.id())));
+		assertEquals(64, h.inventory().count(ItemKind.COBWEB));
+		assertTrue(h.slots[12].isEmpty() && h.slots[13].isEmpty());
+	}
+
 }

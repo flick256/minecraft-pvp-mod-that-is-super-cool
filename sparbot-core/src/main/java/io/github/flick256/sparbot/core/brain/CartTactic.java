@@ -74,6 +74,11 @@ public final class CartTactic implements Tactic {
 	private String step = "";
 	private long lastRail = Long.MIN_VALUE / 2;
 	private int railsBefore = -1;
+	private Vec3 attemptedCart;
+	private int cartsBefore;
+	private long attemptedAt;
+	private int idlePositionTicks;
+	private long retryAfter;
 
 	/** What the bot sets its carts off with. */
 	enum Igniter {
@@ -93,6 +98,11 @@ public final class CartTactic implements Tactic {
 	}
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "cart";
 	}
@@ -104,6 +114,13 @@ public final class CartTactic implements Tactic {
 
 	@Override
 	public double score(BrainContext c) {
+		observePlacement(c);
+		if (idlePositionTicks >= 12) {
+			retryAfter = c.observation.tick() + 20;
+			idlePositionTicks = 0;
+			willCart.reset();
+		}
+		if (c.observation.tick() < retryAfter) { return 0; }
 		InventoryState inv = c.self.inventory();
 		TargetState t = c.seen();
 		Igniter how = igniter(inv);
@@ -119,7 +136,8 @@ public final class CartTactic implements Tactic {
 		if (cartDown || railDown) {
 			return Scores.SPECIALIST + 0.08;
 		}
-		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0) {
+		if (inv.hotbarSlot(ItemKind.TNT_MINECART) < 0 ||
+			inv.hotbarSlot(i -> "minecraft:rail".equals(i.id())) < 0 && c.world.rails().stream().noneMatch(r -> r.horizontalDistanceTo(t.position()) <= BlockPlay.NEAR_TARGET)) {
 			return 0;
 		}
 		if (how == Igniter.CROSSBOW_FIRE && loadedCrossbow(inv) < 0 && c.targetDistance() >= CART_RANGE_MIN && !inv.usingItem()) {
@@ -130,6 +148,19 @@ public final class CartTactic implements Tactic {
 			return 0;
 		}
 		return willCart.get(c.rng, c.profile.items().cartSkill(), 20) ? Scores.SPECIALIST : 0;
+	}
+
+	private void observePlacement(BrainContext c) {
+		InventoryState inv = c.self.inventory();
+		if (attemptedCart != null) {
+			if (inv.count(ItemKind.TNT_MINECART) < cartsBefore && c.observation.tick() - attemptedAt <= 20) {
+				c.memory.ownCart = attemptedCart;
+				c.memory.ownCartAt = c.observation.tick();
+				attemptedCart = null;
+			} else if (c.observation.tick() - attemptedAt > 20) {
+				attemptedCart = null;
+			}
+		}
 	}
 
 	/**
@@ -171,6 +202,9 @@ public final class CartTactic implements Tactic {
 		step = "";
 		lastRail = Long.MIN_VALUE / 2;
 		railsBefore = -1;
+		attemptedCart = null;
+		idlePositionTicks = 0;
+		retryAfter = 0;
 	}
 
 	@Override
@@ -198,6 +232,7 @@ public final class CartTactic implements Tactic {
 				&& BlockPlay.worth(c, p, power, skill, IGNITE_FROM))
 			.min(Comparator.comparingDouble(p -> horizontal(p, t.position())));
 		if (cart.isPresent()) {
+			idlePositionTicks = 0;
 			if (how == Igniter.CROSSBOW_FIRE) {
 				return throughFire(c, cart.get(), power, skill);
 			}
@@ -220,10 +255,15 @@ public final class CartTactic implements Tactic {
 				&& BlockPlay.worth(c, center(r, 0), power, skill, IGNITE_FROM))
 			.min(Comparator.comparingDouble(r -> r.horizontalDistanceTo(ahead)));
 		if (rail.isPresent()) {
+			idlePositionTicks = 0;
 			step = "place cart";
-			c.memory.ownCart = center(rail.get(), 0);
-			c.memory.ownCartAt = c.observation.tick();
-			return BlockPlay.clickTop(c, rail.get(), BlockPlay.RAIL_HEIGHT, cartSlot);
+			Inputs place = BlockPlay.clickTop(c, rail.get(), BlockPlay.RAIL_HEIGHT, cartSlot);
+			if (place.use() && attemptedCart == null) {
+				attemptedCart = center(rail.get(), 0);
+				cartsBefore = inv.count(ItemKind.TNT_MINECART);
+				attemptedAt = c.observation.tick();
+			}
+			return place;
 		}
 
 		int railItem = inv.hotbarSlot(i -> i.kind() == ItemKind.BLOCK && "minecraft:rail".equals(i.id()));
@@ -235,12 +275,16 @@ public final class CartTactic implements Tactic {
 			})
 			.min(Comparator.comparingDouble(s -> s.horizontalDistanceTo(ahead)));
 		if (spot.isPresent()) {
+			idlePositionTicks = 0;
 			step = "place rail";
 			return BlockPlay.clickTop(c, spot.get(), 1.0, railItem);
 		}
 
 		step = "position";
-		return BlockPlay.position(c);
+		Inputs position = BlockPlay.position(c);
+		// No usable rail/ground/cart and no movement needed: stop waiting for a combo that cannot start.
+		idlePositionTicks = position.forward() == 0 && position.strafe() == 0 ? idlePositionTicks + 1 : 0;
+		return position;
 	}
 
 	/** Draws the Flame bow briefly and lets go once the arrow will hit {@code point}. */

@@ -23,7 +23,7 @@ import java.util.Set;
 public final class WallTactic implements Tactic {
 	/** Blocks that are tools of other tactics, not wall material. */
 	private static final Set<String> NOT_WALL = Set.of("minecraft:obsidian", "minecraft:rail", "minecraft:glowstone", "minecraft:respawn_anchor",
-		"minecraft:tnt", "minecraft:cobweb");
+		"minecraft:tnt", "minecraft:cobweb", "minecraft:chest", "minecraft:trapped_chest", "minecraft:ender_chest", "minecraft:barrel", "minecraft:shulker_box");
 	/** Building with the opponent in reach just hands them hits: a wall goes up before they get there. */
 	private static final double MIN_RANGE = 5.0;
 	private static final double MAX_RANGE = 7.0;
@@ -47,6 +47,11 @@ public final class WallTactic implements Tactic {
 	private int blocksBefore;
 	private int ticks;
 	private long lastWall = Long.MIN_VALUE / 2;
+
+	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
 
 	@Override
 	public String name() {
@@ -206,7 +211,7 @@ public final class WallTactic implements Tactic {
 	}
 
 	static boolean wallBlock(ItemInfo item) {
-		return item.kind() == ItemKind.BLOCK && !NOT_WALL.contains(item.id());
+		return item.kind() == ItemKind.BLOCK && !NOT_WALL.contains(item.id()) && !item.id().endsWith("_shulker_box");
 	}
 
 	static int wallSlot(InventoryState inv) {

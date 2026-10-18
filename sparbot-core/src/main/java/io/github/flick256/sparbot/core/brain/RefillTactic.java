@@ -33,6 +33,11 @@ public final class RefillTactic implements Tactic {
 	private final List<InventoryClick> plan = new ArrayList<>();
 
 	@Override
+	public boolean requiresFocus() {
+		return true;
+	}
+
+	@Override
 	public String name() {
 		return "refill";
 	}
@@ -143,6 +148,9 @@ public final class RefillTactic implements Tactic {
 				waterRefill = true;
 			}
 		}
+		// Replenish consumed cart/UHC utility into vacant slots; never displace the supplied kit.
+		addIfMissing(inv, clicks, freeHotbar, used, i -> "minecraft:rail".equals(i.id()), 1);
+		addIfMissing(inv, clicks, freeHotbar, used, i -> i.is(ItemKind.COBWEB), 1);
 		// Only worth opening the inventory when the hotbar has run dry of something important.
 		boolean hotbarOutOfPots = inv.hotbarSlot(Potions::isHealingSplash) < 0;
 		boolean worthIt = hotbarOutOfPots || waterRefill || clicks.size() >= 2;

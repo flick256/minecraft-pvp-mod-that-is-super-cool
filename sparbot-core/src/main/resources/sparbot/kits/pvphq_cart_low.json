@@ -12,7 +12,7 @@
     "reference": "Screenshots of the PvPHQ kit editor sent by the user, 2026-10-05",
     "notes": "PvPHQ's low tier cart kit: rails, TNT minecarts set off by a Flame bow, cobwebs, pearls and golden apples. Uncertain (please confirm): the orange potions are read as Fire Resistance splash potions and the light blue ones as drinkable Swiftness II (the colours fit, the tooltips weren't shown); the yellow ones are Splash Potions of Strength II (a tooltip shows one); hotbar slot 7 is read as oak logs (could be planks); the shulker boxes are given empty, as their contents weren't shown; armor trims are left off. Fully maxed enchantments as the user asked for cart, crystal and SMP kits (2026-10-05): Protection IV, Unbreaking III and Mending on every armor piece (plus Respiration III and Aqua Affinity, Swift Sneak III, Feather Falling IV and Depth Strider III), Sharpness V, Fire Aspect II, Looting III, Sweeping Edge III, Unbreaking III and Mending on the sword; bows Power V, Punch II, Flame, Unbreaking III and Mending (the kit carries arrows, so no Infinity); crossbows Quick Charge III, Piercing IV, Unbreaking III and Mending; the exact sets are SparBot's reading of 'maxed', please confirm.",
     "deviations": [
-      "none: transcribed from a 26.2 server"
+      "Screenshot transcription is incomplete: uncertain items, potion details and enchantments are documented in notes; this is not a verified server export."
     ]
   },
   "armor": {
