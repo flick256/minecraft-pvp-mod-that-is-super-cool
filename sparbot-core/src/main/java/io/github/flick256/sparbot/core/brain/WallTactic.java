@@ -94,6 +94,15 @@ public final class WallTactic implements Tactic {
 	}
 
 	@Override
+	public void onExit(BrainContext c) {
+		// The plan is relative to where the bot stopped. An emergency tactic can move it
+		// before it returns, so do not resume clicking the old coordinates later.
+		if (!plan.isEmpty()) {
+			finish(c);
+		}
+	}
+
+	@Override
 	public void reset() {
 		willWall.reset();
 		plan.clear();

@@ -30,7 +30,6 @@ class UhcTacticsTest {
 				i.spearSkill(), i.crystalSkill(), i.cartSkill(), 1.0),
 			p.mistakeRate(), p.panicHealthFraction());
 	}
-
 	/** Runs until the bot right-clicks holding {@code kind}; returns whether it did within {@code ticks}. */
 	private static boolean usesWithin(BrainHarness h, ItemKind kind, int ticks) {
 		for (int i = 0; i < ticks; i++) {
@@ -214,6 +213,23 @@ class UhcTacticsTest {
 		assertEquals(6, placed, "a pro puts up the full three-by-two wall");
 		assertTrue(ateAt > lastBlockAt, "then eats behind it (wall done at " + lastBlockAt + ", eating at " + ateAt + ")");
 		assertTrue(ateAt - lastBlockAt < 20, "straight away");
+	}
+
+	@Test
+	void discardsPositionRelativeWallPlanWhenAnEmergencyTacticInterruptsIt() {
+		BrainHarness h = new BrainHarness(uhcPro(), TestFixtures.inventory(0, TestFixtures.GAPPLE, 2, PLANKS, 3, WATER),
+			TestFixtures.target(new Vec3(0, 0, 6.0), 0));
+		io.github.flick256.sparbot.core.sense.SelfState self = TestFixtures.self(Vec3.ZERO, 0, 0, 6, 1, true,
+			TestFixtures.flatGround(), h.inventory(), 20);
+		BrainContext context = h.context(self);
+		WallTactic wall = new WallTactic();
+		wall.onEnter(context);
+		wall.act(context); // The first action calculates the placement coordinates from this position.
+		assertFalse("stop".equals(wall.detail()), "has an in-progress placement plan");
+
+		wall.onExit(context); // For example, the emergency water tactic takes over.
+		assertEquals("stop", wall.detail(), "discarded the old position-relative plan");
+		assertEquals(0, wall.score(context), "the interrupted attempt enters its retry cooldown");
 	}
 
 	@Test
