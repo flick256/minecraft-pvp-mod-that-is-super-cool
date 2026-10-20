@@ -8,6 +8,8 @@ import io.github.flick256.sparbot.core.sense.TargetState;
 
 /** Swight chooses UHC plays more selectively. It shares the normal perception and input limits. */
 final class SwightPlan {
+	/** Swight keeps two webs in reserve for a clear opening or a heal setup. */
+	static final int WEB_RESERVE = 2;
 	private int shieldTicks;
 	private long shieldRecoverUntil;
 

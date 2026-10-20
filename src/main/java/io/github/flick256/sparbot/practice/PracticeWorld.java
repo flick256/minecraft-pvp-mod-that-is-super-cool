@@ -6,7 +6,9 @@ import io.github.flick256.sparbot.core.kit.Kit;
 import io.github.flick256.sparbot.core.match.GameMode;
 import io.github.flick256.sparbot.core.practice.PracticeLayout;
 import io.github.flick256.sparbot.core.practice.PracticeLayout.Site;
+import io.github.flick256.sparbot.core.practice.PracticeTerrain;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
+import io.github.flick256.sparbot.core.style.Playstyle;
 import io.github.flick256.sparbot.match.Arena;
 import io.github.flick256.sparbot.match.MatchManager;
 import io.github.flick256.sparbot.practice.colosseum.CelestialColosseum;
@@ -47,6 +49,11 @@ public final class PracticeWorld {
 	private final Map<UUID, Long> padUsed = new HashMap<>();
 	/** Where each player was before they first came to the practice world, for /sparbot practice leave. */
 	private final Map<UUID, Return> returns = new HashMap<>();
+	private final Map<UUID, PracticeTerrain> terrains = new HashMap<>();
+	private final Map<UUID, LastFight> lastFights = new HashMap<>();
+	private record LastFight(GameMode mode, String profileId, String botName, @Nullable Playstyle style) {}
+	private final Map<String, PracticeTerrain> currentTerrains = new HashMap<>();
+	private @Nullable ServerLevel trackedPracticeLevel;
 
 	private record Return(ResourceKey<Level> level, Vec3 pos, float yaw, float pitch) {
 	}
@@ -67,6 +74,15 @@ public final class PracticeWorld {
 
 	/** On server start: a practice world is built straight away, so its players spawn in the hub. */
 	public void onServerStarted(MinecraftServer server) {
+		// The mod singleton survives returning to the title screen and opening another world.
+		onPad.clear();
+		padUsed.clear();
+		returns.clear();
+		terrains.clear();
+		lastFights.clear();
+		currentTerrains.clear();
+		trackedPracticeLevel = null;
+		works = null;
 		if (isPracticeWorld(server)) {
 			try {
 				ensure(server);
@@ -81,6 +97,10 @@ public final class PracticeWorld {
 		ServerLevel level = level(server);
 		if (level == null) {
 			throw new IllegalStateException("The practice dimension isn't loaded (is SparBot's data pack enabled?)");
+		}
+		if (trackedPracticeLevel != level) {
+			currentTerrains.clear();
+			trackedPracticeLevel = level;
 		}
 		PracticeBuilder builder = new PracticeBuilder(level);
 		builder.load(-PracticeLayout.HUB_RADIUS, -PracticeLayout.HUB_RADIUS, PracticeLayout.HUB_RADIUS, PracticeLayout.HUB_RADIUS);
@@ -102,6 +122,7 @@ public final class PracticeWorld {
 					new Arena.Spawn(site.centerX() + 0.5, y, site.centerZ() - site.spawnOffset() + 0.5, 0));
 				SparBot.matches().arenas().setSpawn(site.arenaId(), false,
 					new Arena.Spawn(site.centerX() + 0.5, y, site.centerZ() + site.spawnOffset() + 0.5, 180));
+				if (fresh && site != PracticeLayout.UHC) currentTerrains.put(site.arenaId(), PracticeTerrain.FLAT);
 			}
 		}
 		colosseum(level).start();
@@ -149,7 +170,25 @@ public final class PracticeWorld {
 	 * the mode's kit. The bot is removed when the match ends.
 	 */
 	public String fight(ServerPlayer player, GameMode mode, SkillProfile profile) throws IOException {
+		return fight(player, mode, profile, terrain(player.getUUID()), null);
+	}
+
+	/** Starts a practice match with an explicit terrain and optional rival name. */
+	public String fight(ServerPlayer player, GameMode mode, SkillProfile profile, PracticeTerrain terrain, @Nullable String rivalName) throws IOException {
+		return fight(player, mode, profile, terrain, rivalName, null);
+	}
+
+	/** Same as the terrain overload, with an optional authored playstyle for a named rival. */
+	public String fight(ServerPlayer player, GameMode mode, SkillProfile profile, PracticeTerrain terrain, @Nullable String rivalName,
+		@Nullable Playstyle style) throws IOException {
+		return fight(player, mode, profile, terrain, rivalName, style, true);
+	}
+
+	private String fight(ServerPlayer player, GameMode mode, SkillProfile profile, PracticeTerrain terrain, @Nullable String rivalName,
+		@Nullable Playstyle style, boolean adapt) throws IOException {
 		MinecraftServer server = player.level().getServer();
+		if (SparBot.matches().inMatch(player.getUUID())) throw new IllegalArgumentException("You are already in a match");
+		if (SparBot.drills().inDrill(player.getUUID())) throw new IllegalArgumentException("Finish your drill before starting a fight");
 		ServerLevel level = ensure(server);
 		Site site = PracticeLayout.siteFor(mode.id());
 		Arena arena = SparBot.matches().arenas().get(site.arenaId()).orElseThrow(() -> new IllegalStateException("No arena " + site.arenaId()));
@@ -157,17 +196,85 @@ public final class PracticeWorld {
 			throw new IllegalArgumentException(site.displayName() + " is in use; stop that match first (/sparbot match stop " + arena.id() + ")");
 		}
 		Kit kit = SparBot.kits().get(mode.kit()).orElseThrow(() -> new IllegalArgumentException("Mode " + mode.id() + " has an unknown kit " + mode.kit()));
+		if (SparBot.profiles().get(profile.id()).isEmpty()) throw new IllegalArgumentException("Unknown profile " + profile.id());
+		if (adapt && rivalName == null && SparBot.careers().adaptivePractice(player.getUUID())) {
+			String adapted = SparBot.careers().adaptPracticeProfile(player.getUUID(), mode.id(), profile.id());
+			profile = SparBot.profiles().get(adapted).orElse(profile);
+		}
+		if (currentTerrains.get(site.arenaId()) != terrain) {
+			if (player.level() == level && arena.box().inflate(8).contains(player.position())) {
+				player.teleportTo(level, 0.5, PracticeLayout.FLOOR, -3.5, Set.of(), 0, 0, true);
+			}
+			if (hasNearbyPlayers(arena, level.players(), null)) {
+				throw new IllegalArgumentException(site.displayName() + " has players nearby; try again when the arena is clear");
+			}
+			SparBot.matches().arenas().reset(server, arena);
+			new PracticeBuilder(level).buildCombatTerrain(site, terrain);
+			arena = SparBot.matches().arenas().create(site.arenaId(), level, new BlockPos(site.minX(), site.minY(), site.minZ()),
+				new BlockPos(site.maxX(), site.maxY(), site.maxZ()));
+			SparBot.matches().arenas().setSpawn(site.arenaId(), true,
+				new Arena.Spawn(site.centerX() + 0.5, PracticeLayout.FLOOR, site.centerZ() - site.spawnOffset() + 0.5, 0));
+			SparBot.matches().arenas().setSpawn(site.arenaId(), false,
+				new Arena.Spawn(site.centerX() + 0.5, PracticeLayout.FLOOR, site.centerZ() + site.spawnOffset() + 0.5, 180));
+			arena = SparBot.matches().arenas().get(site.arenaId()).orElseThrow();
+			currentTerrains.put(site.arenaId(), terrain);
+		}
 		if (player.level() != level) {
 			returns.putIfAbsent(player.getUUID(), new Return(player.level().dimension(), player.position(), player.getYRot(), player.getXRot()));
 		}
-		String name = "swight".equals(profile.id()) ? availableSwightName() : botName(site);
-		SparBot.bots().get(name).ifPresent(old -> SparBot.bots().remove(old, "replaced by a new practice fight"));
+		String baseName = rivalName != null && !rivalName.isBlank() ? rivalName : "swight".equals(profile.id()) ? "Swight" : botName(site);
+		baseName = baseName.replaceAll("[^A-Za-z0-9_]", "");
+		if (baseName.isBlank()) baseName = "Rival";
+		if (baseName.length() > 16) baseName = baseName.substring(0, 16);
+		String name = availableBotName(server, baseName);
 		Arena.Spawn spawn = arena.spawnB();
 		Bot bot = SparBot.bots().spawn(server, name, level, new Vec3(spawn.x(), spawn.y(), spawn.z()), spawn.yaw(), profile, kit);
+		if (style != null) bot.setPlaystyle(style);
 		bot.setAssignedTarget(player.getUUID());
-		SparBot.matches().start(server, mode, arena, MatchManager.fighterFor(player), MatchManager.fighterFor(bot),
-			match -> SparBot.bots().get(name).filter(b -> b == bot).ifPresent(b -> SparBot.bots().remove(b, "practice fight over")));
+		try {
+			SparBot.matches().start(server, mode, arena, MatchManager.fighterFor(player), MatchManager.fighterFor(bot),
+				match -> SparBot.bots().get(name).filter(b -> b == bot).ifPresent(b -> SparBot.bots().remove(b, "practice fight over")));
+		} catch (IOException | RuntimeException e) {
+			SparBot.bots().get(name).filter(b -> b == bot).ifPresent(b -> SparBot.bots().remove(b, "practice match failed to start"));
+			throw e;
+		}
+		if (rivalName == null) SparBot.careers().trackPracticeMatch(player.getUUID(), mode.id());
+		lastFights.put(player.getUUID(), new LastFight(mode, profile.id(), rivalName, style));
 		return mode.displayName() + " against " + profile.displayName() + " in the " + site.displayName() + ", first to " + mode.roundsToWin();
+	}
+
+	public static boolean hasNearbyPlayers(Arena arena, Iterable<ServerPlayer> players, @Nullable ServerPlayer excluded) {
+		var area = arena.box().inflate(8);
+		for (ServerPlayer player : players) {
+			if (player != excluded && area.contains(player.position())) return true;
+		}
+		return false;
+	}
+
+	public PracticeTerrain terrain(UUID player) {
+		return terrains.getOrDefault(player, PracticeTerrain.FLAT);
+	}
+
+	public void setTerrain(ServerPlayer player, PracticeTerrain terrain) {
+		terrains.put(player.getUUID(), terrain);
+		player.sendSystemMessage(Component.literal("Practice terrain set to " + terrain.id() + "."));
+	}
+
+	public String rematch(ServerPlayer player) throws IOException {
+		LastFight last = lastFights.get(player.getUUID());
+		if (last == null) throw new IllegalArgumentException("You have no previous practice fight to rematch");
+		SkillProfile profile = SparBot.profiles().get(last.profileId()).orElseThrow(() -> new IllegalArgumentException("Previous rival profile is no longer available"));
+		return fight(player, last.mode(), profile, terrain(player.getUUID()), last.botName(), last.style(), false);
+	}
+
+	private static String availableBotName(MinecraftServer server, String base) {
+		String name = base;
+		int suffix = 2;
+		while (SparBot.bots().get(name).isPresent() || server.getPlayerList().getPlayer(name) != null) {
+			String ending = Integer.toString(suffix++);
+			name = base.substring(0, Math.min(base.length(), 16 - ending.length())) + ending;
+		}
+		return name;
 	}
 
 	private static String availableSwightName() {

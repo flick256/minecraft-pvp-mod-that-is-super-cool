@@ -94,6 +94,25 @@ public final class KitRegistry {
 		kits.put(kit.id(), kit);
 	}
 
+	/** Saves a new custom kit without allowing an editor draft to replace any registered preset. */
+	public void saveNew(Kit kit, HolderLookup.Provider registries) throws IOException {
+		if (kits.containsKey(kit.id())) {
+			throw new IllegalArgumentException("Kit ID already exists: " + kit.id());
+		}
+		List<String> errors = io.github.flick256.sparbot.core.kit.KitValidator.validate(kit);
+		errors.addAll(KitApplier.resolveErrors(kit, registries));
+		if (!errors.isEmpty()) {
+			throw new IllegalArgumentException("Kit '" + kit.id() + "' is invalid: " + errors);
+		}
+		Files.createDirectories(customDir);
+		Path target = customDir.resolve(kit.id() + ".json");
+		if (Files.exists(target)) {
+			throw new IllegalArgumentException("Kit file already exists: " + kit.id());
+		}
+		Files.writeString(target, Kits.toJson(kit), StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.CREATE_NEW);
+		kits.put(kit.id(), kit);
+	}
+
 	public void save(Layout layout) throws IOException {
 		List<String> errors = layout.validate();
 		if (!errors.isEmpty()) {

@@ -2,6 +2,7 @@ package io.github.flick256.sparbot.stats;
 
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.bot.BotPlayer;
+import io.github.flick256.sparbot.record.CombatReviewEvents;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -28,8 +29,9 @@ public final class StatsTracker {
 
 	public static void register() {
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-			if (entity instanceof BotPlayer || source.getEntity() instanceof BotPlayer) {
+			if (entity instanceof Player || source.getEntity() instanceof Player) {
 				HEALTH_BEFORE.put(entity, entity.getHealth() + entity.getAbsorptionAmount());
+				CombatReviewEvents.incoming(entity, source, amount);
 			}
 			return true;
 		});
@@ -44,7 +46,9 @@ public final class StatsTracker {
 		if (before == null) {
 			return;
 		}
-		recordDamage(victim, source, Math.max(0, before - Math.max(0, victim.getHealth()) - victim.getAbsorptionAmount()));
+		float lost = Math.max(0, before - Math.max(0, victim.getHealth()) - victim.getAbsorptionAmount());
+		CombatReviewEvents.damage(victim, source, lost);
+		recordDamage(victim, source, lost);
 	}
 
 	private static void recordDamage(LivingEntity victim, DamageSource source, float lost) {
@@ -73,8 +77,10 @@ public final class StatsTracker {
 	}
 
 	private static void afterDeath(LivingEntity victim, DamageSource source) {
+		CombatReviewEvents.death(victim, source);
 		Float before = HEALTH_BEFORE.remove(victim);
 		if (before != null) {
+			CombatReviewEvents.damage(victim, source, before);
 			// The killing blow took everything that was left.
 			recordDamage(victim, source, before);
 		}

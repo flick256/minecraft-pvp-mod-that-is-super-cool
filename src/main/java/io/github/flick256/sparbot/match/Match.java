@@ -35,6 +35,9 @@ public final class Match {
 	private MatchState.Event result = MatchState.Event.NONE;
 	private final long startedAt = System.currentTimeMillis();
 	private boolean recording;
+	private boolean reviewRecording;
+	private boolean forfeited;
+	private boolean cleanedUp;
 
 	Match(Arena arena, GameMode mode, Kit kit, Fighter a, Fighter b, MatchManager manager) {
 		this.arena = arena;
@@ -58,6 +61,7 @@ public final class Match {
 		ServerPlayer pa = a.resolve(server);
 		ServerPlayer pb = b.resolve(server);
 		if (pa == null || pb == null) {
+			forfeited = true;
 			finish(server, state.forfeit(pa == null ? MatchState.Side.A : MatchState.Side.B), pa, pb);
 			return true;
 		}
@@ -132,7 +136,7 @@ public final class Match {
 
 	private void prepareRound(MinecraftServer server, ServerPlayer pa, ServerPlayer pb) {
 		manager.arenas().reset(server, arena);
-		if (!recording && SparBot.config().recordMatches) {
+		if (!recording && (SparBot.config().recordMatches || reviewRecording)) {
 			try {
 				SparBot.recorder().start(recordingLabel(), mode.id(), List.of(pa, pb));
 				recording = true;
@@ -210,6 +214,19 @@ public final class Match {
 			manager.elo().ladder().record(a.eloKey(), b.eloKey(), winner == MatchState.Side.A ? 1 : 0);
 			manager.elo().save();
 		}
+		cleanup(server, pa, pb);
+		SparBot.LOGGER.info("Match in arena {} finished: {} {} {} ({})", arena.id(), a.name(), state.score(), b.name(), event);
+	}
+
+	/** An explicit stop is not a competitive result, but must undo every per-match resource. */
+	void cancel(MinecraftServer server) {
+		forfeited = true;
+		cleanup(server, a.resolve(server), b.resolve(server));
+	}
+
+	private void cleanup(MinecraftServer server, @Nullable ServerPlayer pa, @Nullable ServerPlayer pb) {
+		if (cleanedUp) { return; }
+		cleanedUp = true;
 		for (Fighter fighter : new Fighter[] {a, b}) {
 			MatchRules.withoutRegeneration(fighter.uuid(), false);
 			ServerPlayer player = fighter == a ? pa : pb;
@@ -233,8 +250,12 @@ public final class Match {
 				SparBot.LOGGER.error("Could not save the recording of the match in {}", arena.id(), e);
 			}
 		}
-		SparBot.LOGGER.info("Match in arena {} finished: {} {} {} ({})", arena.id(), a.name(), state.score(), b.name(), event);
 	}
+
+	/** Request a review recording before the first round starts (used by authored rival matches). */
+	public void enableReviewRecording() { reviewRecording = true; }
+
+	public boolean forfeit() { return forfeited; }
 
 	private void announce(MinecraftServer server, Component message) {
 		for (Fighter fighter : new Fighter[] {a, b}) {

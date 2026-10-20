@@ -4,6 +4,8 @@ import io.github.flick256.sparbot.SparBot;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -52,7 +54,26 @@ public final class PlayerBackup {
 		tag.putInt("xpLevel", player.experienceLevel);
 		tag.putFloat("xpProgress", player.experienceProgress);
 		Files.createDirectories(dir);
-		NbtIo.writeCompressed(tag, file(player.getUUID()));
+		Path destination = file(player.getUUID());
+		if (Files.exists(destination)) {
+			throw new java.nio.file.FileAlreadyExistsException(destination.toString());
+		}
+		Path temporary = Files.createTempFile(dir, player.getUUID() + ".", ".tmp");
+		try {
+			NbtIo.writeCompressed(tag, temporary);
+			try {
+				Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(temporary, destination);
+			}
+		} finally {
+			Files.deleteIfExists(temporary);
+		}
+	}
+
+	/** Removes a backup created by a start attempt that was rolled back before player state changed. */
+	void discard(UUID uuid) throws IOException {
+		Files.deleteIfExists(file(uuid));
 	}
 
 	/** Restores and deletes the backup. Returns false when there is none. */
@@ -66,9 +87,16 @@ public final class PlayerBackup {
 			RegistryOps<Tag> ops = player.level().registryAccess().createSerializationContext(NbtOps.INSTANCE);
 			Inventory inventory = player.getInventory();
 			ListTag items = tag.getListOrEmpty("items");
+			if (items.size() != inventory.getContainerSize()) {
+				throw new IOException("Expected " + inventory.getContainerSize() + " inventory slots, found " + items.size());
+			}
+			java.util.ArrayList<ItemStack> decoded = new java.util.ArrayList<>(items.size());
 			for (int i = 0; i < inventory.getContainerSize(); i++) {
-				ItemStack stack = i < items.size() ? ItemStack.OPTIONAL_CODEC.parse(ops, items.get(i)).result().orElse(ItemStack.EMPTY) : ItemStack.EMPTY;
-				inventory.setItem(i, stack);
+				decoded.add(ItemStack.OPTIONAL_CODEC.parse(ops, items.get(i)).getOrThrow());
+			}
+			// Do not mutate a slot, health, effects, or xp until every slot has decoded successfully.
+			for (int i = 0; i < decoded.size(); i++) {
+				inventory.setItem(i, decoded.get(i));
 			}
 			player.removeAllEffects();
 			player.setHealth(tag.getFloatOr("health", player.getMaxHealth()));
@@ -79,7 +107,7 @@ public final class PlayerBackup {
 			player.inventoryMenu.broadcastChanges();
 			Files.delete(file);
 			return true;
-		} catch (IOException e) {
+		} catch (IOException | RuntimeException e) {
 			SparBot.LOGGER.error("Could not restore match backup for {}: {}", player.getPlainTextName(), e.getMessage());
 			return false;
 		}

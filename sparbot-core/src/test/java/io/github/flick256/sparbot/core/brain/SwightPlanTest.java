@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.flick256.sparbot.core.TestFixtures;
 import io.github.flick256.sparbot.core.act.Inputs;
+import io.github.flick256.sparbot.core.item.ItemInfo;
 import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Vec3;
 import io.github.flick256.sparbot.core.profile.SkillProfiles;
@@ -14,6 +15,8 @@ import io.github.flick256.sparbot.core.style.Playstyle;
 import org.junit.jupiter.api.Test;
 
 class SwightPlanTest {
+	private static final ItemInfo WEB = TestFixtures.item(ItemKind.COBWEB, "minecraft:cobweb", 1, 1);
+
 	@Test
 	void specialistKeepsDemonsPhysicalLimitsAndConservativeReach() {
 		var presets = SkillProfiles.loadPresets();
@@ -135,6 +138,28 @@ class SwightPlanTest {
 		h.world = io.github.flick256.sparbot.core.sense.Surroundings.EMPTY;
 		c = h.context(c.self);
 		assertEquals(h.target.chest(), SwightPlan.meleeAim(c, h.target, Vec3.ZERO), "do not invent unseen obstructions");
+	}
+
+	@Test
+	void conservesTheLastTwoWebsForHealingOrAConfirmedOpening() {
+		var inventory = TestFixtures.inventory(1, WEB, 2, WEB);
+		var target = TestFixtures.target(new Vec3(0, 0, 3), 0);
+		var h = new BrainHarness(TestFixtures.preset("swight"), inventory, target);
+		var self = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 0.2F, true, TestFixtures.flatGround(), h.inventory(), 20);
+		var ordinary = new WebTactic();
+		assertEquals(0, ordinary.score(h.context(self)), "does not spend the reserve on a routine grounded opponent");
+
+		// One extra web makes neutral utility affordable, while food confirms a high-value opening
+		// even when only the reserved pair remains.
+		var extraInventory = TestFixtures.inventory(1, TestFixtures.item(ItemKind.COBWEB, "minecraft:cobweb", 3, 1));
+		var extra = new BrainHarness(TestFixtures.preset("swight"), extraInventory, target);
+		var extraSelf = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 0.2F, true, TestFixtures.flatGround(), extra.inventory(), 20);
+		assertTrue(new WebTactic().score(extra.context(extraSelf)) > 0, "spends above the reserve for neutral utility");
+
+		var eating = TestFixtures.target(new Vec3(0, 0, 3), 0, ItemKind.SWORD, ItemKind.EMPTY, ItemKind.GOLDEN_APPLE, false);
+		var food = new BrainHarness(TestFixtures.preset("swight"), inventory, eating);
+		var foodSelf = TestFixtures.self(Vec3.ZERO, 0, 0, 20, 1, true, TestFixtures.flatGround(), food.inventory(), 20);
+		assertTrue(new WebTactic().score(food.context(foodSelf)) > 0, "uses a reserved web when food use confirms the opening");
 	}
 
 }

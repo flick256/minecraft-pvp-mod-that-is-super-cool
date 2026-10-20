@@ -31,6 +31,7 @@ public final class SparBotClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		KeyMappingHelper.registerKeyMapping(OPEN_MENU);
+		KitEditorClient.register();
 		ModelLayerRegistry.registerModelLayer(VaelorModel.LAYER, VaelorModel::createBodyLayer);
 		EntityRendererRegistry.register(SparBotContent.VAELOR, VaelorRenderer::new);
 		ClientPlayNetworking.registerGlobalReceiver(MenuStatePayload.TYPE, (payload, context) -> {

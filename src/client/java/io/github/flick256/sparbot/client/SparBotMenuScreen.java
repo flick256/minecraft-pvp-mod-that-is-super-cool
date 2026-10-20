@@ -33,6 +33,9 @@ public final class SparBotMenuScreen extends Screen {
 		KITS("Kits", "Ready for the next round", "Equip a kit or save the arrangement that works for you."),
 		DRILLS("Drills", "One skill at a time", "Short practice, instant feedback, and a medal to work towards."),
 		YOU("You", "Your training journal", "Recover, review your last fight, and see what to improve."),
+		RIVALS("Rivals", "A ladder worth climbing", "Choose a rival, learn their style, and earn the next challenge."),
+		CAREER("Career", "Your season, your pace", "Track promotion progress and continue a series when you are ready."),
+		REPLAY("Replay", "Study the exchange", "Pause, scrub and step through a recorded fight."),
 		SETTINGS("Settings", "Your practice, your rules", "Changes apply to this server and require permission."),
 		TECHNIQUES("Techniques", "Tune your opponent", "Choose the techniques this bot can use.");
 		final String label, heading, description;
@@ -56,8 +59,10 @@ public final class SparBotMenuScreen extends Screen {
 	private String spawnName = "Bot1", spawnProfile, spawnKit, spawnStyle;
 	private String practiceProfile, practiceMode, techniquesBot;
 	private String kitSearch = "", settingsSearch = "", status = "Ready";
-	private boolean choosingKit, rebuildNextTick;
+	private boolean choosingKit, choosingRecording, rebuildNextTick;
 	private int scroll, totalHeight, cursorY, refreshIn, ticks;
+	private String replaySelection;
+	private String replaySeekDraft = "";
 	private int left, top, panelWidth, panelHeight, sidebar, contentX, contentWidth, contentTop, contentBottom;
 
 	public SparBotMenuScreen(MenuState state) {
@@ -73,6 +78,9 @@ public final class SparBotMenuScreen extends Screen {
 			show(Tab.BOTS);
 		} else { rebuildKeepingFocus(); }
 	}
+
+	/** Current server recording snapshot, for accessible review controls and client UI integration checks. */
+	public List<MenuState.ReplayEntry> recordingEntries() { return state.recordings(); }
 
 	private void rebuildKeepingFocus() {
 		String focused = fields.entrySet().stream().filter(e -> e.getValue() == getFocused()).map(Map.Entry::getKey).findFirst().orElse(null);
@@ -97,13 +105,15 @@ public final class SparBotMenuScreen extends Screen {
 		contentX = left + sidebar + 14;
 		contentWidth = panelWidth - sidebar - 28;
 		contentTop = top + 62; contentBottom = top + panelHeight - 36;
+		int navStep = panelHeight < 320 ? 16 : 22;
+		int navHeight = panelHeight < 320 ? 14 : 20;
 		int navY = top + 44;
 		for (Tab each : Tab.values()) {
 			if (each == Tab.TECHNIQUES) { continue; }
-			MenuButton button = new MenuButton(each.label, left + 8, navY, sidebar - 16, 20, MenuButton.Tone.NAV,
+			MenuButton button = new MenuButton(each.label, left + 8, navY, sidebar - 16, navHeight, MenuButton.Tone.NAV,
 				tab == each || each == Tab.BOTS && tab == Tab.TECHNIQUES, b -> show(each));
 			addRenderableWidget(button);
-			navY += 22;
+			navY += navStep;
 		}
 		cursorY = contentTop - scroll;
 		switch (tab) {
@@ -114,6 +124,9 @@ public final class SparBotMenuScreen extends Screen {
 			case KITS -> kits();
 			case DRILLS -> drills();
 			case YOU -> you();
+			case RIVALS -> rivals();
+			case CAREER -> career();
+			case REPLAY -> replay();
 			case SETTINGS -> settings();
 			case TECHNIQUES -> techniques();
 		}
@@ -187,6 +200,11 @@ public final class SparBotMenuScreen extends Screen {
 		}
 
 		section("EXPLORE THE PRACTICE WORLD");
+		section("ARENA TERRAIN");
+		String terrain = setting("practiceTerrain");
+		choices(List.of("flat", "uneven", "obstacles"), pick(terrain, List.of("flat", "uneven", "obstacles"), "flat"),
+			value -> run("sparbot practice terrain " + value));
+		flowButtons(List.of("Rematch"), List.of(() -> runAndClose("sparbot practice rematch")));
 		flowButtons(List.of("Hub", "Colosseum", "Leave"), List.of(() -> runAndClose(MenuCommands.practiceHub()),
 			() -> runAndClose(MenuCommands.practiceColosseum()), () -> runAndClose(MenuCommands.practiceLeave())));
 		section("GRAND BOWL");
@@ -294,12 +312,14 @@ public final class SparBotMenuScreen extends Screen {
 			if (choosingKit) {
 				button("Use kit", 12, y + 50, Math.min(130, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> { spawnKit = kit.id(); choosingKit = false; show(Tab.SPAWN); });
 			} else {
-				int bw = Math.min(88, (contentWidth - 36) / 3);
+				int bw = Math.min(76, (contentWidth - 42) / 4);
 				boolean saved = state.myLayouts().contains(kit.id());
 				button("Equip", 12, y + 50, bw, MenuButton.Tone.PRIMARY, () -> run(MenuCommands.giveKit(kit.id())));
-				button(saved ? "Save layout*" : "Save layout", 18 + bw, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.saveLayout(kit.id())))
+				button("Edit", 18 + bw, y + 50, bw, MenuButton.Tone.NORMAL, () -> run("sparbot kiteditor " + kit.id()))
+					.setTooltip(Tooltip.create(Component.literal("Open this template as a new draft, then save it with a new ID to clone it.")));
+				button(saved ? "Save layout*" : "Save layout", 24 + bw * 2, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.saveLayout(kit.id())))
 					.setTooltip(Tooltip.create(Component.literal("Save your current inventory arrangement for this kit.")));
-				button("Reset", 24 + bw * 2, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.resetLayout(kit.id()))).active = saved;
+				button("Reset", 30 + bw * 3, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.resetLayout(kit.id()))).active = saved;
 			}
 		}
 	}
@@ -337,11 +357,131 @@ public final class SparBotMenuScreen extends Screen {
 			y = card(24 + lines * 12, false);
 			wrap(line, 12, y + 12, contentWidth - 24, ACCENT);
 		}
+		List<MenuState.TrainingEntry> recommendations = state.training().isEmpty()
+			? io.github.flick256.sparbot.core.drill.TrainingPlan.recommendations(state.myFights()).stream()
+				.map(r -> new MenuState.TrainingEntry(r.drillId(), r.title(), r.reason(), r.priority())).toList()
+			: state.training();
+		section("NEXT SESSION");
+		if (recommendations.isEmpty()) {
+			empty("Build a little evidence", "Your coach will recommend a drill after a fight has enough attempts to show a pattern.");
+		} else {
+			var recommendation = recommendations.getFirst();
+			int lines = font.getSplitter().splitLines(recommendation.reason(), contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+			y = card(70 + lines * 12, true);
+			text(recommendation.title(), 12, y + 10, GOLD);
+			wrap(recommendation.reason(), 12, y + 28, contentWidth - 24, MUTED);
+			button("Start drill", 12, y + 42 + lines * 12, Math.min(112, contentWidth - 24), MenuButton.Tone.PRIMARY,
+				() -> runAndClose(MenuCommands.drill(recommendation.drillId())));
+		}
+		button("Rematch", 0, cursorY, Math.min(112, contentWidth), MenuButton.Tone.NORMAL, () -> runAndClose("sparbot practice rematch"));
+		cursorY += 32;
 		String trend = state.myFights().stream().map(f -> f.numbers().get("Full charge")).filter(java.util.Objects::nonNull).reduce((a, b) -> a + " > " + b).orElse("");
 		if (state.myFights().size() > 1 && !trend.isEmpty()) {
 			section("FULL CHARGE OVER RECENT FIGHTS");
 			wrap(trend, 0, cursorY, contentWidth, GOLD);
 			cursorY += 12 * font.getSplitter().splitLines(trend, contentWidth, net.minecraft.network.chat.Style.EMPTY).size() + 12;
+		}
+	}
+
+	private void rivals() {
+		if (state.rivals().isEmpty()) { empty("Rivals are on their way", "Refresh after the server loads its challenge roster."); return; }
+		for (MenuState.RivalEntry rival : state.rivals()) {
+			int descriptionLines = font.getSplitter().splitLines(rival.description(), contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+			int detailY = 34 + descriptionLines * 12;
+			int y = card(detailY + 84, rival.unlocked());
+			text(rival.name() + "  /  " + pretty(rival.mode()), 12, y + 10, rival.unlocked() ? GOLD : TEXT);
+			wrap(rival.description(), 12, y + 28, contentWidth - 24, MUTED);
+			String detail = pretty(rival.style()) + "  ·  " + rival.wins() + "W " + rival.losses() + "L";
+			text(detail, 12, y + detailY, ACCENT);
+			text("Strength: " + rival.strength(), 12, y + detailY + 16, MUTED);
+			text("Opening: " + rival.weakness(), 12, y + detailY + 32, MUTED);
+			button(rival.unlocked() ? "Challenge" : "Locked", 12, y + detailY + 50, Math.min(112, contentWidth - 24), MenuButton.Tone.PRIMARY,
+				() -> { if (rival.unlocked()) runAndClose("sparbot rival " + rival.id()); }).active = rival.unlocked();
+		}
+	}
+
+	private void career() {
+		if (state.career().isEmpty()) { empty("Your season starts with a fight", "Complete a ranked challenge to see promotion progress here."); return; }
+		for (MenuState.CareerEntry entry : state.career()) {
+			int y = card(entry.champion() ? 72 : 108, entry.champion());
+			text(pretty(entry.mode()) + "  /  " + entry.tier(), 12, y + 10, entry.champion() ? GOLD : TEXT);
+			text(entry.wins() + " wins  ·  " + entry.losses() + " losses", 12, y + 28, MUTED);
+			text(entry.champion() ? "Champion" : "Promotion: " + entry.progress() + " / " + entry.required(), 12, y + 46, entry.champion() ? GOLD : ACCENT);
+			if (!entry.champion()) text("Next: " + entry.nextRival(), 12, y + 62, MUTED);
+			if (!entry.champion()) {
+				button("Continue", 12, y + 82, Math.min(120, contentWidth - 24), MenuButton.Tone.PRIMARY,
+					() -> runAndClose("sparbot career " + entry.mode() + " continue"));
+			}
+		}
+		section("PRACTICE ADAPTATION");
+		boolean on = "true".equals(setting("adaptivePractice"));
+		button("Adaptation: " + (on ? "On" : "Off"), 0, cursorY, Math.min(160, contentWidth), MenuButton.Tone.NORMAL,
+			() -> run("sparbot career adapt " + (on ? "off" : "on")));
+		cursorY += 32;
+	}
+
+	private void replay() {
+		if (state.recordings().isEmpty()) { empty("No recordings yet", "Record a fight, then return here to study the key moments."); return; }
+		MenuState.ReplayEntry selectedChoice = state.recordings().stream().filter(r -> r.name().equals(replaySelection)).findFirst().orElse(null);
+		if (selectedChoice == null) selectedChoice = state.recordings().stream().filter(MenuState.ReplayEntry::active).findFirst().orElse(state.recordings().getFirst());
+		final MenuState.ReplayEntry selected = selectedChoice;
+		if (choosingRecording) {
+			button("Back to review", 0, cursorY, Math.min(140, contentWidth), MenuButton.Tone.NORMAL, () -> {
+				choosingRecording = false; scroll = 0; rebuildWidgets();
+			});
+			cursorY += 34;
+			section("RECORDING LIBRARY");
+			for (MenuState.ReplayEntry replay : state.recordings()) {
+				int y = card(58, replay.name().equals(selected.name()));
+				int actionWidth = Math.min(112, Math.max(92, contentWidth / 3));
+				int textWidth = Math.max(40, contentWidth - actionWidth - 36);
+				labels.add(new Label(font.plainSubstrByWidth(replay.name(), textWidth), contentX + 12, y + 9, TEXT));
+				String summary = (replay.active() ? replay.paused() ? "Paused" : "Playing" : "Saved") + " · " + replay.durationTicks() + " ticks";
+				labels.add(new Label(font.plainSubstrByWidth(summary, textWidth), contentX + 12, y + 29, MUTED));
+				button("Select recording", contentWidth - actionWidth - 12, y + 18, actionWidth, MenuButton.Tone.NORMAL, () -> {
+					replaySelection = replay.name(); replaySeekDraft = ""; choosingRecording = false; scroll = 0; rebuildWidgets();
+				});
+			}
+			return;
+		}
+		int columns = contentWidth >= 300 ? 4 : 2;
+		int reviewY = card(columns == 4 ? 128 : 152, selected.active());
+		text(selected.name(), 12, reviewY + 10, TEXT);
+		text((selected.active() ? selected.paused() ? "Paused" : "Playing" : "Ready") + "  ·  " + selected.frame() + " / " + selected.durationTicks() + " ticks  ·  " + selected.speed() + "×", 12, reviewY + 28, MUTED);
+		int bw = Math.min(86, (contentWidth - 36) / 3);
+		MenuButton playback = button(selected.active() ? selected.paused() ? "Resume" : "Pause" : "Play", 12, reviewY + 50, bw,
+			selected.active() ? MenuButton.Tone.PRIMARY : MenuButton.Tone.GOLD,
+			() -> run(selected.active() ? "sparbot replay " + (selected.paused() ? "resume " : "pause ") + selected.name() : "sparbot replay " + selected.name()));
+		button("Step −", 18 + bw, reviewY + 50, bw, MenuButton.Tone.NORMAL, () -> run("sparbot replay step " + selected.name() + " back")).active = selected.active();
+		button("Step +", 24 + bw * 2, reviewY + 50, bw, MenuButton.Tone.NORMAL, () -> run("sparbot replay step " + selected.name())).active = selected.active();
+		int rowWidth = Math.min(132, (contentWidth - 30) / 2);
+		button("Stop", 12, reviewY + 74, rowWidth, MenuButton.Tone.DANGER, () -> run("sparbot replay stop " + selected.name())).active = selected.active();
+		button("Choose recording", 18 + rowWidth, reviewY + 74, rowWidth, MenuButton.Tone.NORMAL, () -> {
+			choosingRecording = true; scroll = 0; rebuildWidgets();
+		});
+		List<String> speeds = List.of("0.25", "0.5", "1", "2");
+		int speedWidth = (contentWidth - 24 - (columns - 1) * 4) / columns;
+		for (int i = 0; i < speeds.size(); i++) {
+			String speed = speeds.get(i);
+			button(speed + "×", 12 + i % columns * (speedWidth + 4), reviewY + 98 + i / columns * 24, speedWidth,
+				MenuButton.Tone.NORMAL, () -> run("sparbot replay speed " + selected.name() + " " + speed)).active = selected.active();
+		}
+		playback.setTooltip(Tooltip.create(Component.literal((selected.active() ? "Pause or resume " : "Start ") + selected.name() + " replay.")));
+		section("SEEK / EVENTS · " + selected.name());
+		EditBox seek = field("replaySeek", replaySeekDraft, "Tick", 0, cursorY, Math.min(contentWidth - 62, 150), 8, v -> replaySeekDraft = v);
+		button("Seek", Math.min(contentWidth - 52, 156), cursorY, 52, MenuButton.Tone.NORMAL, () -> {
+			try { int tick = Integer.parseInt(seek.getValue()); if (tick >= 0 && tick <= selected.durationTicks()) run("sparbot replay seek " + selected.name() + " " + tick); }
+			catch (NumberFormatException ignored) { status = "Enter a tick number"; }
+		}).active = selected.active();
+		cursorY += 36;
+		for (MenuState.ReplayEventEntry event : selected.events()) {
+			int textLines = font.getSplitter().splitLines(event.text(), Math.max(48, contentWidth - 96), net.minecraft.network.chat.Style.EMPTY).size();
+			int height = Math.max(48, 32 + textLines * 12);
+			int y = card(height, false);
+			text(event.tick() + "t  ·  " + pretty(event.kind()), 12, y + 8, ACCENT);
+			wrap(event.text(), 12, y + 24, Math.max(48, contentWidth - 96), MUTED);
+			button("Go", Math.max(12, contentWidth - 58), y + (height - 22) / 2, 46, MenuButton.Tone.NORMAL,
+				() -> run("sparbot replay seek " + selected.name() + " " + event.tick())).active = selected.active();
 		}
 	}
 
@@ -363,7 +503,8 @@ public final class SparBotMenuScreen extends Screen {
 	private void settings() {
 		field("settingsSearch", settingsSearch, "Search settings", 0, cursorY, contentWidth, 64, v -> { settingsSearch = v; scroll = 0; rebuildNextTick = true; });
 		cursorY += 34;
-		List<MenuState.Setting> settings = state.settings().stream().filter(s -> matches(settingsSearch, s.key())).toList();
+	List<MenuState.Setting> settings = state.settings().stream().filter(s -> !s.type().equals("preference"))
+			.filter(s -> matches(settingsSearch, s.key())).toList();
 		if (settings.isEmpty()) { empty("No matching settings", "Try a shorter search."); }
 		for (MenuState.Setting s : settings) {
 			int y = card(62, false);

@@ -48,26 +48,49 @@ public final class MatchManager {
 		if (a.uuid().equals(b.uuid())) {
 			throw new IllegalArgumentException("A fighter cannot fight itself");
 		}
+		List<ServerPlayer> humans = new ArrayList<>(2);
 		for (Fighter f : new Fighter[] {a, b}) {
 			if (inMatch(f.uuid())) {
 				throw new IllegalArgumentException(f.name() + " is already in a match");
 			}
-			if (f.resolve(server) == null) {
+			ServerPlayer player = f.resolve(server);
+			if (player == null) {
 				throw new IllegalArgumentException(f.name() + " is not online");
+			}
+			if (!f.isBot()) {
+				humans.add(player);
 			}
 		}
 		Kit kit = SparBot.kits().get(mode.kit()).orElseThrow(() -> new IllegalArgumentException("Mode " + mode.id() + " uses unknown kit " + mode.kit()));
-		for (Fighter f : new Fighter[] {a, b}) {
-			if (!f.isBot()) {
-				ServerPlayer player = f.resolve(server);
-				if (backups.has(player.getUUID())) {
-					throw new IllegalArgumentException(f.name() + " still has an unrestored match backup; rejoin first");
-				}
-				backups.save(player);
-			} else {
-				f.bot().setInMatch(true);
+		// Validate every existing backup before writing either one, so a later precondition cannot
+		// leave the first human with a newly-created backup for a match that never started.
+		for (int i = 0; i < humans.size(); i++) {
+			ServerPlayer player = humans.get(i);
+			if (backups.has(player.getUUID())) {
+				Fighter fighter = !a.isBot() && a.uuid().equals(player.getUUID()) ? a : b;
+				throw new IllegalArgumentException(fighter.name() + " still has an unrestored match backup; rejoin first");
 			}
 		}
+		List<java.util.UUID> savedBackups = new ArrayList<>(humans.size());
+		try {
+			for (ServerPlayer player : humans) {
+				backups.save(player);
+				savedBackups.add(player.getUUID());
+			}
+		} catch (IOException | RuntimeException e) {
+			for (java.util.UUID uuid : savedBackups) {
+				try {
+					backups.discard(uuid);
+				} catch (IOException rollbackFailure) {
+					e.addSuppressed(rollbackFailure);
+				}
+			}
+			throw e;
+		}
+		// Bots are reserved only after all human backups exist. On save failure no fighter state
+		// or human effects have changed, and rollback removes only backups from this attempt.
+		if (a.isBot()) { a.bot().setInMatch(true); }
+		if (b.isBot()) { b.bot().setInMatch(true); }
 		Match match = new Match(arena, mode, kit, a, b, this);
 		running.put(arena.id(), match);
 		watch(server, match);
@@ -83,10 +106,7 @@ public final class MatchManager {
 			if (match.tick(server)) {
 				running.remove(match.arena().id());
 				report(server, match, false);
-				Consumer<Match> callback = onFinish.remove(match.arena().id());
-				if (callback != null) {
-					callback.accept(match);
-				}
+				completed(server, match);
 			}
 		}
 		pendingRestore.removeIf(uuid -> {
@@ -109,20 +129,23 @@ public final class MatchManager {
 		if (match == null) {
 			return false;
 		}
-		onFinish.remove(arenaId);
+		match.cancel(server);
 		report(server, match, true);
-		for (Fighter f : new Fighter[] {match.a(), match.b()}) {
-			ServerPlayer player = f.resolve(server);
-			if (f.isBot()) {
-				f.bot().setInMatch(false);
-				f.bot().setBrainPaused(false);
-				f.bot().setAssignedTarget(null);
-			} else {
-				restoreWhenAlive(player, f);
-			}
-		}
-		arenas.reset(server, match.arena());
+		completed(server, match);
 		return true;
+	}
+
+	private void completed(MinecraftServer server, Match match) {
+		try {
+			SparBot.careers().onMatchFinished(match, match.result(), match.a().resolve(server), match.b().resolve(server));
+		} catch (RuntimeException e) {
+			SparBot.LOGGER.error("Career result failed for {}; match inventory cleanup has completed", match.arena().id(), e);
+		}
+		Consumer<Match> callback = onFinish.remove(match.arena().id());
+		if (callback != null) {
+			try { callback.accept(match); }
+			catch (RuntimeException e) { SparBot.LOGGER.error("Match completion callback failed for {}", match.arena().id(), e); }
+		}
 	}
 
 	/** A human against a bot: their fight is measured for the report and coach lines at the end. */

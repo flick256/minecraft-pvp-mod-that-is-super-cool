@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.core.match.GameMode;
 import io.github.flick256.sparbot.core.profile.SkillProfile;
+import io.github.flick256.sparbot.core.practice.PracticeTerrain;
 import java.io.IOException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -79,6 +80,21 @@ final class PracticeCommands {
 					throw fail("Nowhere to go back to: this world is the practice world");
 				}
 				return ok(ctx, "Back where you were");
+			}))
+			.then(Commands.literal("terrain").then(Commands.argument("layout", StringArgumentType.word())
+				.suggests((ctx, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(PracticeTerrain.values()).map(PracticeTerrain::id), b))
+				.executes(ctx -> {
+					PracticeTerrain terrain = PracticeTerrain.byId(StringArgumentType.getString(ctx, "layout"))
+						.orElseThrow(() -> fail("Choose flat, uneven, or obstacles"));
+					SparBot.practice().setTerrain(ctx.getSource().getPlayerOrException(), terrain);
+					return 1;
+				})))
+			.then(Commands.literal("rematch").executes(ctx -> {
+				try {
+					return ok(ctx, SparBot.practice().rematch(ctx.getSource().getPlayerOrException()));
+				} catch (IOException | IllegalArgumentException | IllegalStateException e) {
+					throw fail(e.getMessage());
+				}
 			}))
 			.then(Commands.literal("fight").then(Commands.argument("mode", StringArgumentType.word()).suggests(MODES)
 				.executes(ctx -> fight(ctx, SparBot.config().defaultProfile))

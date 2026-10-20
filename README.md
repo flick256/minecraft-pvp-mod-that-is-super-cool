@@ -1,5 +1,7 @@
 # SparBot
 
+**[Download SparBot 4.0.0](https://raw.githubusercontent.com/flick256/minecraft-pvp-mod-that-is-super-cool/refs/heads/builds/sparbot-4.0.0/sparbot-4.0.0.jar)** · [4.0 guide](docs/guide-4.0.md) · [Validation and upgrade notes](docs/testing-4.0.md)
+
 A Fabric mod for **Minecraft Java Edition 26.2** that adds PvP sparring bots. A bot plays like a real
 player at a chosen skill level, from Beginner to Pro, and it is **fully mortal**: it takes damage, knockback
 and fall damage through the same vanilla code as a human, uses up totems, drops its items and dies for real.
@@ -8,15 +10,17 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 3.2.1. Sword, combat, NoDebuff, mace, spear, crystal, cart and UHC modes; matches, Elo, recording
-> and replay, an in-game menu; **skill drills that teach** (every attempt judged the moment you make it, from
-> the keys you really pressed, to the tick; cues that tell you when to act) and a **live coach** in your fights
-> against bots. Every bot fights with
+> Status: 4.0.0. Adds 18 authored rivals across five career circuits, each promotion decided by a first-to-three
+> match; opt-in practice adaptation between fights; a native, draft-only kit editor; terrain choices for practice
+> rematches; and replay controls with event review. The menu's You journal can turn evidence-backed coaching into
+> one recommended drill you can start directly. Existing modes, matches, Elo, recording, replay and skill drills remain.
+> See the [4.0 guide](docs/guide-4.0.md) for the new flows and commands. Every bot fights with
 > hand-written, human-limited fighting code (2.0 removed the machine learning): at a chosen skill level and
 > **playstyle**, with any technique switchable per bot. A debug view shows what a bot is thinking.
 
-3.2.1 adds item illustrations and decorative menu details, corrects shield follow-up timing, and helps
-Swight find an exposed hitbox around obstructing webs. See [validation and shield notes](docs/testing-3.2.1.md).
+4.0 adds five authored career circuits: sword, UHC, cart, crystal and mace. The UHC circuit's champion is Swight.
+Replay event review records observed combat and shield facts, and version 2 recordings remain readable alongside
+version 1 files. See the [4.0 guide](docs/guide-4.0.md) and [earlier validation and shield notes](docs/testing-3.2.1.md).
 
 ## What a bot can do (milestone 3)
 

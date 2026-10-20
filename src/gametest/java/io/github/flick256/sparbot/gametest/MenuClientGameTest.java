@@ -3,6 +3,7 @@ package io.github.flick256.sparbot.gametest;
 import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.practice.colosseum.ColosseumSurvey;
 import io.github.flick256.sparbot.client.SparBotMenuScreen;
+import io.github.flick256.sparbot.client.KitEditorScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -29,6 +30,10 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			}
 
 			menuSmoke(context, world);
+			if (Boolean.getBoolean("sparbot.v4Only")) {
+				menuV4Smoke(context, world);
+				return;
+			}
 			if (Boolean.getBoolean("sparbot.menuOnly")) { return; }
 			context.getInput().pressKey(GLFW.GLFW_KEY_B);
 			context.waitForScreen(SparBotMenuScreen.class);
@@ -310,6 +315,259 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		clickMenu(context, "Done");
 	}
 
+	/** The 4.0 menu through live buttons and commands; only the coach report and replay marker are test fixtures. */
+	private static void menuV4Smoke(ClientGameTestContext context, TestSingleplayerContext world) {
+		String runId = Long.toString(System.currentTimeMillis());
+		String recording = "menu_v4_" + runId;
+		String cloneId = "menuv4_" + runId;
+		world.getServer().runOnServer(server -> {
+			var player = human(server);
+			io.github.flick256.sparbot.core.drill.DrillTally tally = new io.github.flick256.sparbot.core.drill.DrillTally();
+			for (int i = 0; i < 6; i++) tally.hit(i < 5 ? 0.4 : 1.0, false, true, 2.8);
+			SparBot.drills().reports().add(player.getUUID(), io.github.flick256.sparbot.core.drill.FightReport.of(
+				"sword_duel", "Game Test Rival", "lost", System.currentTimeMillis(), tally));
+		});
+
+		context.runOnClient(client -> client.options.guiScale().set(2));
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		context.waitTicks(4);
+		context.takeScreenshot("menu-v4-overview");
+		clickMenu(context, "Rivals");
+		context.takeScreenshot("menu-v4-rivals");
+		clickMenu(context, "Challenge");
+		world.getServer().waitFor(server -> SparBot.matches().inMatch(human(server).getUUID()), 300);
+		world.getServer().runOnServer(server -> SparBot.matches().stopAll(server));
+		world.getServer().waitFor(server -> !SparBot.matches().inMatch(human(server).getUUID()), 200);
+
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Career");
+		context.takeScreenshot("menu-v4-career");
+		clickMenu(context, "Continue");
+		String careerArena = io.github.flick256.sparbot.core.practice.PracticeLayout.siteFor("sword_duel").arenaId();
+		world.getServer().waitFor(server -> SparBot.matches().match(careerArena).isPresent(), 600);
+		java.util.concurrent.atomic.AtomicInteger killedRounds = new java.util.concurrent.atomic.AtomicInteger();
+		java.util.concurrent.atomic.AtomicInteger roundsToWin = new java.util.concurrent.atomic.AtomicInteger();
+		java.util.concurrent.atomic.AtomicBoolean authoredStyle = new java.util.concurrent.atomic.AtomicBoolean();
+		java.util.concurrent.atomic.AtomicBoolean matchRecording = new java.util.concurrent.atomic.AtomicBoolean();
+		world.getServer().waitFor(server -> {
+			var match = SparBot.matches().match(careerArena).orElse(null);
+			if (match == null) return true;
+			roundsToWin.set(match.state().mode().roundsToWin());
+			authoredStyle.set(match.b().isBot() && match.b().bot().playstyle().id().equals("balanced"));
+			matchRecording.set(SparBot.recorder().active().stream().anyMatch(label -> label.startsWith("match-" + careerArena + "-")));
+			return match.state().phase() == io.github.flick256.sparbot.core.match.MatchState.Phase.FIGHTING
+				&& match.b().isBot() && !match.b().bot().body().isDeadOrDying();
+		}, 300);
+		// Win each round by killing the actual match bot once after the round enters FIGHTING.
+		world.getServer().waitFor(server -> {
+			var match = SparBot.matches().match(careerArena).orElse(null);
+			if (match == null) return true;
+			if (match.state().phase() == io.github.flick256.sparbot.core.match.MatchState.Phase.FIGHTING
+				&& match.state().round() > killedRounds.get()) {
+				killedRounds.set(match.state().round());
+				var body = match.b().bot().body();
+				var level = (net.minecraft.server.level.ServerLevel) body.level();
+				body.hurtServer(level, level.damageSources().genericKill(), Float.MAX_VALUE);
+			}
+			return !SparBot.matches().inMatch(human(server).getUUID());
+		}, 1200);
+		world.getServer().runOnServer(server -> {
+			var progress = SparBot.careers().progress(human(server).getUUID(), "sword_duel");
+			boolean nextUnlocked = SparBot.careers().menuRivals(human(server).getUUID()).stream()
+				.anyMatch(r -> r.id().equals("redline") && r.unlocked());
+			if (roundsToWin.get() != 3 || killedRounds.get() < 3 || !authoredStyle.get() || !matchRecording.get()
+				|| progress.wins() != 1 || progress.tier() != 1 || progress.losses() != 0 || progress.seriesActive() || !nextUnlocked) {
+				throw new AssertionError("actual best-of-five career win did not promote exactly once: rounds=" + roundsToWin.get()
+					+ ", killed=" + killedRounds.get() + ", wins=" + progress.wins() + ", tier=" + progress.tier()
+					+ ", unlocked=" + nextUnlocked + ", recorded=" + matchRecording.get());
+			}
+		});
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Career");
+		clickMenu(context, "Continue");
+		world.getServer().waitFor(server -> SparBot.matches().match(careerArena).isPresent()
+			&& SparBot.careers().progress(human(server).getUUID(), "sword_duel").seriesActive(), 600);
+		world.getServer().runOnServer(server -> SparBot.matches().stop(server, careerArena));
+		world.getServer().waitFor(server -> !SparBot.matches().inMatch(human(server).getUUID()), 300);
+		world.getServer().runOnServer(server -> {
+			var progress = SparBot.careers().progress(human(server).getUUID(), "sword_duel");
+			if (progress.wins() != 1 || progress.losses() != 0 || progress.tier() != 1 || progress.seriesActive())
+				throw new AssertionError("stopping a career series awarded or retained progress");
+		});
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Career");
+		clickMenu(context, "Continue");
+		world.getServer().waitFor(server -> SparBot.matches().match(careerArena).isPresent()
+			&& SparBot.careers().progress(human(server).getUUID(), "sword_duel").seriesActive(), 600);
+		world.getServer().runOnServer(server -> SparBot.matches().stop(server, careerArena));
+		world.getServer().waitFor(server -> !SparBot.matches().inMatch(human(server).getUUID()), 300);
+		world.getServer().runOnServer(server -> {
+			var progress = SparBot.careers().progress(human(server).getUUID(), "sword_duel");
+			if (progress.wins() != 1 || progress.losses() != 0 || progress.tier() != 1 || progress.seriesActive())
+				throw new AssertionError("career retry after cancellation failed or awarded a result");
+		});
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Career");
+		clickMenu(context, "Adaptation: Off");
+		world.getServer().waitFor(server -> SparBot.careers().adaptivePractice(human(server).getUUID()), 200);
+		context.waitTicks(8);
+		clickMenu(context, "Adaptation: On");
+		world.getServer().waitFor(server -> !SparBot.careers().adaptivePractice(human(server).getUUID()), 200);
+
+		// Save this longer fixture after career matches so it is the newest recording in the native menu.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot record start " + recording + " @s"));
+		world.getServer().waitFor(server -> SparBot.recorder().isRecording(recording), 200);
+		world.getServer().runOnServer(server -> SparBot.recorder().event("combat", "Recorded game-test exchange", human(server).getUUID()));
+		context.waitTicks(100);
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot record stop " + recording));
+		world.getServer().waitFor(server -> !SparBot.recorder().isRecording(recording), 200);
+		context.runOnClient(client -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+			new io.github.flick256.sparbot.menu.MenuRequestPayload(false)));
+		context.waitFor(client -> client.gui.screen() instanceof SparBotMenuScreen menu
+			&& !menu.recordingEntries().isEmpty() && menu.recordingEntries().getFirst().name().equals(recording), 200);
+
+		clickMenu(context, "Replay");
+		context.runOnClient(client -> {
+			if (!(client.gui.screen() instanceof SparBotMenuScreen menu) || menu.recordingEntries().isEmpty()
+				|| !menu.recordingEntries().getFirst().name().equals(recording)) {
+				throw new AssertionError("the replay menu did not put the refreshed fixture first");
+			}
+		});
+		clickMenu(context, "Choose recording");
+		clickMenu(context, "Select recording");
+		clickMenu(context, "Play");
+		world.getServer().waitFor(server -> SparBot.replays().status().stream().anyMatch(r -> r.name().equals(recording)), 200);
+		context.waitTicks(8);
+		clickMenu(context, "Pause");
+		world.getServer().waitFor(server -> replayStatus(recording).paused(), 200);
+		context.takeScreenshot("menu-v4-replay");
+		clickMenu(context, "0.5×");
+		world.getServer().waitFor(server -> replayStatus(recording).speed() == 0.5, 200);
+		int beforeStep = world.getServer().computeOnServer(server -> replayStatus(recording).frame());
+		clickMenu(context, "Step +");
+		world.getServer().waitFor(server -> replayStatus(recording).frame() > beforeStep, 200);
+		int eventTick = world.getServer().computeOnServer(server -> replayStatus(recording).events().stream()
+			.filter(e -> e.kind().equals("combat")).findFirst().orElseThrow().tick());
+		clickMenu(context, "Go");
+		world.getServer().waitFor(server -> replayStatus(recording).frame() == eventTick, 200);
+		clickMenu(context, "Stop");
+		world.getServer().waitFor(server -> SparBot.replays().status().stream().noneMatch(r -> r.name().equals(recording)), 200);
+
+		clickMenu(context, "You");
+		context.takeScreenshot("menu-v4-training");
+		clickMenu(context, "Start drill");
+		world.getServer().waitFor(server -> SparBot.drills().inDrill(human(server).getUUID()), 200);
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot drill stop"));
+		world.getServer().waitFor(server -> !SparBot.drills().inDrill(human(server).getUUID()), 200);
+
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Practice");
+		clickMenu(context, "Uneven");
+		world.getServer().waitFor(server -> SparBot.practice().terrain(human(server).getUUID()) == io.github.flick256.sparbot.core.practice.PracticeTerrain.UNEVEN,
+			200);
+		clickMenu(context, "Rematch");
+		world.getServer().waitFor(server -> SparBot.matches().inMatch(human(server).getUUID()), 300);
+		world.getServer().runOnServer(server -> SparBot.matches().stopAll(server));
+		world.getServer().waitFor(server -> !SparBot.matches().inMatch(human(server).getUUID()), 200);
+
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		clickMenu(context, "Kits");
+		clickMenu(context, "Edit");
+		context.waitForScreen(KitEditorScreen.class);
+		context.takeScreenshot("menu-v4-editor");
+		// A discarded count edit for one slot must not carry into the next equipment selection.
+		clickMenu(context, "Details");
+		focusField(context, "Count");
+		selectAll(context);
+		context.getInput().typeChars("64");
+		clickMenu(context, "Layout");
+		clickMenu(context, "[ Layout");
+		clickEditorAt(context, 400, 190); // Select the Head equipment slot in the rendered layout.
+		clickMenu(context, "Items");
+		focusField(context, "Search registered items");
+		context.getInput().typeChars("minecraft:diamond_helmet");
+		context.waitTicks(3);
+		clickEditorAt(context, 30, 70); // Apply the only matching registered item to the selected equipment slot.
+		clickMenu(context, "Details");
+		context.takeScreenshot("menu-v4-editor-details");
+		focusField(context, "New kit ID");
+		selectAll(context);
+		context.getInput().typeChars(cloneId);
+		focusField(context, "Display name");
+		selectAll(context);
+		context.getInput().typeChars("Menu 4.0 test clone");
+		focusField(context, "Enchantment ID");
+		context.getInput().typeChars("minecraft:protection");
+		focusField(context, "Level");
+		selectAll(context);
+		context.getInput().typeChars("4");
+		clickMenu(context, "Add / update enchant");
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(4);
+		context.runOnClient(client -> {
+			var visibleWidgets = client.gui.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w && w.visible)
+				.map(c -> (net.minecraft.client.gui.components.AbstractWidget) c).toList();
+			if (visibleWidgets.stream().anyMatch(w -> w.getX() < 0 || w.getY() < 0 || w.getRight() > client.gui.screen().width
+				|| w.getBottom() > client.gui.screen().height))
+				throw new AssertionError("compact kit editor widget is outside the viewport");
+			for (int i = 0; i < visibleWidgets.size(); i++) for (int j = i + 1; j < visibleWidgets.size(); j++) {
+				var a = visibleWidgets.get(i); var b = visibleWidgets.get(j);
+				if (a.getX() < b.getRight() && a.getRight() > b.getX() && a.getY() < b.getBottom() && a.getBottom() > b.getY())
+					throw new AssertionError("compact kit editor widgets overlap: " + a.getMessage().getString() + " and " + b.getMessage().getString());
+			}
+			if (client.gui.screen().children().stream().noneMatch(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w
+				&& w.visible && w.getMessage().getString().equals("Save new custom kit")))
+				throw new AssertionError("compact kit editor hid its Save action");
+		});
+		context.takeScreenshot("menu-v4-editor-details-compact");
+		clickMenu(context, "Save new custom kit");
+		world.getServer().waitFor(server -> SparBot.kits().get(cloneId).isPresent(), 300);
+		world.getServer().runOnServer(server -> {
+			var kit = SparBot.kits().get(cloneId).orElseThrow();
+			if (kit.provenance().verified() || !kit.displayName().equals("Menu 4.0 test clone")
+				|| kit.armor() == null || kit.armor().head() == null || !kit.armor().head().id().equals("minecraft:diamond_helmet")
+				|| kit.armor().head().enchantments() == null
+				|| !java.util.Objects.equals(kit.armor().head().enchantments().get("minecraft:protection"), 4)) {
+				throw new AssertionError("the editor didn't save an unverified named draft");
+			}
+		});
+		clickMenu(context, "Done");
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(8);
+		context.runOnClient(client -> {
+			java.util.Set<String> expected = java.util.Set.of("Overview", "Practice", "Bots", "Spawn", "Kits", "Drills", "You", "Rivals", "Career", "Replay", "Settings");
+			java.util.Set<String> actual = client.gui.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w
+				&& w.visible && expected.contains(w.getMessage().getString())).map(c -> ((net.minecraft.client.gui.components.AbstractWidget) c).getMessage().getString())
+				.collect(java.util.stream.Collectors.toSet());
+			if (!actual.equals(expected)) throw new AssertionError("compact navigation is missing tabs: " + expected + " vs " + actual);
+			if (client.gui.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w && w.visible)
+				.map(c -> (net.minecraft.client.gui.components.AbstractWidget) c)
+				.anyMatch(w -> w.getX() < 0 || w.getY() < 0 || w.getRight() > client.gui.screen().width || w.getBottom() > client.gui.screen().height)) {
+				throw new AssertionError("a compact-menu widget is outside the viewport");
+			}
+		});
+		context.getInput().pressKey(GLFW.GLFW_KEY_TAB);
+		context.runOnClient(client -> {
+			if (client.gui.screen().getFocused() == null) throw new AssertionError("compact menu navigation is not keyboard accessible");
+		});
+		context.takeScreenshot("menu-v4-compact");
+		context.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
+		world.getServer().runOnServer(server -> SparBot.replays().stop(recording));
+	}
+
+	private static io.github.flick256.sparbot.record.ReplayManager.ReplayStatus replayStatus(String name) {
+		return SparBot.replays().status().stream().filter(s -> s.name().equals(name)).findFirst().orElseThrow();
+	}
+
 	private static void selectAll(ClientGameTestContext context) {
 		// This Fabric TestInput version injects KeyEvent modifiers=0, even while holdControl is active.
 		// Send the real modified event through Screen so the normal editor shortcut is exercised.
@@ -331,13 +589,25 @@ public class MenuClientGameTest implements FabricClientGameTest {
 		});
 	}
 
+	private static void clickEditorAt(ClientGameTestContext context, int x, int y) {
+		double scale = context.computeOnClient(client -> (double) client.getWindow().getWidth() / client.gui.screen().width);
+		context.getInput().setCursorPos(x * scale, y * scale);
+		context.getInput().pressMouse(GLFW.GLFW_MOUSE_BUTTON_1);
+		context.waitTick();
+		context.getInput().releaseMouse(GLFW.GLFW_MOUSE_BUTTON_1);
+		context.waitTick();
+	}
+
 	private static void clickMenu(ClientGameTestContext context, String label) {
-		for (int i = 0; i < 50; i++) {
-			boolean visible = context.computeOnClient(client -> client.gui.screen().children().stream().anyMatch(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w
-				&& w.visible && w.active && w.getMessage().getString().equals(label)));
-			if (visible) { context.clickScreenButton(label); context.waitTicks(2); return; }
-			if (!context.tryClickScreenButton("Dn")) { break; }
-			context.waitTick();
+		// Event review can leave the viewport below the playback controls. Search both ways.
+		for (String direction : java.util.List.of("Up", "Dn")) {
+			for (int i = 0; i < 50; i++) {
+				boolean visible = context.computeOnClient(client -> client.gui.screen().children().stream().anyMatch(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w
+					&& w.visible && w.active && w.getMessage().getString().equals(label)));
+				if (visible) { context.clickScreenButton(label); context.waitTicks(2); return; }
+				if (!context.tryClickScreenButton(direction)) { break; }
+				context.waitTick();
+			}
 		}
 		throw new AssertionError("menu action not reachable: " + label);
 	}

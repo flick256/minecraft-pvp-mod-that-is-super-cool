@@ -281,6 +281,8 @@ public final class SparBotCommand {
 		RecordCommands.addTo(root);
 		ConfigCommands.addTo(root);
 		PracticeCommands.addTo(root);
+		CareerCommands.addTo(root);
+		KitEditorCommands.addTo(root);
 		PracticeCommands.addDrillsTo(root);
 		dispatcher.register(root);
 	}

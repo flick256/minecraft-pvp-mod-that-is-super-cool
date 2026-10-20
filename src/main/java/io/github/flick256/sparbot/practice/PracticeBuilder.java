@@ -2,6 +2,7 @@ package io.github.flick256.sparbot.practice;
 
 import io.github.flick256.sparbot.core.practice.PracticeLayout;
 import io.github.flick256.sparbot.core.practice.PracticeLayout.Site;
+import io.github.flick256.sparbot.core.practice.PracticeTerrain;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -54,6 +55,42 @@ final class PracticeBuilder {
 		TrainingHall.build(level);
 		// The version marker under the hub: an older or missing one means the world gets built again.
 		set(0, S - 2, PracticeLayout.VERSION, Blocks.LODESTONE.defaultBlockState());
+	}
+
+	/** Rebuilds just the fighting floor. The two spawn pads stay level and free of obstacles. */
+	void buildCombatTerrain(Site site, PracticeTerrain terrain) {
+		load(site.minX(), site.minZ(), site.maxX(), site.maxZ());
+		int radius = site.radius();
+		fill(site.centerX() - radius, F - 4, site.centerZ() - radius, site.centerX() + radius, F + site.height(),
+			site.centerZ() + radius, Blocks.AIR.defaultBlockState());
+		for (int dx = -radius; dx <= radius; dx++) {
+			for (int dz = -radius; dz <= radius; dz++) {
+				int height = terrain == PracticeTerrain.UNEVEN ? terrainHeight(site, dx, dz) : 0;
+				for (int y = -4; y < height - 1; y++) {
+					set(site.centerX() + dx, F + y, site.centerZ() + dz, Blocks.DIRT.defaultBlockState());
+				}
+				set(site.centerX() + dx, F + height - 1, site.centerZ() + dz, terrain == PracticeTerrain.FLAT
+					? Blocks.SANDSTONE.defaultBlockState() : Blocks.GRASS_BLOCK.defaultBlockState());
+			}
+		}
+		if (terrain == PracticeTerrain.OBSTACLES) {
+			// Four compact cover pillars leave a clear five-by-five square around either spawn.
+			int coverZ = Math.min(radius - 1, Math.max(radius / 2, site.spawnOffset() + 3));
+			int[][] offsets = {{-radius / 2, -coverZ}, {radius / 2, -coverZ}, {-radius / 2, coverZ}, {radius / 2, coverZ}};
+			for (int[] offset : offsets) {
+				if (Math.abs(offset[1]) <= site.spawnOffset() + 2) continue;
+				int x = site.centerX() + offset[0], z = site.centerZ() + offset[1];
+				int ground = F;
+				fill(x - 1, ground, z - 1, x + 1, ground + 2, z + 1, Blocks.COBBLESTONE.defaultBlockState());
+			}
+		}
+	}
+
+	static int terrainHeight(Site site, int dx, int dz) {
+		int wave = Math.floorMod(Math.floorDiv(dx, 4) + Math.floorDiv(dz, 4), 4);
+		int height = wave <= 2 ? wave : 4 - wave;
+		int spawnDistance = Math.max(Math.abs(dx) - 2, Math.abs(Math.abs(dz) - site.spawnOffset()) - 2);
+		return Math.min(height, Math.max(0, spawnDistance));
 	}
 
 	static boolean built(ServerLevel level) {

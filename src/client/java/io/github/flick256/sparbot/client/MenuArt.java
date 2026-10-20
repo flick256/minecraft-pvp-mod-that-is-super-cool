@@ -26,6 +26,9 @@ final class MenuArt {
 			case "Kits" -> Items.CHEST;
 			case "Drills" -> Items.TARGET;
 			case "You" -> Items.WRITABLE_BOOK;
+			case "Rivals" -> Items.IRON_SWORD;
+			case "Career" -> Items.NETHER_STAR;
+			case "Replay" -> Items.CLOCK;
 			default -> Items.REDSTONE;
 		};
 	}

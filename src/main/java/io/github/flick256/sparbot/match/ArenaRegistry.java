@@ -25,9 +25,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -133,10 +135,11 @@ public final class ArenaRegistry {
 		return removed;
 	}
 
-	/** Removes drops, projectiles (arrows, pearls in flight, hooks, tridents), xp orbs and primed TNT. */
+	/** Removes disposable combat entities, including untriggered crystals and TNT carts. */
 	public static int clearLooseEntities(ServerLevel level, Arena arena) {
 		List<Entity> loose = level.getEntities((Entity) null, arena.box().inflate(2),
-			e -> e instanceof ItemEntity || e instanceof Projectile || e instanceof ExperienceOrb || e instanceof PrimedTnt);
+			e -> e instanceof ItemEntity || e instanceof Projectile || e instanceof ExperienceOrb || e instanceof PrimedTnt
+				|| e instanceof EndCrystal || e instanceof MinecartTNT);
 		loose.forEach(Entity::discard);
 		return loose.size();
 	}

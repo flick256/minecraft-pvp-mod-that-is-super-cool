@@ -54,7 +54,17 @@ public final class WebTactic implements Tactic {
 		if (d < MIN_RANGE || d > MAX_RANGE) {
 			return 0;
 		}
-		if (coversHeal(c)) {
+		boolean healOpening = coversHeal(c);
+		boolean knockupOpening = knockedUp(c, t);
+		boolean foodOpening = t.usingKind().isFood();
+		boolean highValue = healOpening || knockupOpening || foodOpening;
+		// A neutral web is replaceable; a clear trap or a web that buys healing time is
+		// worth spending from the reserve. Count live inventory so a consumed web changes
+		// the decision immediately, even when kits have only one stack.
+		if ("swight".equals(c.profile.id()) && inv.count(ItemKind.COBWEB) <= SwightPlan.WEB_RESERVE && !highValue) {
+			return 0;
+		}
+		if (healOpening) {
 			// Low with an apple to eat and them coming: web them, then eat while they cut out.
 			return willWeb.get(c.rng, c.profile.items().uhcSkill(), 10) ? Scores.SURVIVAL + 0.08 : 0;
 		}
@@ -62,7 +72,7 @@ public final class WebTactic implements Tactic {
 		if (!c.utilityWindow() && c.profile.items().uhcSkill() >= 0.6) {
 			return 0;
 		}
-		if (knockedUp(c, t)) {
+		if (knockupOpening) {
 			// The follow-up to a hit (or a shield stun): skilled players web the landing spot.
 			return willWeb.get(c.rng, c.profile.items().uhcSkill(), 10) ? Scores.SPECIALIST + 0.06 : 0;
 		}

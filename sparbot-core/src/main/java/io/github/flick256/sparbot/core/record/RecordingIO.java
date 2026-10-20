@@ -6,6 +6,8 @@ import io.github.flick256.sparbot.core.item.ItemKind;
 import io.github.flick256.sparbot.core.math.Vec3;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,7 +23,14 @@ import java.util.zip.GZIPOutputStream;
  */
 public final class RecordingIO {
 	private static final int MAGIC = 0x53504252; // "SPBR"
-	public static final int VERSION = 1;
+	public static final int VERSION = 2;
+	public static final int MAX_FIGHTERS = 16;
+	public static final int MAX_FRAMES = 24 * 60 * 60 * 20;
+	public static final int MAX_EVENTS = 200_000;
+	public static final long MAX_UNCOMPRESSED_BYTES = 128L * 1024 * 1024;
+	public static final long MAX_FILE_BYTES = 160L * 1024 * 1024;
+	public static final int MAX_METADATA_EVENTS = 16;
+	public record Metadata(String label, int durationTicks, List<ReplayEvent> events, long uncompressedBytesRead) { }
 
 	private static final int JUMP = 1;
 	private static final int SNEAK = 2;
@@ -35,8 +44,11 @@ public final class RecordingIO {
 	}
 
 	public static void write(Recording recording, OutputStream out) throws IOException {
+		if (recording.fighters().isEmpty() || recording.fighters().size() > MAX_FIGHTERS) throw new IOException("Invalid fighter count " + recording.fighters().size());
+		if (recording.frames().size() > MAX_FRAMES) throw new IOException("Invalid frame count " + recording.frames().size());
+		if (recording.events().size() > MAX_EVENTS) throw new IOException("Invalid event count " + recording.events().size());
 		GZIPOutputStream zip = new GZIPOutputStream(out);
-		DataOutputStream data = new DataOutputStream(zip);
+		DataOutputStream data = new DataOutputStream(new BoundedOutputStream(zip, MAX_UNCOMPRESSED_BYTES));
 		data.writeInt(MAGIC);
 		data.writeInt(VERSION);
 		data.writeUTF(recording.label());
@@ -52,6 +64,7 @@ public final class RecordingIO {
 		}
 		data.writeInt(recording.frames().size());
 		for (Frame frame : recording.frames()) {
+			if (frame.samples().length != recording.fighters().size()) throw new IOException("Frame fighter count does not match recording header");
 			data.writeLong(frame.tick());
 			for (Sample s : frame.samples()) {
 				data.writeBoolean(s != null);
@@ -60,17 +73,21 @@ public final class RecordingIO {
 				}
 			}
 		}
+		data.writeInt(recording.events().size());
+		for (ReplayEvent event : recording.events()) {
+			data.writeInt(event.tick()); data.writeUTF(event.kind()); data.writeUTF(event.text());
+		}
 		data.flush();
 		zip.finish();
 	}
 
 	public static Recording read(InputStream in) throws IOException {
-		DataInputStream data = new DataInputStream(new GZIPInputStream(in));
+		DataInputStream data = new DataInputStream(new BoundedInputStream(new GZIPInputStream(in), MAX_UNCOMPRESSED_BYTES));
 		if (data.readInt() != MAGIC) {
 			throw new IOException("Not a SparBot recording");
 		}
 		int version = data.readInt();
-		if (version != VERSION) {
+		if (version != 1 && version != VERSION) {
 			throw new IOException("Unsupported recording version " + version + " (this SparBot reads version " + VERSION + ")");
 		}
 		String label = data.readUTF();
@@ -78,11 +95,13 @@ public final class RecordingIO {
 		String dimension = data.readUTF();
 		long started = data.readLong();
 		int fighterCount = data.readInt();
+		if (fighterCount < 1 || fighterCount > MAX_FIGHTERS) throw new IOException("Invalid fighter count " + fighterCount);
 		List<FighterInfo> fighters = new ArrayList<>(fighterCount);
 		for (int i = 0; i < fighterCount; i++) {
 			fighters.add(new FighterInfo(data.readUTF(), data.readBoolean(), data.readUTF(), data.readUTF()));
 		}
 		int frameCount = data.readInt();
+		if (frameCount < 0 || frameCount > MAX_FRAMES) throw new IOException("Invalid frame count " + frameCount);
 		List<Frame> frames = new ArrayList<>(frameCount);
 		for (int i = 0; i < frameCount; i++) {
 			long tick = data.readLong();
@@ -92,7 +111,86 @@ public final class RecordingIO {
 			}
 			frames.add(new Frame(tick, samples));
 		}
-		return new Recording(label, mode, dimension, started, fighters, frames);
+		List<ReplayEvent> events = new ArrayList<>();
+		if (version >= 2) {
+			int eventCount = data.readInt();
+			if (eventCount < 0 || eventCount > MAX_EVENTS) throw new IOException("Invalid event count " + eventCount);
+			for (int i = 0; i < eventCount; i++) events.add(new ReplayEvent(data.readInt(), data.readUTF(), data.readUTF()));
+		}
+		return new Recording(label, mode, dimension, started, fighters, frames, events);
+	}
+
+	/** Reads menu data while streaming past samples without allocating frame/sample objects. */
+	public static Metadata readMetadata(InputStream in, int maxEvents) throws IOException {
+		return readMetadata(in, maxEvents, MAX_UNCOMPRESSED_BYTES);
+	}
+
+	public static Metadata readMetadata(InputStream in, int maxEvents, long maxUncompressedBytes) throws IOException {
+		if (maxEvents < 0 || maxEvents > MAX_METADATA_EVENTS) throw new IllegalArgumentException("metadata event limit out of range");
+		if (maxUncompressedBytes < 1 || maxUncompressedBytes > MAX_UNCOMPRESSED_BYTES) throw new IllegalArgumentException("metadata byte limit out of range");
+		BoundedInputStream bounded = new BoundedInputStream(new GZIPInputStream(in), maxUncompressedBytes);
+		DataInputStream data = new DataInputStream(bounded);
+		if (data.readInt() != MAGIC) throw new IOException("Not a SparBot recording");
+		int version = data.readInt();
+		if (version != 1 && version != VERSION) throw new IOException("Unsupported recording version " + version);
+		String label = data.readUTF(); data.readUTF(); data.readUTF(); data.readLong();
+		int fighterCount = data.readInt();
+		if (fighterCount < 1 || fighterCount > MAX_FIGHTERS) throw new IOException("Invalid fighter count " + fighterCount);
+		for (int i = 0; i < fighterCount; i++) { data.readUTF(); data.readBoolean(); data.readUTF(); data.readUTF(); }
+		int frameCount = data.readInt();
+		if (frameCount < 0 || frameCount > MAX_FRAMES) throw new IOException("Invalid frame count " + frameCount);
+		for (int i = 0; i < frameCount; i++) {
+			data.readLong();
+			for (int f = 0; f < fighterCount; f++) if (data.readBoolean()) skipSample(data);
+		}
+		if (version == 1) return new Metadata(label, frameCount, List.of(), bounded.bytesRead());
+		int eventCount = data.readInt();
+		if (eventCount < 0 || eventCount > MAX_EVENTS) throw new IOException("Invalid event count " + eventCount);
+		List<ReplayEvent> events = new ArrayList<>(Math.min(eventCount, maxEvents));
+		for (int i = 0; i < eventCount; i++) {
+			ReplayEvent event = new ReplayEvent(data.readInt(), data.readUTF(), data.readUTF());
+			if (events.size() < maxEvents) events.add(event);
+		}
+		return new Metadata(label, frameCount, events, bounded.bytesRead());
+	}
+
+	private static void skipSample(DataInputStream data) throws IOException {
+		for (int i = 0; i < 6; i++) data.readDouble();
+		for (int i = 0; i < 5; i++) data.readFloat();
+		data.readBoolean(); data.readByte(); data.readByte();
+		data.readUTF(); data.readUTF(); data.readUTF(); data.readUTF();
+		data.readFloat(); data.readFloat();
+		for (int i = 0; i < 6; i++) data.readByte();
+	}
+
+	private static final class BoundedInputStream extends FilterInputStream {
+		private final long limit;
+		private long remaining;
+		BoundedInputStream(InputStream in, long limit) { super(in); this.limit = limit; remaining = limit; }
+		long bytesRead() { return limit - remaining; }
+		@Override public int read() throws IOException {
+			if (remaining == 0) { if (in.read() < 0) return -1; throw new IOException("Recording exceeds maximum uncompressed size"); }
+			int value = in.read(); if (value >= 0) remaining--; return value;
+		}
+		@Override public int read(byte[] bytes, int offset, int length) throws IOException {
+			if (length == 0) return 0;
+			if (remaining == 0) { if (in.read() < 0) return -1; throw new IOException("Recording exceeds maximum uncompressed size"); }
+			int count = in.read(bytes, offset, (int) Math.min(length, remaining));
+			if (count > 0) remaining -= count;
+			return count;
+		}
+	}
+	private static final class BoundedOutputStream extends FilterOutputStream {
+		private long remaining;
+		BoundedOutputStream(OutputStream out, long limit) { super(out); remaining = limit; }
+		@Override public void write(int value) throws IOException {
+			if (remaining == 0) throw new IOException("Recording exceeds maximum uncompressed size");
+			out.write(value); remaining--;
+		}
+		@Override public void write(byte[] bytes, int offset, int length) throws IOException {
+			if (length > remaining) throw new IOException("Recording exceeds maximum uncompressed size");
+			out.write(bytes, offset, length); remaining -= length;
+		}
 	}
 
 	private static void writeSample(DataOutputStream data, Sample s) throws IOException {

@@ -23,6 +23,25 @@ import net.minecraft.world.phys.Vec3;
 
 /** Milestone 5: matches, arenas, rounds, cleanup, forfeits, Elo and player inventory safety. */
 public class MatchGameTests {
+	@GameTest(maxTicks = 2, padding = 24)
+	public void arenaResetRemovesCrystalsAndTntCartsWithoutDetonatingThem(GameTestHelper helper) throws Exception {
+		Arena arena = arena(helper, "hazardreset");
+		var level = helper.getLevel();
+		var cart = new net.minecraft.world.entity.vehicle.minecart.MinecartTNT(net.minecraft.world.entity.EntityTypes.TNT_MINECART, level);
+		var crystal = new net.minecraft.world.entity.boss.enderdragon.EndCrystal(net.minecraft.world.entity.EntityTypes.END_CRYSTAL, level);
+		var outside = new net.minecraft.world.entity.vehicle.minecart.MinecartTNT(net.minecraft.world.entity.EntityTypes.TNT_MINECART, level);
+		cart.setPos(helper.absoluteVec(new Vec3(2.5, 1, 2.5)));
+		crystal.setPos(helper.absoluteVec(new Vec3(4.5, 1, 4.5)));
+		outside.setPos(helper.absoluteVec(new Vec3(20.5, 1, 3.5)));
+		level.addFreshEntity(cart); level.addFreshEntity(crystal); level.addFreshEntity(outside);
+		try {
+			SparBot.matches().arenas().reset(level.getServer(), arena);
+			helper.assertTrue(cart.isRemoved() && crystal.isRemoved(), "old explosive utility is discarded before the next round");
+			helper.assertFalse(outside.isRemoved(), "reset does not remove carts outside the arena boundary");
+			helper.assertTrue(helper.getBlockState(new BlockPos(2, 0, 2)).is(Blocks.STONE), "cleanup does not detonate the old utility");
+		} finally { cart.discard(); crystal.discard(); outside.discard(); }
+		helper.succeed();
+	}
 	private static final GameMode QUICK = new GameMode("test_quick", "Quick", "", "basic_sword", 2, 60, 1, "health");
 	private static final GameMode ONE_ROUND = new GameMode("test_one", "One round", "", "basic_sword", 1, 60, 1, "health");
 
@@ -138,4 +157,68 @@ public class MatchGameTests {
 			SparBot.LOGGER.info("Benchmark test: pro/wtap {}-{} beginner", bench.winsA(), bench.winsB());
 		});
 	}
+	@GameTest(maxTicks = 100)
+	public void stoppingUhcRestoresRulesInventoryRecordingAndRunsCleanupOnce(GameTestHelper helper) throws Exception {
+		Arena arena = arena(helper, "stopcleanup");
+		ServerLevel level = helper.getLevel();
+		ServerPlayer human = TestSupport.spawnRealPlayer(helper, 2.5, 1, 3.5);
+		human.getInventory().setItem(0, new ItemStack(Items.EMERALD, 7));
+		boolean regenerationBefore = io.github.flick256.sparbot.match.MatchRules.regenerates(human);
+		Bot bot = TestSupport.dummy(helper, "StopRival", 5.5, 1, 4.5, 90, "basic_sword");
+		var mode = new GameMode("test_stop_uhc", "Stop UHC", "", "basic_sword", 1, 60, 2, "health", false);
+		var callbacks = new java.util.concurrent.atomic.AtomicInteger();
+		Match match = SparBot.matches().start(level.getServer(), mode, arena, MatchManager.fighterFor(human), MatchManager.fighterFor(bot),
+			finished -> callbacks.incrementAndGet());
+		match.enableReviewRecording();
+		helper.runAfterDelay(10, () -> {
+			helper.assertTrue(human.getMainHandItem().is(Items.DIAMOND_SWORD), "match kit was actually applied");
+			helper.assertFalse(io.github.flick256.sparbot.match.MatchRules.regenerates(human), "UHC disabled normal regeneration");
+			helper.assertTrue(SparBot.recorder().active().stream().anyMatch(n -> n.startsWith("match-" + arena.id())), "review recording started");
+			helper.assertTrue(SparBot.matches().stop(level.getServer(), arena.id()), "first stop ends the match");
+			helper.assertFalse(SparBot.matches().stop(level.getServer(), arena.id()), "second stop is a no-op");
+			helper.assertTrue(match.forfeit(), "stopped match cannot award career progress");
+			helper.assertValueEqual(callbacks.get(), 1, "temporary opponent cleanup callback ran exactly once");
+			helper.assertTrue(human.getMainHandItem().is(Items.EMERALD) && human.getMainHandItem().getCount() == 7, "original inventory restored");
+			helper.assertTrue(io.github.flick256.sparbot.match.MatchRules.regenerates(human) == regenerationBefore, "original regeneration rule restored");
+			helper.assertFalse(SparBot.matches().backups().has(human.getUUID()), "restored backup removed");
+			helper.assertTrue(SparBot.recorder().active().stream().noneMatch(n -> n.startsWith("match-" + arena.id())), "stopped recording was closed");
+			TestSupport.remove(bot); TestSupport.removeRealPlayer(human); helper.succeed();
+		});
+	}
+
+	@GameTest(maxTicks = 100)
+	public void corruptBackupLeavesInventoryUnchangedAndIsPreserved(GameTestHelper helper) throws Exception {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer human = TestSupport.spawnRealPlayer(helper, 2.5, 1, 3.5);
+		java.nio.file.Path dir = java.nio.file.Files.createTempDirectory("sparbot-corrupt-backup-");
+		java.nio.file.Path file = dir.resolve(human.getUUID() + ".nbt");
+		io.github.flick256.sparbot.match.PlayerBackup backup = new io.github.flick256.sparbot.match.PlayerBackup(dir);
+		try {
+			human.getInventory().setItem(0, new ItemStack(Items.DIRT, 5));
+			human.getInventory().setItem(20, new ItemStack(Items.DIAMOND, 3));
+			backup.save(human);
+
+			// Corrupt the final slot: restoring slot 0 before decoding this entry would partially
+			// overwrite the emeralds below before noticing the invalid item id.
+			var saved = net.minecraft.nbt.NbtIo.readCompressed(file, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+			var items = saved.getListOrEmpty("items");
+			var invalid = new net.minecraft.nbt.CompoundTag();
+			invalid.putString("id", "sparbot:not_a_real_item");
+			invalid.putInt("count", 1);
+			items.set(items.size() - 1, invalid);
+			net.minecraft.nbt.NbtIo.writeCompressed(saved, file);
+
+			human.getInventory().setItem(0, new ItemStack(Items.EMERALD, 7));
+			helper.assertFalse(backup.restore(human), "malformed slot fails the restore");
+			helper.assertTrue(human.getInventory().getItem(0).is(Items.EMERALD)
+				&& human.getInventory().getItem(0).getCount() == 7, "inventory remains unchanged when any slot fails decoding");
+			helper.assertTrue(backup.has(human.getUUID()), "corrupt backup remains for recovery instead of being silently deleted");
+		} finally {
+			java.nio.file.Files.deleteIfExists(file);
+			java.nio.file.Files.deleteIfExists(dir);
+			TestSupport.removeRealPlayer(human);
+		}
+		helper.succeed();
+	}
+
 }

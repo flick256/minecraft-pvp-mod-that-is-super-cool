@@ -41,6 +41,8 @@ public final class SparBot implements ModInitializer {
 	private static final MatchManager MATCHES = new MatchManager();
 	private static final Recorder RECORDER = new Recorder();
 	private static final ReplayManager REPLAYS = new ReplayManager();
+	private static final io.github.flick256.sparbot.career.CareerManager CAREERS = new io.github.flick256.sparbot.career.CareerManager(
+		FabricLoader.getInstance().getConfigDir().resolve("sparbot").resolve("career.json"));
 	private static final io.github.flick256.sparbot.practice.PracticeWorld PRACTICE = new io.github.flick256.sparbot.practice.PracticeWorld();
 	private static final io.github.flick256.sparbot.drill.DrillManager DRILLS = new io.github.flick256.sparbot.drill.DrillManager();
 	private static final io.github.flick256.sparbot.kit.PlayerLayouts PLAYER_LAYOUTS = new io.github.flick256.sparbot.kit.PlayerLayouts(
@@ -52,12 +54,15 @@ public final class SparBot implements ModInitializer {
 		reloadConfigAndProfiles();
 		StatsTracker.register();
 		MenuSync.register();
+		io.github.flick256.sparbot.kit.editor.KitEditor.register();
 		DRILLS.register();
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> SparBotCommand.register(dispatcher));
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			reloadKits(server);
 			MATCHES.reload(server, configDir().resolve("sparbot"));
 			DRILLS.load(configDir().resolve("sparbot"));
+			try { CAREERS.load(); }
+			catch (java.io.IOException | IllegalArgumentException e) { LOGGER.error("Could not load career progress; existing save was preserved", e); }
 			io.github.flick256.sparbot.practice.colosseum.HollowCrown.load(configDir().resolve("sparbot"));
 			PRACTICE.onServerStarted(server);
 		});
@@ -75,6 +80,7 @@ public final class SparBot implements ModInitializer {
 			stopPart("colosseum games", () -> PRACTICE.games().stop(server, "the server is stopping"));
 			stopPart("Deep encounter", () -> PRACTICE.stopDeep(server));
 			stopPart("matches", () -> MATCHES.stopAll(server));
+			stopPart("career", CAREERS::stop);
 			stopPart("recordings", RECORDER::stopAll);
 			stopPart("replays", REPLAYS::stopAll);
 			stopPart("bots", () -> BOTS.removeAll("server stopping"));
@@ -146,6 +152,8 @@ public final class SparBot implements ModInitializer {
 	public static Recorder recorder() {
 		return RECORDER;
 	}
+
+	public static io.github.flick256.sparbot.career.CareerManager careers() { return CAREERS; }
 
 	public static ReplayManager replays() {
 		return REPLAYS;

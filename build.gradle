@@ -107,3 +107,23 @@ if (project.hasProperty('menuOnly')) {
 		jvmArgs "-Dsparbot.menuOnly=true"
 	}
 }
+
+// Exercise the 4.0 rivals, career, editor and replay UI in addition to the existing menu flow.
+if (project.hasProperty('v4Only')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs "-Dsparbot.v4Only=true"
+	}
+}
+
+// Isolate the eight-bot timing check from the functional suite's concurrent test worlds.
+tasks.named('processGametestResources') {
+	inputs.property 'performanceOnly', project.hasProperty('performanceOnly')
+	if (project.hasProperty('performanceOnly')) {
+		doLast {
+			def descriptor = new File(destinationDir, 'fabric.mod.json')
+			def json = new groovy.json.JsonSlurper().parse(descriptor)
+			json.entrypoints['fabric-gametest'] = ['io.github.flick256.sparbot.gametest.PerformanceGameTests']
+			descriptor.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+		}
+	}
+}

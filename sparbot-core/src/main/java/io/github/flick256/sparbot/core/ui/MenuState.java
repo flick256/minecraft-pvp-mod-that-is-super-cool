@@ -18,7 +18,33 @@ import java.util.Map;
  */
 public record MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
 	List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts, Map<String, Integer> myMedals,
-	List<io.github.flick256.sparbot.core.drill.FightReport> myFights) {
+	List<io.github.flick256.sparbot.core.drill.FightReport> myFights, List<RivalEntry> rivals, List<CareerEntry> career,
+	List<ReplayEntry> recordings, List<TrainingEntry> training) {
+	/** 4.0 additions default to empty when reading a pre-4.0 server snapshot. */
+	public MenuState {
+		rivals = rivals == null ? List.of() : List.copyOf(rivals);
+		career = career == null ? List.of() : List.copyOf(career);
+		recordings = recordings == null ? List.of() : List.copyOf(recordings);
+		training = training == null ? List.of() : List.copyOf(training);
+	}
+
+	/** Source compatibility with the 3.x menu snapshot. */
+	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
+		List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts, Map<String, Integer> myMedals,
+		List<io.github.flick256.sparbot.core.drill.FightReport> myFights) {
+		this(open, profiles, kits, styles, modes, bots, settings, kitInfo, models, myLayouts, myMedals, myFights,
+			List.of(), List.of(), List.of(), List.of());
+	}
+
+	public record RivalEntry(String id, String name, String mode, String profile, String style, String description,
+		String strength, String weakness, int wins, int losses, boolean unlocked) { }
+	public record CareerEntry(String mode, String tier, int wins, int losses, int progress, int required, String nextRival, boolean champion) { }
+	public record ReplayEventEntry(int tick, String kind, String text) { }
+	public record ReplayEntry(String name, int durationTicks, boolean active, boolean paused, int frame, double speed, List<ReplayEventEntry> events) {
+		public ReplayEntry { events = events == null ? List.of() : List.copyOf(events); }
+	}
+	public record TrainingEntry(String drillId, String title, String reason, int priority) { }
+
 	/** Without fight reports. */
 	public MenuState(boolean open, List<String> profiles, List<String> kits, List<String> styles, List<String> modes, List<BotEntry> bots,
 		List<Setting> settings, List<KitEntry> kitInfo, List<String> models, List<String> myLayouts, Map<String, Integer> myMedals) {
@@ -58,13 +84,14 @@ public record MenuState(boolean open, List<String> profiles, List<String> kits, 
 
 	public static MenuState fromJson(String json) {
 		MenuState state = GSON.fromJson(json, MenuState.class);
-		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null || state.kitInfo() == null || state.models() == null) {
+		if (state == null || state.profiles() == null || state.bots() == null || state.settings() == null || state.kits() == null || state.styles() == null || state.modes() == null || state.kitInfo() == null || state.models() == null) {
 			throw new JsonParseException("Incomplete SparBot menu state");
 		}
 		if (state.myLayouts() == null || state.myMedals() == null || state.myFights() == null) {
 			return new MenuState(state.open(), state.profiles(), state.kits(), state.styles(), state.modes(), state.bots(), state.settings(),
 				state.kitInfo(), state.models(), state.myLayouts() == null ? List.of() : state.myLayouts(),
-				state.myMedals() == null ? Map.of() : state.myMedals(), state.myFights() == null ? List.of() : state.myFights());
+				state.myMedals() == null ? Map.of() : state.myMedals(), state.myFights() == null ? List.of() : state.myFights(),
+				state.rivals(), state.career(), state.recordings(), state.training());
 		}
 		return state;
 	}

@@ -18,6 +18,22 @@ class MenuTest {
 	}
 
 	@Test
+	void legacySnapshotsDefaultExpansionListsAndNewSnapshotsKeepThem() {
+		MenuState old = new MenuState(true, List.of("pro"), List.of("basic_sword"), List.of("balanced"), List.of("sword_duel"),
+			List.of(), List.of(), List.of(), List.of());
+		var json = com.google.gson.JsonParser.parseString(old.toJson()).getAsJsonObject();
+		for (String key : List.of("rivals", "career", "recordings", "training")) { json.remove(key); }
+		assertEquals(List.of(), MenuState.fromJson(json.toString()).career());
+		var state = new MenuState(old.open(), old.profiles(), old.kits(), old.styles(), old.modes(), old.bots(), old.settings(), old.kitInfo(),
+			old.models(), old.myLayouts(), old.myMedals(), old.myFights(),
+			List.of(new MenuState.RivalEntry("swight", "Swight", "uhc_duel", "swight", "balanced", "UHC specialist", "Utility", "Pressure", 1, 0, true)),
+			List.of(new MenuState.CareerEntry("uhc_duel", "Pro", 2, 1, 2, 3, "swight", false)),
+			List.of(new MenuState.ReplayEntry("match-test", 100, true, true, 40, .5, List.of(new MenuState.ReplayEventEntry(12, "shield", "Blocked")))),
+			List.of(new MenuState.TrainingEntry("full_charge", "Full charge", "Wait for charge", 1)));
+		assertEquals(state, MenuState.fromJson(state.toJson()));
+	}
+
+	@Test
 	void rejectsHalfAState() {
 		assertThrows(JsonParseException.class, () -> MenuState.fromJson("{\"open\":true}"));
 	}
