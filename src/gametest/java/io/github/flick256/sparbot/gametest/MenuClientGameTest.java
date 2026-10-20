@@ -4,6 +4,9 @@ import io.github.flick256.sparbot.SparBot;
 import io.github.flick256.sparbot.practice.colosseum.ColosseumSurvey;
 import io.github.flick256.sparbot.client.SparBotMenuScreen;
 import io.github.flick256.sparbot.client.KitEditorScreen;
+import io.github.flick256.sparbot.client.StudyClient;
+import io.github.flick256.sparbot.client.StudyScreen;
+import io.github.flick256.sparbot.core.study.StudyQuestion;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -18,9 +21,31 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
 		if (Boolean.getBoolean("sparbot.shutdownOnly")) {
+			context.runOnClient(client -> StudyClient.setEnabled(false));
 			shutdown(context);
 			return;
 		}
+		if (Boolean.getBoolean("sparbot.layoutOnly")) {
+			context.runOnClient(client -> { client.options.guiScale().set(1); StudyClient.setEnabled(false); });
+			try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
+				menuLayoutOnly(context);
+			}
+			return;
+		}
+		if (Boolean.getBoolean("sparbot.studyOnly")) {
+			context.runOnClient(client -> {
+				client.options.guiScale().set(1);
+				StudyClient.setEnabled(true);
+				StudyClient.configureSubjects(java.util.Set.of("Mathematical Methods"));
+			});
+			try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
+				studyFlow(context, world);
+			}
+			return;
+		}
+		// The existing menu and practice scenarios exercise normal game flows; keep the personal study gate
+		// out of their way, including before the world joins and could trigger its first-entry question.
+		context.runOnClient(client -> StudyClient.setEnabled(false));
 		try (TestSingleplayerContext world = context.worldBuilder().adjustSettings(settings -> settings.setAllowCommands(true)).create()) {
 			world.getServer().runCommand("sparbot config set autoTarget false");
 			context.waitTicks(5);
@@ -165,6 +190,365 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice leave"));
 			world.getServer().waitFor(server -> human(server) != null && human(server).level() == server.overworld(), 200);
 		}
+	}
+
+	/** End-to-end personal study flow using the real screen controls and client command hook. */
+	private static void studyFlow(ClientGameTestContext context, TestSingleplayerContext world) {
+		context.getInput().resizeWindow(640, 480);
+		waitForStudyScreen(context, "world-entry");
+		StudyQuestion question = context.computeOnClient(client -> StudyClient.question());
+		if (question == null || !question.subject().equals("Mathematical Methods")) {
+			throw new AssertionError("entry study question did not use the selected subject");
+		}
+		assertStudyLayoutAcrossSizes(context);
+		context.takeScreenshot("study-question");
+		var entryBefore = studyProgress(context, question.id());
+		answerStudyQuestion(context, question, true);
+		var entryAfter = studyProgress(context, question.id());
+		assertAssistedSuccess(entryBefore, entryAfter, "entry answer");
+		clickMenu(context, "Continue");
+		context.waitTicks(4);
+		if (!world.getServer().computeOnServer(server -> human(server).level() == server.overworld())) {
+			throw new AssertionError("finishing entry study moved the player out of the world");
+		}
+
+		// Entry credit permits this first activity command to proceed without another question.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight sword_duel beginner"));
+		world.getServer().waitFor(server -> SparBot.matches().match("practice_sword").isPresent(), 1200);
+		world.getServer().runOnServer(server -> SparBot.matches().stop(server, "practice_sword"));
+		context.waitTicks(4);
+
+		// The next activity is queued behind a real question. Completing the screen replays it once.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight sword_duel beginner"));
+		waitForStudyScreen(context, "second-fight-queue");
+		world.getServer().waitFor(server -> SparBot.matches().match("practice_sword").isEmpty(), 20);
+		question = context.computeOnClient(client -> StudyClient.question());
+		assertStudyLayoutAcrossSizes(context);
+		answerStudyQuestion(context, question, true);
+		clickMenu(context, "Continue");
+		world.getServer().waitFor(server -> SparBot.matches().match("practice_sword").isPresent(), 1200);
+		world.getServer().runOnServer(server -> SparBot.matches().stop(server, "practice_sword"));
+
+		// Cancelling a queued command discards it and cannot start a match later.
+		context.runOnClient(client -> client.player.connection.sendCommand("sparbot practice fight sword_duel beginner"));
+		waitForStudyScreen(context, "third-fight-queue-before-cancel");
+		clickMenu(context, "Return");
+		context.waitTicks(20);
+		if (world.getServer().computeOnServer(server -> SparBot.matches().match("practice_sword").isPresent())) {
+			throw new AssertionError("cancelled study question started its queued fight");
+		}
+
+		// Open optional revision from the menu and reach an English self-review through the same scheduler
+		// and controls used by a player. English starts with written response questions in the bundled bank.
+		context.runOnClient(client -> StudyClient.configureSubjects(java.util.Set.of("English")));
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		boolean selfReviewCompleted = false;
+		for (int i = 0; i < 14 && !selfReviewCompleted; i++) {
+			clickMenu(context, "Open study");
+			waitForStudyScreen(context, "optional-english-" + i);
+			question = context.computeOnClient(client -> StudyClient.question());
+			if (question == null || !question.subject().equals("English")) throw new AssertionError("optional study did not use English");
+			assertStudyLayoutAcrossSizes(context);
+			if (question.kind() == StudyQuestion.Kind.SELF_REVIEW) {
+				var before = studyProgress(context, question.id());
+				answerStudyQuestion(context, question, false);
+				var after = studyProgress(context, question.id());
+				if (after.attempts() != before.attempts() + 1
+					|| after.assistedSuccesses() != before.assistedSuccesses()
+					|| after.unaidedSuccesses() != before.unaidedSuccesses()
+					|| after.dueAtMillis() < System.currentTimeMillis()
+					|| after.dueAtMillis() > System.currentTimeMillis() + 11 * 60_000L) {
+					throw new AssertionError("Needs work self-review did not record an assisted miss with a short review interval");
+				}
+				clickMenu(context, "Continue");
+				selfReviewCompleted = true;
+			} else {
+				answerStudyQuestion(context, question, true);
+				clickMenu(context, "Continue");
+			}
+		}
+		if (!selfReviewCompleted) throw new AssertionError("English scheduler did not present a self-review question");
+		context.runOnClient(client -> StudyClient.setEnabled(false));
+	}
+
+	private static void answerStudyQuestion(ClientGameTestContext context, StudyQuestion question, boolean selfReviewMeetsCriteria) {
+		if (question == null) throw new AssertionError("study question disappeared");
+		if (question.kind() == io.github.flick256.sparbot.core.study.StudyQuestion.Kind.CHOICE) {
+			int wrong = question.answerIndex() == 0 ? 1 : 0;
+			clickStudyButton(context, "Option " + (char) ('A' + wrong) + ": " + question.options().get(wrong));
+			clickMenu(context, "Check answer");
+			clickStudyButton(context, "Show hint 1");
+			context.takeScreenshot("study-hints");
+			clickStudyButton(context, "Option " + (char) ('A' + question.answerIndex()) + ": " + question.options().get(question.answerIndex()));
+			clickMenu(context, "Check answer");
+		} else if (question.kind() == io.github.flick256.sparbot.core.study.StudyQuestion.Kind.NUMBER) {
+			focusField(context, "Answer");
+			context.getInput().typeChars("999999999");
+			clickMenu(context, "Check answer");
+			clickStudyButton(context, "Show hint 1");
+			context.takeScreenshot("study-hints");
+			focusField(context, "Answer");
+			selectAll(context);
+			context.getInput().typeChars(Double.toString(question.numericAnswer()));
+			clickMenu(context, "Check answer");
+		} else {
+			focusField(context, "Your written attempt");
+			context.getInput().typeChars("I identified the method and explained the main reasoning.");
+			clickStudyButton(context, "Reveal rubric");
+			context.takeScreenshot("study-writtenreview");
+			clickMenu(context, selfReviewMeetsCriteria ? "Met criteria" : "Needs work");
+		}
+	}
+
+	private static void waitForStudyScreen(ClientGameTestContext context, String phase) {
+		try {
+			context.waitForScreen(StudyScreen.class);
+		} catch (AssertionError timeout) {
+			String state = context.computeOnClient(client -> {
+				var screen = client.gui.screen();
+				StudyQuestion question = StudyClient.question();
+				return "activeScreen=" + (screen == null ? "null" : screen.getClass().getName())
+					+ ", required=" + StudyClient.required() + ", enabled=" + StudyClient.enabled()
+					+ ", questionId=" + (question == null ? "null" : question.id())
+					+ ", reason=" + StudyClient.reason() + ", status=" + StudyClient.status();
+			});
+			try { context.takeScreenshot("study-timeout-" + phase); } catch (Throwable screenshotFailure) { timeout.addSuppressed(screenshotFailure); }
+			throw new AssertionError("Timed out waiting for study screen at " + phase + " (" + state + ")", timeout);
+		}
+	}
+
+	/** Native layout-only sweep of every primary menu tab and each kit editor page. */
+	private static void menuLayoutOnly(ClientGameTestContext context) {
+		context.getInput().pressKey(GLFW.GLFW_KEY_B);
+		context.waitForScreen(SparBotMenuScreen.class);
+		context.runOnClient(client -> net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new io.github.flick256.sparbot.menu.MenuRequestPayload(false)));
+		context.waitTicks(12);
+		if (!Boolean.getBoolean("sparbot.editorLayoutOnly")) {
+			assertMenuLayoutAcrossSizes(context);
+			context.takeScreenshot("layout-home-640x480");
+			for (String tab : java.util.List.of("Practice", "Bots", "Spawn", "Kits", "Drills", "You", "Rivals", "Career", "Replay", "Settings")) {
+				clickMenu(context, tab);
+				context.waitTicks(2);
+				assertMenuLayoutAcrossSizes(context);
+			}
+		}
+		clickMenu(context, "Kits");
+		clickMenu(context, "Edit");
+		context.waitForScreen(KitEditorScreen.class);
+		assertEditorLayoutAcrossSizes(context);
+		context.takeScreenshot("layout-editor-640x480");
+		clickMenu(context, "Items");
+		assertEditorLayoutAcrossSizes(context);
+		clickMenu(context, "Details");
+		assertEditorLayoutAcrossSizes(context);
+		context.takeScreenshot("layout-editor-details-640x480");
+		clickMenu(context, "Done");
+		context.waitFor(client -> client.gui.screen() == null);
+	}
+
+	private static void assertMenuLayoutAcrossSizes(ClientGameTestContext context) {
+		for (int[] size : new int[][] {{320, 240}, {400, 225}, {480, 270}, {640, 360}, {640, 480}}) {
+			context.getInput().resizeWindow(size[0], size[1]);
+			context.waitTicks(2);
+			assertActualScreenSize(context, size[0], size[1]);
+			scrollMenuToEdge(context, 3);
+			for (int scrolls = 0; scrolls < 120; scrolls++) {
+				var rects = currentMenuLayout(context);
+			assertLayoutRects(context, rects, size[0], size[1], "menu");
+				if (!scrollMenu(context, -3)) break;
+				context.waitTick();
+				if (rects.equals(currentMenuLayout(context))) break;
+				if (scrolls == 119) throw new AssertionError("menu did not reach bottom of scrollable content");
+			}
+			scrollMenuToEdge(context, 3);
+		}
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(2);
+		scrollMenuToEdge(context, 3);
+	}
+
+	private static void assertEditorLayoutAcrossSizes(ClientGameTestContext context) {
+		for (int[] size : new int[][] {{320, 240}, {400, 225}, {480, 270}, {640, 360}, {640, 480}}) {
+			context.getInput().resizeWindow(size[0], size[1]);
+			context.waitTicks(2);
+			assertActualScreenSize(context, size[0], size[1]);
+			var rects = context.computeOnClient(client -> {
+				if (!(client.gui.screen() instanceof KitEditorScreen editor)) throw new AssertionError("kit editor closed during layout check");
+				return editor.layoutSnapshot();
+			});
+			assertLayoutRects(context, rects, size[0], size[1], "kit editor");
+		}
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(2);
+	}
+
+	private static void assertActualScreenSize(ClientGameTestContext context, int width, int height) {
+		int[] actual = context.computeOnClient(client -> new int[] {client.gui.screen().width, client.gui.screen().height});
+		if (actual[0] != width || actual[1] != height) {
+			throw layoutFailure(context, "screen", width, height,
+				"GUI dimensions " + actual[0] + "x" + actual[1] + " do not match requested size");
+		}
+	}
+
+	private static java.util.List<StudyScreen.LayoutRect> currentMenuLayout(ClientGameTestContext context) {
+		return context.computeOnClient(client -> {
+			if (!(client.gui.screen() instanceof SparBotMenuScreen menu)) throw new AssertionError("main menu closed during layout check");
+			return menu.layoutSnapshot();
+		});
+	}
+
+	private static void scrollMenuToEdge(ClientGameTestContext context, double vertical) {
+		for (int i = 0; i < 120; i++) {
+			var before = currentMenuLayout(context);
+			if (!scrollMenu(context, vertical)) return;
+			context.waitTick();
+			if (before.equals(currentMenuLayout(context))) return;
+		}
+	}
+
+	private static boolean scrollMenu(ClientGameTestContext context, double vertical) {
+		return context.computeOnClient(client -> {
+			if (!(client.gui.screen() instanceof SparBotMenuScreen menu)) return false;
+			return menu.mouseScrolled(menu.width * 0.75, menu.height * 0.6, 0, vertical);
+		});
+	}
+
+	private static void assertLayoutRects(ClientGameTestContext context, java.util.List<StudyScreen.LayoutRect> rects, int width, int height, String screen) {
+		for (int i = 0; i < rects.size(); i++) {
+			var a = rects.get(i);
+			if (a.x() < 0 || a.y() < 0 || a.width() < 0 || a.height() < 0
+				|| a.x() + a.width() > width || a.y() + a.height() > height) {
+				throw layoutFailure(context, screen, width, height, "layout outside bounds: " + a);
+			}
+			if (a.kind().equals("hitbox")) continue;
+			for (int j = i + 1; j < rects.size(); j++) {
+				var b = rects.get(j);
+				if (b.kind().equals("hitbox")) continue;
+				boolean overlaps = a.x() < b.x() + b.width() && b.x() < a.x() + a.width()
+					&& a.y() < b.y() + b.height() && b.y() < a.y() + a.height();
+				boolean containedText = isText(a.kind()) && contains(b, a) && isContainer(b.kind())
+					|| isText(b.kind()) && contains(a, b) && isContainer(a.kind());
+				if (overlaps && !containedText) {
+					throw layoutFailure(context, screen, width, height, "layout elements overlap: " + a + " / " + b);
+				}
+			}
+		}
+	}
+
+	private static boolean isText(String kind) { return kind.endsWith("label") || kind.equals("label"); }
+	private static boolean isContainer(String kind) { return kind.equals("widget") || kind.endsWith("-cell"); }
+	private static boolean contains(StudyScreen.LayoutRect outer, StudyScreen.LayoutRect inner) {
+		return outer.x() <= inner.x() && outer.y() <= inner.y()
+			&& outer.x() + outer.width() >= inner.x() + inner.width()
+			&& outer.y() + outer.height() >= inner.y() + inner.height();
+	}
+
+	private static AssertionError layoutFailure(ClientGameTestContext context, String screen, int width, int height, String message) {
+		AssertionError failure = new AssertionError(screen + " at " + width + "x" + height + ": " + message);
+		try { context.takeScreenshot("layout-failure-" + screen.replace(' ', '-') + "-" + width + "x" + height); }
+		catch (Throwable screenshotFailure) { failure.addSuppressed(screenshotFailure); }
+		return failure;
+	}
+
+	private record StudyProgressSnapshot(int attempts, int assistedSuccesses, int unaidedSuccesses, long dueAtMillis) { }
+
+	private static StudyProgressSnapshot studyProgress(ClientGameTestContext context, String questionId) {
+		return context.computeOnClient(client -> {
+			var progress = StudyClient.progress(questionId);
+			return new StudyProgressSnapshot(progress.attempts(), progress.assistedSuccesses(), progress.unaidedSuccesses(), progress.dueAtMillis());
+		});
+	}
+
+	private static void assertAssistedSuccess(StudyProgressSnapshot before, StudyProgressSnapshot after, String label) {
+		if (after.attempts() != before.attempts() + 2 || after.assistedSuccesses() != before.assistedSuccesses() + 1
+			|| after.unaidedSuccesses() != before.unaidedSuccesses()) {
+			throw new AssertionError(label + " did not record the wrong retry and hinted success as assisted progress");
+		}
+	}
+
+	private static void assertStudyLayoutAcrossSizes(ClientGameTestContext context) {
+		int[][] sizes = {{320, 240}, {400, 225}, {640, 360}};
+		for (int[] size : sizes) {
+			context.getInput().resizeWindow(size[0], size[1]);
+			context.waitTicks(2);
+			int[] actual = context.computeOnClient(client -> new int[] {client.gui.screen().width, client.gui.screen().height});
+			if (actual[0] != size[0] || actual[1] != size[1]) {
+				throw new AssertionError("GUI dimensions " + actual[0] + "x" + actual[1] + " do not match requested " + size[0] + "x" + size[1]);
+			}
+			scrollStudyToEdge(context, 3);
+			for (int scrolls = 0; scrolls < 120; scrolls++) {
+				java.util.List<StudyScreen.LayoutRect> rects = currentStudyLayout(context);
+				assertStudyLayout(rects, size[0], size[1]);
+				if (!scrollStudy(context, -3)) break;
+				context.waitTick();
+				if (rects.equals(currentStudyLayout(context))) break;
+				if (scrolls == 119) throw new AssertionError("study screen did not reach the bottom of its scrollable content");
+			}
+			scrollStudyToEdge(context, 3);
+		}
+		context.getInput().resizeWindow(640, 480);
+		context.waitTicks(2);
+	}
+
+	private static java.util.List<StudyScreen.LayoutRect> currentStudyLayout(ClientGameTestContext context) {
+		return context.computeOnClient(client -> {
+			if (!(client.gui.screen() instanceof StudyScreen screen)) throw new AssertionError("study screen closed during layout check");
+			return screen.layoutSnapshot();
+		});
+	}
+
+	private static void assertStudyLayout(java.util.List<StudyScreen.LayoutRect> rects, int width, int height) {
+		for (int i = 0; i < rects.size(); i++) {
+			var a = rects.get(i);
+			if (a.x() < 0 || a.y() < 0 || a.width() < 0 || a.height() < 0
+				|| a.x() + a.width() > width || a.y() + a.height() > height) {
+				throw new AssertionError("study layout element outside " + width + "x" + height + ": " + a);
+			}
+			if (a.kind().equals("hitbox")) continue;
+			for (int j = i + 1; j < rects.size(); j++) {
+				var b = rects.get(j);
+				if (b.kind().equals("hitbox")) continue;
+				boolean overlaps = a.x() < b.x() + b.width() && b.x() < a.x() + a.width()
+					&& a.y() < b.y() + b.height() && b.y() < a.y() + a.height();
+				if (overlaps) throw new AssertionError("study layout elements overlap at " + width + "x" + height + ": " + a + " / " + b);
+			}
+		}
+	}
+
+	private static void scrollStudyToEdge(ClientGameTestContext context, double vertical) {
+		for (int i = 0; i < 120; i++) {
+			var before = currentStudyLayout(context);
+			if (!scrollStudy(context, vertical)) return;
+			context.waitTick();
+			if (before.equals(currentStudyLayout(context))) return;
+		}
+	}
+
+	private static boolean scrollStudy(ClientGameTestContext context, double vertical) {
+		return context.computeOnClient(client -> {
+			if (!(client.gui.screen() instanceof StudyScreen screen)) return false;
+			return screen.mouseScrolled(screen.width / 2.0, screen.height / 2.0, 0, vertical);
+		});
+	}
+
+	private static void scrollStudyUntilButton(ClientGameTestContext context, String label) {
+		for (int i = 0; i < 120; i++) {
+			boolean visible = context.computeOnClient(client -> client.gui.screen() != null && client.gui.screen().children().stream()
+				.anyMatch(c -> c instanceof net.minecraft.client.gui.components.AbstractWidget w && w.visible && w.active && w.getMessage().getString().equals(label)));
+			if (visible) return;
+			var before = currentStudyLayout(context);
+			if (!scrollStudy(context, -3)) break;
+			context.waitTick();
+			if (before.equals(currentStudyLayout(context))) break;
+		}
+		throw new AssertionError("study action not reachable by scrolling: " + label);
+	}
+
+	private static void clickStudyButton(ClientGameTestContext context, String label) {
+		scrollStudyUntilButton(context, label);
+		context.clickScreenButton(label);
+		context.waitTicks(2);
 	}
 
 	/** Two world closures in the same JVM, with a live bot left for the shutdown hook each time. */
@@ -582,11 +966,33 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	}
 
 	private static void focusField(ClientGameTestContext context, String name) {
+		boolean study = context.computeOnClient(client -> client.gui.screen() instanceof StudyScreen);
+		if (study) scrollStudyUntilInput(context, name);
 		context.runOnClient(client -> {
-			var box = client.gui.screen().children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.EditBox e && e.visible && e.getMessage().getString().equals(name))
-				.map(c -> (net.minecraft.client.gui.components.EditBox) c).findFirst().orElseThrow();
-			client.gui.screen().setFocused(box);
+			var screen = client.gui.screen();
+			var edit = screen.children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.EditBox e && e.visible && e.getMessage().getString().equals(name))
+				.findFirst().orElse(null);
+			if (edit == null && name.equals("Your written attempt")) {
+				edit = screen.children().stream().filter(c -> c instanceof net.minecraft.client.gui.components.MultiLineEditBox m && m.visible).findFirst().orElse(null);
+			}
+			if (edit == null) throw new AssertionError("study input field not found: " + name);
+			screen.setFocused(edit);
 		});
+	}
+
+	private static void scrollStudyUntilInput(ClientGameTestContext context, String name) {
+		for (int i = 0; i < 120; i++) {
+			boolean visible = context.computeOnClient(client -> client.gui.screen() != null && client.gui.screen().children().stream().anyMatch(c -> {
+				if (c instanceof net.minecraft.client.gui.components.EditBox box) return box.visible && box.getMessage().getString().equals(name);
+				return name.equals("Your written attempt") && c instanceof net.minecraft.client.gui.components.MultiLineEditBox box && box.visible;
+			}));
+			if (visible) return;
+			var before = currentStudyLayout(context);
+			if (!scrollStudy(context, -3)) break;
+			context.waitTick();
+			if (before.equals(currentStudyLayout(context))) break;
+		}
+		throw new AssertionError("study input not reachable by scrolling: " + name);
 	}
 
 	private static void clickEditorAt(ClientGameTestContext context, int x, int y) {

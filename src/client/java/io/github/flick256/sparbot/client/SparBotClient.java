@@ -32,6 +32,7 @@ public final class SparBotClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		KeyMappingHelper.registerKeyMapping(OPEN_MENU);
 		KitEditorClient.register();
+		StudyClient.register();
 		ModelLayerRegistry.registerModelLayer(VaelorModel.LAYER, VaelorModel::createBodyLayer);
 		EntityRendererRegistry.register(SparBotContent.VAELOR, VaelorRenderer::new);
 		ClientPlayNetworking.registerGlobalReceiver(MenuStatePayload.TYPE, (payload, context) -> {
@@ -43,6 +44,7 @@ public final class SparBotClient implements ClientModInitializer {
 				return;
 			}
 			Minecraft minecraft = context.client();
+			if (minecraft.gui.screen() instanceof StudyScreen) return;
 			if (minecraft.gui.screen() instanceof SparBotMenuScreen open) {
 				open.update(state);
 			} else if (state.open()) {
@@ -51,6 +53,7 @@ public final class SparBotClient implements ClientModInitializer {
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(minecraft -> {
 			while (OPEN_MENU.consumeClick()) {
+				if (minecraft.gui.screen() instanceof StudyScreen) continue;
 				if (minecraft.player == null) {
 					continue;
 				}

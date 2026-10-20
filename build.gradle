@@ -115,6 +115,21 @@ if (project.hasProperty('v4Only')) {
 	}
 }
 
+// Exercise revision, hints, safe cancellation and the command handoff before fights.
+if (project.hasProperty('studyOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs '-Dsparbot.studyOnly=true'
+	}
+}
+
+// Audit all menu and kit editor pages at compact window sizes.
+if (project.hasProperty('layoutOnly') || project.hasProperty('editorLayoutOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs '-Dsparbot.layoutOnly=true'
+		if (project.hasProperty('editorLayoutOnly')) jvmArgs '-Dsparbot.editorLayoutOnly=true'
+	}
+}
+
 // Isolate the eight-bot timing check from the functional suite's concurrent test worlds.
 tasks.named('processGametestResources') {
 	inputs.property 'performanceOnly', project.hasProperty('performanceOnly')

@@ -82,6 +82,49 @@ public final class SparBotMenuScreen extends Screen {
 	/** Current server recording snapshot, for accessible review controls and client UI integration checks. */
 	public List<MenuState.ReplayEntry> recordingEntries() { return state.recordings(); }
 
+	/** Read-only text and control bounds for compact-layout checks. Content text is clipped to its actual scissor. */
+	public List<StudyScreen.LayoutRect> layoutSnapshot() {
+		List<StudyScreen.LayoutRect> result = new ArrayList<>();
+		addSnapshotText(result, "sidebar-label", "SPARBOT", left + 18, top + 13, left, top, left + sidebar, top + panelHeight);
+		addSnapshotText(result, "sidebar-label", "PRACTICE", left + 18, top + 26, left, top, left + sidebar, top + panelHeight);
+		if (panelHeight > 250) addSnapshotText(result, "sidebar-label", "v" + version, left + 18, top + panelHeight - 18,
+			left, top, left + sidebar, top + panelHeight);
+		int navigationBottom = top + (panelHeight < 320 ? 42 : 44) + 10 * (panelHeight < 320 ? 14 : 22) + (panelHeight < 320 ? 12 : 20);
+		if (panelHeight > 330 && sidebar >= 110 && top + panelHeight - 105 >= navigationBottom + 8) {
+			int cy = top + panelHeight - 91;
+			addSnapshotText(result, "sidebar-label", "TRAIN. ADAPT.", left + 18, cy + 27, left, top, left + sidebar, top + panelHeight);
+			addSnapshotText(result, "sidebar-label", "GO AGAIN.", left + 18, cy + 40, left, top, left + sidebar, top + panelHeight);
+		}
+		addSnapshotText(result, "header-label", font.plainSubstrByWidth(tab.heading, contentWidth), contentX, top + 16,
+			contentX, top, contentX + contentWidth, top + 51);
+		addSnapshotText(result, "header-label", font.plainSubstrByWidth(tab.description, contentWidth), contentX, top + 34,
+			contentX, top, contentX + contentWidth, top + 51);
+		for (Label label : labels) addSnapshotText(result, "content-label", label.text(), label.x(), label.y(),
+			contentX, contentTop, contentX + contentWidth, contentBottom);
+		if (contentWidth > 370) addSnapshotText(result, "status-label", status, contentX, top + panelHeight - 20,
+			contentX, top, contentX + contentWidth, top + panelHeight);
+		for (var child : children()) {
+			if (!(child instanceof AbstractWidget widget) || !widget.visible) continue;
+			if (widget instanceof MenuButton nav && widget.getX() < contentX) {
+				boolean hasIcon = widget.getWidth() >= 90 && widget.getHeight() >= 18;
+				int reserve = hasIcon ? 32 : 12;
+				String navText = font.plainSubstrByWidth(nav.getMessage().getString(), widget.getWidth() - reserve);
+				int navX = widget.getX() + (hasIcon ? 26 : 10);
+				int navY = widget.getY() + (widget.getHeight() - 8) / 2;
+				addSnapshotText(result, "sidebar-label", navText, navX, navY, left, top, left + sidebar, top + panelHeight);
+			}
+			result.add(new StudyScreen.LayoutRect("widget", widget.getMessage().getString(), widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+		}
+		return List.copyOf(result);
+	}
+
+	private void addSnapshotText(List<StudyScreen.LayoutRect> target, String kind, String text, int x, int y,
+			int clipLeft, int clipTop, int clipRight, int clipBottom) {
+		int x1 = Math.max(x, clipLeft), y1 = Math.max(y, clipTop);
+		int x2 = Math.min(x + font.width(text), clipRight), y2 = Math.min(y + font.lineHeight, clipBottom);
+		if (x2 > x1 && y2 > y1) target.add(new StudyScreen.LayoutRect(kind, text, x1, y1, x2 - x1, y2 - y1));
+	}
+
 	private void rebuildKeepingFocus() {
 		String focused = fields.entrySet().stream().filter(e -> e.getValue() == getFocused()).map(Map.Entry::getKey).findFirst().orElse(null);
 		EditBox previous = focused == null ? null : fields.get(focused);
@@ -105,9 +148,11 @@ public final class SparBotMenuScreen extends Screen {
 		contentX = left + sidebar + 14;
 		contentWidth = panelWidth - sidebar - 28;
 		contentTop = top + 62; contentBottom = top + panelHeight - 36;
-		int navStep = panelHeight < 320 ? 16 : 22;
-		int navHeight = panelHeight < 320 ? 14 : 20;
-		int navY = top + 44;
+		// Compact screens still expose every destination. Tighten the row height so
+		// the final entry stays above the panel edge at 400×225 and similar sizes.
+		int navStep = panelHeight < 320 ? 14 : 22;
+		int navHeight = panelHeight < 320 ? 12 : 20;
+		int navY = top + (panelHeight < 320 ? 42 : 44);
 		for (Tab each : Tab.values()) {
 			if (each == Tab.TECHNIQUES) { continue; }
 			MenuButton button = new MenuButton(each.label, left + 8, navY, sidebar - 16, navHeight, MenuButton.Tone.NAV,
@@ -144,7 +189,7 @@ public final class SparBotMenuScreen extends Screen {
 		if (tab == Tab.SPAWN) { primary.active = validSpawn(); }
 		if (tab == Tab.PRACTICE) { primary.active = !state.modes().isEmpty() && !state.profiles().isEmpty(); }
 		int edge = contentX + contentWidth - actionWidth - 6;
-		if (contentWidth >= actionWidth + 112) {
+		if (max == 0 ? contentWidth >= actionWidth + 68 : contentWidth >= actionWidth + 116) {
 			addRenderableWidget(new MenuButton("Refresh", edge - 56, y, 56, 20, MenuButton.Tone.NORMAL, false, b -> requestRefresh()));
 			edge -= 62;
 		}
@@ -156,17 +201,29 @@ public final class SparBotMenuScreen extends Screen {
 	}
 
 	private void overview() {
-		int y = card(94, false);
+		String practiceDescription = "Head into practice with a complete kit, or build your own sparring partner.";
+		int practiceLines = font.getSplitter().splitLines(practiceDescription, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+		int practiceButtonY = Math.max(64, 28 + practiceLines * 12 + 8);
+		int y = card(practiceButtonY + 30, false);
 		illustrate(y + 58, false);
 		text("A better fight starts here.", 12, y + 12, TEXT);
-		wrap("Head into practice with a complete kit, or build your own sparring partner.", 12, y + 28, contentWidth - 24, MUTED);
-		button("Start practice", 12, y + 64, Math.min(150, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> show(Tab.PRACTICE));
+		wrap(practiceDescription, 12, y + 28, contentWidth - 24, MUTED);
+		button("Start practice", 12, y + practiceButtonY, Math.min(150, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> show(Tab.PRACTICE));
+		String studyDescription = "Work through a question and sharpen your recall before the next fight.";
+		int studyLines = font.getSplitter().splitLines(studyDescription, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+		y = card(61 + studyLines * 12, true);
+		text("STUDY / EXAM PRACTICE", 12, y + 12, GOLD);
+		wrap(studyDescription, 12, y + 29, contentWidth - 24, MUTED);
+		button("Open study", 12, y + 35 + studyLines * 12, Math.min(120, contentWidth - 24), MenuButton.Tone.GOLD, StudyClient::openOptional);
 		if (state.profiles().contains("swight")) {
-			y = card(112, true);
+			String swightDescription = "Utility with a plan. A demanding UHC opponent with human limits, built to challenge Demon.";
+			int swightLines = font.getSplitter().splitLines(swightDescription, contentWidth - 24, net.minecraft.network.chat.Style.EMPTY).size();
+			int challengeY = Math.max(82, 29 + swightLines * 12 + 8);
+			y = card(challengeY + 30, true);
 			illustrate(y + 78, true);
 			text("SWIGHT  /  UHC SPECIALIST", 12, y + 12, GOLD);
-			wrap("Utility with a plan. A demanding UHC opponent with human limits, built to challenge Demon.", 12, y + 29, contentWidth - 24, MUTED);
-			button("Challenge Swight", 12, y + 82, Math.min(160, contentWidth - 24), MenuButton.Tone.GOLD,
+			wrap(swightDescription, 12, y + 29, contentWidth - 24, MUTED);
+			button("Challenge Swight", 12, y + challengeY, Math.min(160, contentWidth - 24), MenuButton.Tone.GOLD,
 				() -> runAndClose(MenuCommands.practiceFight(uhcMode(), "swight")));
 		}
 		y = card(74, false);
@@ -306,20 +363,22 @@ public final class SparBotMenuScreen extends Screen {
 		List<MenuState.KitEntry> kits = state.kitInfo().stream().filter(k -> matches(kitSearch, k.id() + " " + k.displayName())).toList();
 		if (kits.isEmpty()) { empty("No matching kits", "Try a shorter name or clear the search."); }
 		for (MenuState.KitEntry kit : kits) {
-			int y = card(78, choosingKit && kit.id().equals(spawnKit));
+			boolean compactActions = !choosingKit && contentWidth < 300;
+			int y = card(compactActions ? 98 : 78, choosingKit && kit.id().equals(spawnKit));
 			text(kit.displayName(), 12, y + 10, TEXT);
 			text(kit.verified() ? "Verified layout" : "Layout details unverified", 12, y + 27, kit.verified() ? ACCENT : MUTED);
 			if (choosingKit) {
 				button("Use kit", 12, y + 50, Math.min(130, contentWidth - 24), MenuButton.Tone.PRIMARY, () -> { spawnKit = kit.id(); choosingKit = false; show(Tab.SPAWN); });
 			} else {
-				int bw = Math.min(76, (contentWidth - 42) / 4);
+				int bw = compactActions ? (contentWidth - 30) / 2 : Math.min(76, (contentWidth - 42) / 4);
 				boolean saved = state.myLayouts().contains(kit.id());
-				button("Equip", 12, y + 50, bw, MenuButton.Tone.PRIMARY, () -> run(MenuCommands.giveKit(kit.id())));
-				button("Edit", 18 + bw, y + 50, bw, MenuButton.Tone.NORMAL, () -> run("sparbot kiteditor " + kit.id()))
+				int firstRowY = y + (compactActions ? 42 : 50), secondRowY = y + 70;
+				button("Equip", 12, firstRowY, bw, MenuButton.Tone.PRIMARY, () -> run(MenuCommands.giveKit(kit.id())));
+				button("Edit", 18 + bw, firstRowY, bw, MenuButton.Tone.NORMAL, () -> run("sparbot kiteditor " + kit.id()))
 					.setTooltip(Tooltip.create(Component.literal("Open this template as a new draft, then save it with a new ID to clone it.")));
-				button(saved ? "Save layout*" : "Save layout", 24 + bw * 2, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.saveLayout(kit.id())))
+				button(saved ? "Save layout*" : "Save layout", compactActions ? 12 : 24 + bw * 2, compactActions ? secondRowY : firstRowY, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.saveLayout(kit.id())))
 					.setTooltip(Tooltip.create(Component.literal("Save your current inventory arrangement for this kit.")));
-				button("Reset", 30 + bw * 3, y + 50, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.resetLayout(kit.id()))).active = saved;
+				button("Reset", compactActions ? 18 + bw : 30 + bw * 3, compactActions ? secondRowY : firstRowY, bw, MenuButton.Tone.NORMAL, () -> run(MenuCommands.resetLayout(kit.id()))).active = saved;
 			}
 		}
 	}
@@ -647,7 +706,8 @@ public final class SparBotMenuScreen extends Screen {
 		g.fillGradient(left + 1, top + 1, left + sidebar, top + panelHeight - 1, 0xFF1B2835, 0xFF141C29);
 		MenuArt.corners(g, left, top, panelWidth, panelHeight, 0xFF53747E);
 		g.fillGradient(contentX, top + 1, left + panelWidth - 1, top + 49, 0xFF182C38, 0xFF111A28);
-		if (panelHeight > 330 && sidebar >= 110) {
+		int navigationBottom = top + (panelHeight < 320 ? 42 : 44) + 10 * (panelHeight < 320 ? 14 : 22) + (panelHeight < 320 ? 12 : 20);
+		if (panelHeight > 330 && sidebar >= 110 && top + panelHeight - 105 >= navigationBottom + 8) {
 			int cy = top + panelHeight - 91;
 			g.horizontalLine(left + 18, left + sidebar - 18, cy - 14, 0xFF293D4B);
 			MenuArt.item(g, net.minecraft.world.item.Items.DIAMOND_SWORD, left + 31, cy);

@@ -1,0 +1,1051 @@
+[
+  {
+    "subject": "English",
+    "topic": "Film analysis",
+    "prompt": "Consider the opening sequence in Sunset Boulevard: Joe Gillis narrates after his death, as police and photographers arrive at the pool. Analyse how the framing and retrospective narration shape the audience’s expectations.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Consider the contrast between Joe’s already-known fate and his account of how events unfolded.",
+      "Track how the police and photographers frame the body as a public spectacle; connect that framing to the voiceover."
+    ],
+    "explanation": "The unusual opening frames the story as a mystery whose outcome is already known. Joe’s retrospective voice can create irony because he narrates events that led to his death; the police and photographic attention also make private tragedy a public spectacle. Other readings are valid when supported by the scene.",
+    "rubric": [
+      "Identifies a specific framing or narration choice in the opening.",
+      "Explains how it shapes expectation, tone or audience alignment.",
+      "Supports an interpretation with a relevant detail from the scene."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-01"
+  },
+  {
+    "subject": "English",
+    "topic": "Film analysis",
+    "prompt": "In the scenes at Norma’s mansion, Wilder uses lavish interiors, old photographs and controlled performance. Analyse how one or more of these visual choices can shape a viewer’s understanding of Norma and the mansion.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Look at the mansion as a visual setting as well as Norma’s home: what does its scale, decoration or imagery suggest?",
+      "Choose one visual detail and explain both its effect on the viewer and what it implies about Norma’s relationship with her past."
+    ],
+    "explanation": "The mansion can be read as a theatrical world that preserves Norma’s former screen identity. Its images and scale may suggest wealth and glamour while also making the space feel enclosed and detached from contemporary life. A response may offer another interpretation if it connects visual details to an effect.",
+    "rubric": [
+      "Names a relevant visual or performance choice.",
+      "Explains how that choice contributes to a reading of Norma or the mansion.",
+      "Connects the reading to a likely audience effect or wider idea."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-02"
+  },
+  {
+    "subject": "English",
+    "topic": "Film analysis",
+    "prompt": "Max writes and sends fan letters to Norma. Analyse how this action develops ideas about loyalty, illusion or control in the film.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Separate Max’s motive from the effect of his action: how might the letters express care while sustaining a false belief?",
+      "Build your interpretation around the tension between loyalty and illusion, then support it with what the letters cause Norma to believe."
+    ],
+    "explanation": "Max’s letters sustain Norma’s belief that public admiration continues. The action can express loyalty and care while also maintaining an illusion that limits her contact with reality; the tension makes Max’s devotion ethically complex. Supported alternative readings are acceptable.",
+    "rubric": [
+      "Identifies the fan letters as a significant action.",
+      "Explains a supported interpretation involving loyalty, illusion or control.",
+      "Uses a relevant detail or effect to develop the interpretation."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-03"
+  },
+  {
+    "subject": "English",
+    "topic": "Film analysis",
+    "prompt": "In the final sequence, Norma faces the newsreel camera and descends the staircase as if returning to a film role. Analyse how performance and camera attention shape the ending.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Notice the gap between Norma’s sense that she is performing and the audience’s awareness of the situation.",
+      "Link the camera’s attention and staircase descent to the ending’s mix of performance, pathos or unease."
+    ],
+    "explanation": "The camera’s attention allows Norma to experience herself as a star again, while viewers know the situation is a staged delusion. The sequence can produce both pathos and unease, turning spectatorship itself into part of the film’s critique. Interpretations should be grounded in the sequence.",
+    "rubric": [
+      "Identifies performance or camera attention in the sequence.",
+      "Explains how it shapes the audience’s understanding of Norma.",
+      "Develops an interpretation of the ending’s effect or idea."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-04"
+  },
+  {
+    "subject": "English",
+    "topic": "Creating texts: protest",
+    "prompt": "Plan a protest text for a school audience about a local issue of your choice. State its purpose, intended audience and the action you want readers to take.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Narrow the issue to a specific local change and decide who can act on it.",
+      "Write a purpose-led plan: audience, reason to care, and one concrete action readers can take."
+    ],
+    "explanation": "A useful plan names a focused issue, defines a specific audience, and uses a clear purpose to guide a practical call to action. The issue and action can vary; the plan should make their relationship clear.",
+    "rubric": [
+      "Names a focused issue and intended audience.",
+      "States a purpose that fits the audience.",
+      "Gives a clear, feasible call to action."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-05"
+  },
+  {
+    "subject": "English",
+    "topic": "Creating texts: protest",
+    "prompt": "Write two alternative opening lines for a protest text about public transport: one that creates urgency and one that invites solidarity. Briefly identify the language choice in each.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Urgency often foregrounds a consequence or deadline; solidarity often builds a shared identity.",
+      "Draft one line using a time-sensitive consequence, then another using inclusive language or a shared value."
+    ],
+    "explanation": "An urgent opening might foreground a time-sensitive consequence; a solidarity-based opening might use inclusive pronouns or a shared value. Effective responses make the difference in purpose and audience positioning clear without relying on a single prescribed wording.",
+    "rubric": [
+      "Provides two distinct opening lines.",
+      "Uses a language choice suited to urgency in one line.",
+      "Uses a language choice that builds solidarity in the other."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-06"
+  },
+  {
+    "subject": "English",
+    "topic": "Creating texts: protest",
+    "prompt": "A protest text has a strong claim but risks alienating readers who are undecided. Suggest one revision to its voice or tone and explain how the revision could keep the claim persuasive.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Identify what an undecided reader might resist: tone, evidence, cost or the proposed action.",
+      "Try acknowledging that concern before answering it, while keeping the central claim direct."
+    ],
+    "explanation": "The writer could acknowledge a reasonable concern before answering it, or use invitational language while keeping the claim direct. This can signal respect for undecided readers and make the requested action more accessible. Other revisions are valid if linked to audience and purpose.",
+    "rubric": [
+      "Suggests a specific change to voice or tone.",
+      "Explains how the change addresses undecided readers.",
+      "Keeps the central claim and purpose clear."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-07"
+  },
+  {
+    "subject": "English",
+    "topic": "Creating texts: protest",
+    "prompt": "Draft a short final call to action for a protest text about protecting a community garden. Include an action, a time or place, and a reason to participate.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A call to action works best when a reader can tell exactly what to do and when.",
+      "Include a specific garden-related action and time/place, then connect participation to a shared benefit."
+    ],
+    "explanation": "A clear ending tells readers what to do and when or where, then connects participation to a shared outcome such as keeping a usable green space. The exact wording may vary.",
+    "rubric": [
+      "States a concrete action.",
+      "Includes a usable time or place.",
+      "Links participation to a relevant reason or shared value."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-08"
+  },
+  {
+    "subject": "English",
+    "topic": "Argument analysis",
+    "prompt": "Read the original passage: “The eastern oval should stay open after school. At present, teams share one crowded court, while the oval sits empty by four o’clock. A later closing time would give students room to train and families a safe place to walk. The council says staffing costs matter; a four-week trial, with sign-in data, would show whether the extra hours are worthwhile.” Which contention does the writer advance?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "The eastern oval should remain open later after school.",
+      "All school sport should be compulsory.",
+      "The council should build another court immediately.",
+      "Families should stop walking at the oval."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Distinguish the writer’s main recommendation from the reasons supporting it.",
+      "Use the opening sentence to check whether the selected option states the proposed change."
+    ],
+    "explanation": "The opening sentence states the central contention: keep the oval open after school.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-09"
+  },
+  {
+    "subject": "English",
+    "topic": "Argument analysis",
+    "prompt": "Read this original practice passage:\n\nThe eastern oval should stay open after school. At present, teams share one crowded court, while the oval sits empty by four o’clock. A later closing time would give students room to train and families a safe place to walk. The council says staffing costs matter; a four-week trial, with sign-in data, would show whether the extra hours are worthwhile.\n\nWhat role does the contrast between the crowded court and empty oval play?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "It presents an apparent mismatch in the use of facilities as a reason for change.",
+      "It proves staffing costs are zero.",
+      "It introduces an unrelated personal story.",
+      "It concedes that students do not want to train."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Compare the two spaces as the writer describes them and identify the contrast in their current use.",
+      "Ask how that contrast makes the current arrangement seem to the audience."
+    ],
+    "explanation": "The contrast frames the current allocation as inefficient and supports the case for opening the underused oval.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-10"
+  },
+  {
+    "subject": "English",
+    "topic": "Argument analysis",
+    "prompt": "Read this original practice passage:\n\nLast week, sixty students borrowed revision guides, but only twenty found a desk after school. Our library is a promise of access, not merely a room of shelves. Let us trial evening opening on two nights for one month, record attendance, and then decide whether to make the change permanent.\n\nWhy does the writer propose a two-night pilot of evening library opening?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "To test demand while limiting commitment before a permanent decision.",
+      "To prove that staffing never has a cost.",
+      "To require all students to study at night.",
+      "To replace the library’s books with desks."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Focus on why a limited trial is useful when a proposal’s demand or cost is uncertain.",
+      "Look at the pilot’s duration and review: what decision can they inform before a permanent change?"
+    ],
+    "explanation": "A limited trial followed by review addresses uncertainty about demand before a permanent decision.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-11"
+  },
+  {
+    "subject": "English",
+    "topic": "Argument analysis",
+    "prompt": "Read this original practice passage:\n\nLast week, sixty students borrowed revision guides, but only twenty found a desk after school. Our library is a promise of access, not merely a room of shelves. Let us trial evening opening on two nights for one month, record attendance, and then decide whether to make the change permanent.\n\nAnalyse how the writer combines evidence and language to persuade a school community to trial evening opening.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Identify the contention, the concrete comparison offered as evidence, and one phrase with a value judgment.",
+      "For a concise analysis, explain how the evidence supports the proposal, then link the chosen phrase to the school audience."
+    ],
+    "explanation": "The writer seeks a trial of evening opening. The mismatch between demand for guides and available desks gives a concrete reason to test extra access. Calling the library “a promise” presents access as a shared educational value, encouraging the school community to see the trial as worthwhile.",
+    "rubric": [
+      "Identifies contention and audience.",
+      "Explains the persuasive role of the specific evidence.",
+      "Explains the likely effect of a language choice."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "english-12"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Functions",
+    "prompt": "For f(x)=x²−4x+1, which expression gives the axis of symmetry of its graph?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "x=−2",
+      "x=2",
+      "y=2",
+      "y=−3"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "For a quadratic, the axis passes through the vertex and can be found from its coefficients.",
+      "Use x=−b/(2a) for ax²+bx+c, paying attention to the sign of b."
+    ],
+    "explanation": "For ax²+bx+c, the axis is x=−b/(2a)=4/2=2.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-01"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Functions",
+    "prompt": "The graph of y=2^x is translated 3 units right and 1 unit down. Which is its equation?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "y=2^(x+3)+1",
+      "y=2^(x−3)−1",
+      "y=2^x−3+1",
+      "y=2^(x−1)−3"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A horizontal translation changes the input x; a vertical translation changes the output.",
+      "For a shift right by h replace x with x−h, then apply the downward shift outside the function."
+    ],
+    "explanation": "A right translation replaces x by x−3; a downward translation subtracts 1.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-02"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Functions",
+    "prompt": "Which statement about g(x)=√(x−2)+1 is correct?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Domain x≥2 and range y≥1",
+      "Domain x≥1 and range y≥2",
+      "Domain all real numbers and range y≥1",
+      "Domain x≤2 and range y≤1"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "The square root requires its inside expression to be non-negative; its output also has a lower bound.",
+      "Set x−2≥0 for the domain, then apply the outside +1 to the range of the square root."
+    ],
+    "explanation": "The radicand requires x−2≥0, and the square root is nonnegative, so x≥2 and y≥1.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-03"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "Differentiate f(x)=3x⁴−2x²+5.",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "12x³−4x",
+      "12x³−2x",
+      "3x³−4x",
+      "12x⁴−4x²"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Apply the power rule separately to each power of x; a constant differentiates to zero.",
+      "Multiply each coefficient by its exponent, then reduce that exponent by one."
+    ],
+    "explanation": "Apply the power rule term by term: 12x³−4x.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-04"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "For y=ln(2x+1), what is dy/dx?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "1/(2x+1)",
+      "2/(2x+1)",
+      "ln 2",
+      "2 ln(2x+1)"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Use the chain rule for a logarithm whose input is not just x.",
+      "Differentiate ln(u) as u′/u, with u=2x+1."
+    ],
+    "explanation": "By the chain rule, derivative is 1/(2x+1) multiplied by 2.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-05"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "A function has f′(x)=(x−1)(x+2). On which interval is it decreasing?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "x<−2 only",
+      "−2<x<1",
+      "x>1 only",
+      "All real x"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A function decreases where its derivative is negative.",
+      "Find the two zeros of the factored derivative and test its sign in each interval."
+    ],
+    "explanation": "The derivative is negative between its roots −2 and 1, so the function decreases there.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-06"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "For f(x)=x³−3x, which is the local maximum point?",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "(−1,2)",
+      "(1,−2)",
+      "(0,0)",
+      "(−1,−2)"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Stationary points occur where f′=0; use f″ or a sign change to identify a local maximum.",
+      "Evaluate f′ and f″ at the candidate x-values, then substitute the maximum’s x-value into f."
+    ],
+    "explanation": "f′=3x²−3=0 at x=±1. Since f″=6x, x=−1 is a local maximum; f(−1)=2.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-07"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "A particle has displacement s(t)=t³−6t²+9t metres for t≥0. At which positive times is its velocity zero?",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "t=1 only",
+      "t=3 only",
+      "t=1 and t=3",
+      "t=0 and t=3"
+    ],
+    "answerIndex": 2,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Velocity is the derivative of displacement with respect to time.",
+      "Differentiate s(t), factor the resulting quadratic, and retain positive roots."
+    ],
+    "explanation": "Velocity v=s′=3t²−12t+9=3(t−1)(t−3), giving t=1 and t=3.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-08"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "Find the gradient of y=e^(2x) at x=0.",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 2,
+    "tolerance": 0.01,
+    "unit": "",
+    "hints": [
+      "The gradient at a point is the derivative evaluated at that point.",
+      "Use the chain rule on e^(2x), then substitute x=0."
+    ],
+    "explanation": "Differentiate using the chain rule: y′=2e^(2x). At x=0, y′=2.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-09"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "Find the area under y=2x from x=0 to x=3.",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 9,
+    "tolerance": 0.01,
+    "unit": "square units",
+    "hints": [
+      "The area under a non-negative curve on an interval is a definite integral.",
+      "Integrate 2x with respect to x and evaluate the antiderivative at 3 and 0."
+    ],
+    "explanation": "The area is ∫₀³2x dx=[x²]₀³=9 square units.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-10"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Probability",
+    "prompt": "A fair coin is tossed 4 times. What is the probability of exactly 3 heads?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "1/16",
+      "1/4",
+      "3/8",
+      "1/2"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Treat each toss as an independent trial with the same probability of heads.",
+      "Count the ways to choose which three tosses are heads, then divide by all 4-toss outcomes."
+    ],
+    "explanation": "There are C(4,3)=4 such sequences among 16 equally likely outcomes, so the probability is 1/4. Correct answer should be index 1.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-11"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Probability",
+    "prompt": "If X~Bin(6,0.3), what is P(X=0)?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "0.117649",
+      "0.300000",
+      "0.700000",
+      "0.882351"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "For a binomial variable, zero successes means every trial is a failure.",
+      "Use the failure probability 1−p raised to the number of trials."
+    ],
+    "explanation": "P(X=0)=(0.7)^6=0.117649.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-12"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Probability",
+    "prompt": "A normal variable has mean 100 and standard deviation 15. Approximately what proportion lies between 85 and 115?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "0.341",
+      "0.500",
+      "0.683",
+      "0.954"
+    ],
+    "answerIndex": 2,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "The interval endpoints are one standard deviation below and above the mean.",
+      "Standardise both endpoints; use the normal distribution’s central one-standard-deviation probability."
+    ],
+    "explanation": "The interval is one standard deviation either side of the mean; for a normal distribution its probability is about 0.683.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-13"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Probability",
+    "prompt": "A normal variable has mean 40 and standard deviation 5. Find the z-score for x=32.",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": -1.6,
+    "tolerance": 0.01,
+    "unit": "",
+    "hints": [
+      "A z-score measures the signed distance from the mean in standard deviations.",
+      "Calculate (x−μ)/σ, retaining the sign to show that x is below the mean."
+    ],
+    "explanation": "z=(32−40)/5=−1.6.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-14"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Probability",
+    "prompt": "Events A and B are independent, with P(A)=0.4 and P(B)=0.5. Find P(A∩B).",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 0.2,
+    "tolerance": 0.001,
+    "unit": "",
+    "hints": [
+      "Independence means the occurrence of one event does not change the probability of the other.",
+      "For independent A and B, use the product rule for their intersection."
+    ],
+    "explanation": "For independent events, P(A∩B)=P(A)P(B)=0.4×0.5=0.2.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-15"
+  },
+  {
+    "subject": "Mathematical Methods",
+    "topic": "Calculus",
+    "prompt": "A differentiable function has derivative f′(x)=x²−4. Describe its increasing and decreasing intervals and classify its stationary points.",
+    "marks": 4,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Stationary values occur where the derivative is zero; intervals are determined by its sign.",
+      "Solve x²−4=0, then test one value in each resulting interval before classifying sign changes."
+    ],
+    "explanation": "The derivative is positive for x<−2 and x>2, and negative for −2<x<2. Thus f increases on (−∞,−2) and (2,∞), decreases on (−2,2), has a local maximum at x=−2 and local minimum at x=2.",
+    "rubric": [
+      "Finds stationary x-values −2 and 2.",
+      "Correctly identifies increasing/decreasing intervals.",
+      "Correctly classifies both stationary points."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "methods-16"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Equilibrium",
+    "prompt": "For N₂(g)+3H₂(g)⇌2NH₃(g), what is the effect of decreasing the container volume at constant temperature?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Equilibrium shifts toward NH₃",
+      "Equilibrium shifts toward N₂ and H₂",
+      "Kc increases",
+      "No shift because pressure has no effect on gases"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Apply Le Chatelier’s principle by comparing the number of gaseous particles on each side.",
+      "Count the gas coefficients in the balanced equation; pressure change does not alter Kc at fixed temperature."
+    ],
+    "explanation": "The product side has fewer gas particles (2 versus 4), so higher pressure favours NH₃. Kc remains constant at fixed temperature.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-01"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Equilibrium",
+    "prompt": "For A(g)⇌2B(g), what happens to Kc if the system is diluted at constant temperature?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Kc increases",
+      "Kc decreases",
+      "Kc stays the same",
+      "Kc becomes zero"
+    ],
+    "answerIndex": 2,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "The equilibrium constant is set by temperature, whereas dilution can change the equilibrium position.",
+      "Separate the question “what changes the position?” from “what changes Kc?” and use the stated constant temperature."
+    ],
+    "explanation": "Kc depends only on temperature. Dilution may shift the equilibrium position but does not change Kc at fixed temperature.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-02"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Equilibrium",
+    "prompt": "For H₂(g)+I₂(g)⇌2HI(g), the system is at equilibrium. Which change increases the rate of both forward and reverse reactions without changing Kc?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Adding a catalyst",
+      "Adding HI",
+      "Increasing volume",
+      "Removing H₂"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A catalyst changes reaction rates by providing an alternative pathway; it does not favour one direction at equilibrium.",
+      "Check which option affects both forward and reverse rates while leaving temperature and Kc unchanged."
+    ],
+    "explanation": "A catalyst speeds both directions by lowering activation energy; it does not change Kc.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-03"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Redox",
+    "prompt": "In 2Mg(s)+O₂(g)→2MgO(s), which substance is reduced?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Mg",
+      "O₂",
+      "MgO",
+      "Neither"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Reduction is gain of electrons and corresponds to a decrease in oxidation number.",
+      "Assign oxidation numbers to Mg and O on both sides, then identify which element’s number decreases."
+    ],
+    "explanation": "Oxygen gains electrons as its oxidation state falls from 0 to −2, so O₂ is reduced.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-04"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Redox",
+    "prompt": "What is the oxidation number of sulfur in SO₄²⁻?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "+4",
+      "+6",
+      "−2",
+      "−6"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "The sum of oxidation numbers in a polyatomic ion equals the ion’s overall charge.",
+      "Assign oxygen its usual −2 value and solve for sulfur using the −2 total charge."
+    ],
+    "explanation": "Four oxygens contribute −8; the total charge is −2, so sulfur is +6.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-05"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Redox",
+    "prompt": "In a galvanic cell, electrons flow through the external circuit from the:",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Cathode to anode",
+      "Anode to cathode",
+      "Salt bridge to anode",
+      "Electrolyte to cathode"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Oxidation occurs at the anode and releases electrons; reduction occurs at the cathode.",
+      "Trace electrons through the external wire from the electrode where they are produced to where they are consumed."
+    ],
+    "explanation": "Oxidation at the anode releases electrons; reduction at the cathode consumes them, so external electron flow is anode to cathode.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-06"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Energy",
+    "prompt": "A reaction mixture absorbs heat from its surroundings. Which statement is correct for the system?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "ΔH is positive and the process is endothermic",
+      "ΔH is negative and exothermic",
+      "ΔH is zero",
+      "The sign depends only on pressure"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Define ΔH for the system and track the direction of heat transfer.",
+      "If heat enters the reacting system, relate that sign to the term endothermic."
+    ],
+    "explanation": "Heat enters the system, so the process is endothermic and ΔH is positive.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-07"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Energy",
+    "prompt": "Using bond energies, ΔH is estimated from which expression?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Sum of energies of bonds formed minus bonds broken",
+      "Sum of energies of bonds broken minus bonds formed",
+      "Total energy of reactants plus products",
+      "Energy of the strongest bond only"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Breaking bonds requires energy; forming bonds releases energy.",
+      "Set up the estimate as energy required to break reactant bonds minus energy released forming product bonds."
+    ],
+    "explanation": "Breaking bonds requires energy; forming bonds releases energy. Approximate ΔH=energy to break−energy released on formation.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-08"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Organic chemistry",
+    "prompt": "Which functional group identifies an alcohol?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "−OH attached to a saturated carbon",
+      "−COOH",
+      "−COO−",
+      "−NH₂"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Identify the characteristic atom arrangement in each functional group.",
+      "Distinguish a hydroxyl group on a carbon chain from the carboxyl group of a carboxylic acid."
+    ],
+    "explanation": "An alcohol contains a hydroxyl group bonded to a saturated carbon; −COOH is a carboxylic acid.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-09"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Organic chemistry",
+    "prompt": "Which product is formed by complete combustion of propane?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "CO₂ and H₂O",
+      "CO and H₂",
+      "C and H₂O",
+      "Ethanol and CO₂"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Complete combustion means sufficient oxygen is available to oxidise carbon fully.",
+      "Write the usual products for complete combustion of a hydrocarbon, including the product containing hydrogen."
+    ],
+    "explanation": "Complete combustion of a hydrocarbon in excess oxygen produces carbon dioxide and water.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-10"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Equilibrium",
+    "prompt": "At a particular equilibrium, [A]=0.20 mol L−1 and [B]=0.60 mol L−1 for A⇌B. Calculate Kc=[B]/[A].",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 3,
+    "tolerance": 0.01,
+    "unit": "",
+    "hints": [
+      "For this 1:1 equilibrium expression, use the stated product-to-reactant concentration ratio.",
+      "Substitute the equilibrium concentrations in mol L−1 and divide [B] by [A]."
+    ],
+    "explanation": "Kc=0.60/0.20=3.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-11"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Equilibrium",
+    "prompt": "For A⇌B, initial concentrations are [A]=1.00 mol L−1 and [B]=0. At equilibrium [B]=0.40 mol L−1. Assuming a 1:1 reaction, calculate Kc.",
+    "marks": 3,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 0.6666666666666667,
+    "tolerance": 0.01,
+    "unit": "",
+    "hints": [
+      "Use the 1:1 stoichiometric change to infer how much A remains when 0.40 mol L−1 of B forms.",
+      "Write both equilibrium concentrations, then substitute them into Kc=[B]/[A]."
+    ],
+    "explanation": "The change forms 0.40 mol L−1 B, so [A]eq=1.00−0.40=0.60. Kc=[B]/[A]=0.40/0.60≈0.667.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-12"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Redox",
+    "prompt": "A current of 2.0 A flows for 5.0 minutes. Calculate the charge transferred.",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 600,
+    "tolerance": 1,
+    "unit": "C",
+    "hints": [
+      "Charge transferred relates current to elapsed time.",
+      "Convert minutes to seconds before applying Q=It with current in amperes."
+    ],
+    "explanation": "Q=It; convert 5.0 min to 300 s, so Q=2.0×300=600 C.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-13"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Energy",
+    "prompt": "A 50.0 g sample of water warms by 4.0°C. Using c=4.18 J g−1 °C−1, calculate the heat absorbed.",
+    "marks": 2,
+    "kind": "NUMBER",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": 836,
+    "tolerance": 1,
+    "unit": "J",
+    "hints": [
+      "Heating a sample uses q=mcΔT, with mass, specific heat capacity and temperature change.",
+      "Use the supplied specific heat capacity and multiply by 50.0 g and the 4.0°C rise."
+    ],
+    "explanation": "q=mcΔT=50.0×4.18×4.0=836 J.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-14"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Organic chemistry",
+    "prompt": "Which pair of reactants can form an ester in an esterification reaction?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "An alcohol and a carboxylic acid",
+      "An alkane and oxygen",
+      "An alkene and hydrogen",
+      "An amine and a metal"
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Esterification combines a carboxylic acid with an alcohol.",
+      "Identify which option contains both reactant classes; the reaction also forms water."
+    ],
+    "explanation": "An alcohol reacts with a carboxylic acid to form an ester and water.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-15"
+  },
+  {
+    "subject": "Chemistry",
+    "topic": "Energy",
+    "prompt": "Explain how bond breaking and bond formation determine whether a reaction is exothermic or endothermic.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Track the energy required to break reactant bonds and released when product bonds form.",
+      "Compare those totals: whichever is larger determines whether ΔH is positive or negative."
+    ],
+    "explanation": "Breaking reactant bonds absorbs energy; forming product bonds releases energy. If formation releases more than breaking absorbs, ΔH is negative and the reaction is exothermic. If breaking absorbs more, ΔH is positive and the reaction is endothermic.",
+    "rubric": [
+      "States bond breaking absorbs energy.",
+      "States bond formation releases energy.",
+      "Correctly compares amounts and relates to ΔH."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question",
+    "id": "chemistry-16"
+  }
+]

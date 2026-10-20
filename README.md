@@ -1,6 +1,6 @@
 # SparBot
 
-**[Download SparBot 4.0.0](https://raw.githubusercontent.com/flick256/minecraft-pvp-mod-that-is-super-cool/refs/heads/builds/sparbot-4.0.0/sparbot-4.0.0.jar)** · [4.0 guide](docs/guide-4.0.md) · [Validation and upgrade notes](docs/testing-4.0.md)
+**[Download SparBot 4.1.0](https://raw.githubusercontent.com/flick256/minecraft-pvp-mod-that-is-super-cool/refs/heads/builds/sparbot-4.1.0/sparbot-4.1.0.jar)** · [4.1 study guide](docs/study-4.1.md) · [4.1 validation](docs/testing-4.1.md) · [4.0 guide](docs/guide-4.0.md) · [4.0 validation and upgrade notes](docs/testing-4.0.md)
 
 A Fabric mod for **Minecraft Java Edition 26.2** that adds PvP sparring bots. A bot plays like a real
 player at a chosen skill level, from Beginner to Pro, and it is **fully mortal**: it takes damage, knockback
@@ -10,15 +10,17 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 4.0.0. Adds 18 authored rivals across five career circuits, each promotion decided by a first-to-three
-> match; opt-in practice adaptation between fights; a native, draft-only kit editor; terrain choices for practice
-> rematches; and replay controls with event review. The menu's You journal can turn evidence-backed coaching into
-> one recommended drill you can start directly. Existing modes, matches, Elo, recording, replay and skill drills remain.
-> See the [4.0 guide](docs/guide-4.0.md) for the new flows and commands. Every bot fights with
-> hand-written, human-limited fighting code (2.0 removed the machine learning): at a chosen skill level and
+> Status: 4.1.0 fixes overlapping menu layouts and adds an offline VCE-style study routine, enabled by default.
+> One question on world entry counts toward your first fight; later SparBot fights require another. Its 72 original
+> questions cover English, Mathematical Methods, Chemistry, French and History Revolutions; staged hints, feedback
+> and self-review support practice without claiming to cover the full official VCE curriculum. Subjects and exam
+> dates are editable in the study UI. See the [4.1 study guide](docs/study-4.1.md). Version 4.0 features remain
+> available, including five career circuits, opt-in practice adaptation, the draft kit editor, practice terrain,
+> replay event review and evidence-backed drill recommendations ([4.0 guide](docs/guide-4.0.md)). Every bot fights
+> with hand-written, human-limited fighting code (2.0 removed machine learning): at a chosen skill level and
 > **playstyle**, with any technique switchable per bot. A debug view shows what a bot is thinking.
 
-4.0 adds five authored career circuits: sword, UHC, cart, crystal and mace. The UHC circuit's champion is Swight.
+Version 4.0 introduced five authored career circuits: sword, UHC, cart, crystal and mace. The UHC circuit's champion is Swight.
 Replay event review records observed combat and shield facts, and version 2 recordings remain readable alongside
 version 1 files. See the [4.0 guide](docs/guide-4.0.md) and [earlier validation and shield notes](docs/testing-3.2.1.md).
 
@@ -129,7 +131,7 @@ All commands need the permission level set in the config (default: gamemasters, 
 ## The menu
 
 With SparBot installed on your client too, press **B** (rebindable in Controls) or run `/sparbot menu`:
-- **Overview:** quick access to practice, your bots, drills, and **Challenge Swight**.
+- **Overview:** quick access to practice, **Open study**, your bots, drills, and **Challenge Swight**.
 - **Practice:** choose a mode and opponent, then **Enter arena**. The action stays visible while you browse.
 - **Bots:** see each opponent's health, start a fight, respawn it, remove it, or open **Tech** to change its techniques.
 - **Spawn:** enter a name, choose a skill level and playstyle, then pick a kit from the searchable library.

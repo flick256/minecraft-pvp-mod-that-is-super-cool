@@ -1,0 +1,693 @@
+[
+  {
+    "id": "french_01",
+    "subject": "French",
+    "topic": "Reading comprehension: purpose and audience",
+    "prompt": "Read this original practice message:\n\n« Salut Léa, le conseil des élèves organise samedi une matinée sans voiture. On veut montrer qu’un petit changement peut rendre le quartier plus agréable. Tu pourrais tenir le stand de réparation des vélos ? Même une heure nous aiderait beaucoup. »\n\nWhat is the writer mainly trying to do?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "Invite Léa to help at a community event and explain its aim.",
+      "Complain that the council has banned cars permanently.",
+      "Ask Léa to buy a bicycle for the school.",
+      "Report the results of a completed transport survey."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "For purpose, identify the action the writer wants the reader to take and the reason given.",
+      "Find the direct request and connect it to the event described."
+    ],
+    "explanation": "The writer asks Léa to staff the repair stand for an hour and gives the event’s aim: making the neighbourhood more pleasant. « Tu pourrais… ? » is a polite request, not a report or complaint.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_02",
+    "subject": "French",
+    "topic": "Reading comprehension: tone and implication",
+    "prompt": "Read this original practice review:\n\n« Le café vient d’ouvrir près de la gare. Les pâtisseries sont excellentes et le personnel souriant, mais il faut parfois attendre vingt minutes pour commander. J’y retournerai sans doute, à condition de ne pas être pressé. »\n\nWhich description best captures the reviewer’s attitude?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Entirely negative: the reviewer says the food is poor.",
+      "Mixed but generally favourable, with a clear reservation about the wait.",
+      "Unreservedly enthusiastic: the reviewer sees no drawback.",
+      "Uncertain because the reviewer has never visited."
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Tone often combines positive and negative evidence; attend to contrast words.",
+      "Locate « mais » and the final condition, then weigh them against the praise."
+    ],
+    "explanation": "The pastries and staff receive positive comments, and the reviewer expects to return. « Mais » introduces a real drawback: a long wait. The final condition (« à condition de ne pas être pressé ») makes the approval qualified.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_03",
+    "subject": "French",
+    "topic": "Reading comprehension: meaning in context",
+    "prompt": "Read this original practice passage:\n\n« Après la fermeture de la piscine, les habitants ont lancé une pétition. La mairie a d’abord repoussé la décision, puis elle a accepté de financer une étude. Ce n’est qu’un premier pas, mais les riverains ont enfin le sentiment d’être entendus. »\n\nIn this context, what does « riverains » mean?",
+    "marks": 1,
+    "kind": "CHOICE",
+    "options": [
+      "People who live nearby.",
+      "People who work as lifeguards.",
+      "Visitors from another country.",
+      "Members of the town council."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Use nearby details to infer an unfamiliar word rather than translating it in isolation.",
+      "Connect « riverains » to the petition about a local pool and the feeling of being heard."
+    ],
+    "explanation": "« Les riverains » are local residents, especially people living near a place. They launched a petition about the neighbourhood pool and feel the town has heard them.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_04",
+    "subject": "French",
+    "topic": "Reading comprehension: reference and sequence",
+    "prompt": "Read this original practice passage:\n\n« Inès a proposé de créer un jardin partagé derrière la bibliothèque. Le directeur a accepté de prêter le terrain, à condition que les bénévoles l’entretiennent. Ils se réuniront pour la première fois lundi ; chacun apportera des graines ou des outils. »\n\nWho does « l’ » refer to in « que les bénévoles l’entretiennent »?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "The plot of land.",
+      "The library director.",
+      "The first meeting.",
+      "A set of seeds."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A pronoun usually replaces a noun already mentioned; check its grammatical form and sense.",
+      "Find the thing that can be maintained and that the director agrees to lend."
+    ],
+    "explanation": "The director lends « le terrain » (masculine singular), so « l’ » replaces that land: the volunteers must maintain the plot. « Entretiennent » also fits maintaining a garden space.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_05",
+    "subject": "French",
+    "topic": "Grammar in context: subjunctive",
+    "prompt": "Complete the sentence with the correct verb form:\n\n« Il faut que chaque participant ___ son nom avant vendredi. »\n\nWhich option is correct?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "inscrit",
+      "inscrive",
+      "inscrivait",
+      "inscrira"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Recognise expressions that trigger the subjunctive when they express necessity.",
+      "After « il faut que », use the subjunctive form agreeing with « chaque participant »."
+    ],
+    "explanation": "« Il faut que » expresses necessity and is followed by the subjunctive. The subject « chaque participant » is third-person singular, so the correct form is « inscrive ».",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_06",
+    "subject": "French",
+    "topic": "Grammar in context: object pronouns",
+    "prompt": "Replace « les invitations aux familles » with the correct pronouns:\n\n« Nous avons envoyé les invitations aux familles hier. Nous ___ avons envoyées par courriel. »",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "leur les",
+      "les leur",
+      "en leur",
+      "y les"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Separate the direct object from the recipient; French pronoun order matters.",
+      "Replace « les invitations » with « les » and « aux familles » with « leur », then place them before « avons »."
+    ],
+    "explanation": "« Les invitations » is the direct object (« les »), and « aux familles » is the indirect recipient (« leur »). The order is « les leur ». Because the preceding direct object « les » refers to feminine plural « invitations », the past participle agrees: « envoyées ».",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_07",
+    "subject": "French",
+    "topic": "Grammar in context: past-time narration",
+    "prompt": "Choose the verb form that best completes the contrast between an ongoing background situation and a completed event:\n\n« Il ___ depuis une heure quand le train est enfin arrivé. »",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "attend",
+      "attendait",
+      "a attendu",
+      "attendra"
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "In narration, distinguish background or duration from a completed event.",
+      "The arrival is a completed event in the passé composé; choose the imperfect for the ongoing wait."
+    ],
+    "explanation": "« Attendait » (imparfait) presents the waiting as an ongoing background action. « Est arrivé » (passé composé) marks the completed event that occurred after that wait began.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_08",
+    "subject": "French",
+    "topic": "Translation: nuance and ambiguity",
+    "prompt": "Translate into English, preserving the ambiguity of « son » where the passage does not identify whose brother it is:\n\n« Camille a téléphoné à son frère après la réunion. »",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "French possessive adjectives agree with the thing possessed, while the owner comes from context.",
+      "Translate « a téléphoné » and « après la réunion », then avoid assigning the brother’s gender to Camille."
+    ],
+    "explanation": "Model answer: “Camille phoned their brother after the meeting.” Depending on context, “his brother” or “her brother” may also be possible; the French sentence alone does not specify the owner’s gender. The three marks reward accurate tense and meaning, a natural translation of « après la réunion », and preservation or explanation of the possessive ambiguity.",
+    "rubric": [
+      "Accurately translates « a téléphoné » as “phoned/called” and keeps the completed past event.",
+      "Translates « son frère » as “their brother” or explains that his/her depends on context.",
+      "Accurately translates « après la réunion » as “after the meeting” and forms a clear sentence."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_09",
+    "subject": "French",
+    "topic": "Translation: idiomatic expression",
+    "prompt": "Translate the sentence into natural English. Do not translate « avoir besoin de » word for word:\n\n« Les élèves ont besoin de davantage de temps pour comparer les deux propositions. »",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Some common French expressions need an idiomatic English equivalent.",
+      "Translate « ont besoin de » as “need”, then identify who needs what and for which action."
+    ],
+    "explanation": "Model answer: “The students need more time to compare the two proposals.” « Avoir besoin de » means “to need”; it is not “to have need of” in natural English. Award credit for the subjects, the quantity of time, and the purpose of comparing both proposals.",
+    "rubric": [
+      "Identifies « les élèves » as “the students/pupils”.",
+      "Translates « ont besoin de davantage de temps » naturally as “need more time”.",
+      "Preserves the purpose « pour comparer les deux propositions » as “to compare the two proposals”."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_10",
+    "subject": "French",
+    "topic": "Written communication: register and purpose",
+    "prompt": "You are writing to a local council officer to request safer lighting near your school. Draft a short French opening of about 35–45 words that identifies the location, explains one practical concern, and makes a polite request for action.",
+    "marks": 4,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A formal request should make its purpose clear and use an appropriate register.",
+      "Name the location, give one concrete concern, then use a polite request such as « Pourriez-vous… ? »."
+    ],
+    "explanation": "Model answer: « Madame, Monsieur, je vous écris au sujet du passage situé derrière le lycée. Le soir, l’éclairage est insuffisant et plusieurs élèves ont du mal à voir les obstacles. Pourriez-vous envisager d’installer une lampe supplémentaire ? Je vous remercie de votre attention. » The precise wording may vary. Credit clear purpose, a specific concern, a polite request, and accurate, coherent French.",
+    "rubric": [
+      "Clearly identifies the issue and relevant location.",
+      "Explains a concrete practical concern rather than making only a vague complaint.",
+      "Makes a courteous and actionable request suited to a formal recipient."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_11",
+    "subject": "French",
+    "topic": "Grammar and meaning: relative pronouns",
+    "prompt": "Choose the correct relative pronoun:\n\n« Voici le quartier ___ nous avons grandi et ___ les habitants défendent les espaces verts. »",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "où … que",
+      "que … dont",
+      "où … dont",
+      "dont … où"
+    ],
+    "answerIndex": 2,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Choose a relative pronoun by checking the grammatical role of the missing phrase.",
+      "Growing up happens in a place (« où »); « défendre quelque chose » takes a direct object, while « dont » replaces « de + … »."
+    ],
+    "explanation": "The first gap refers to the place where they grew up, so « où » is needed. In « les habitants défendent les espaces verts », « les espaces verts » is the direct object of défendre; however this option’s second gap is « dont », which would require « défendre de », so scrutinize the sentence: the intended meaning is “the neighbourhood whose residents defend green spaces,” where « dont » expresses possession. Thus « où … dont » is correct.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "french_12",
+    "subject": "French",
+    "topic": "Reading comprehension: argument and evidence",
+    "prompt": "Read this original practice passage:\n\n« Certains commerçants craignent que la rue piétonne réduise leur clientèle. Pourtant, depuis l’essai de trois mois, les terrasses sont plus fréquentées et les ventes du marché du samedi ont augmenté, selon l’association locale. Ces chiffres ne prouvent pas que tous les magasins en profitent ; ils suggèrent toutefois que la rue attire davantage de visiteurs. »\n\nWhat is the writer’s main argument?",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "The trial proves that every business has become more profitable.",
+      "The reported figures suggest the pedestrian street may attract more visitors, though benefits may vary.",
+      "The local association has cancelled the Saturday market.",
+      "The writer argues that concerns about customer numbers are impossible to measure."
+    ],
+    "answerIndex": 1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Separate the evidence presented from the conclusion the writer draws.",
+      "Notice the qualification « ne prouvent pas… tous » and the cautious verb « suggèrent »."
+    ],
+    "explanation": "The writer cites busier terraces and increased market sales as evidence suggesting the pedestrian street draws more visitors. The sentence explicitly limits the claim: the figures do not prove every shop benefits.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_01",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Original practice summary (not a historical quotation): In the late 1780s, the French crown faced a severe fiscal crisis after decades of debt, including costs from wars and support for the American Revolution. Attempts to make privileged groups contribute more encountered resistance. Which explanation best connects this fiscal crisis to the calling of the Estates-General in 1789?",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "The crown sought broader consent for new revenue after reform efforts met resistance.",
+      "The Third Estate had already abolished royal taxation and demanded a new body to restore it.",
+      "The monarchy called the Estates-General chiefly to approve universal male suffrage.",
+      "The fiscal crisis ended when France received a large, unconditional loan from Britain."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Trace the link between state debt, failed fiscal reform, and the need for political consent.",
+      "Identify why the crown could not secure new revenue through existing institutions."
+    ],
+    "explanation": "The monarchy needed to address a major debt and revenue problem. Resistance to reforms that would make privileged groups contribute more helped produce a political deadlock, leading the crown to summon the Estates-General to seek agreement on taxation and reform.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_02",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Original practice summary (not a historical quotation): French society was divided into legally distinct orders. Many members of the Third Estate paid taxes and carried seigneurial obligations, while the clergy and nobility retained important privileges. Which claim best explains why this arrangement contributed to revolutionary pressure?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "It made social status and fiscal burdens appear unequal, strengthening demands for political change.",
+      "It gave every order equal representation and equal influence in the Estates-General.",
+      "It eliminated differences between urban workers and wealthy commoners.",
+      "It meant that only nobles were permitted to pay direct taxes."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Consider how legal privilege and tax obligations affected perceptions of fairness.",
+      "Connect unequal burdens to the Third Estate’s demands for a greater political voice."
+    ],
+    "explanation": "The unequal distribution of privilege and burdens was widely contested. It helped the Third Estate argue that political arrangements should reflect the nation more broadly and that privilege should not shield groups from reform.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_03",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Original practice summary (not a historical quotation): Bad harvests in 1788 contributed to grain shortages and higher bread prices. For many urban households, bread took a large share of income. Which conclusion best explains the political effect of this hardship?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "Economic hardship could turn existing grievances into immediate popular anger and action.",
+      "High bread prices automatically created a unified revolutionary programme shared by all French people.",
+      "Food shortages made the monarchy financially secure by increasing tax receipts.",
+      "The harvest crisis affected only wealthy landowners and had no urban consequences."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Distinguish a trigger that intensifies discontent from a single sufficient cause.",
+      "Explain how rising staple-food costs affected daily life and perceptions of government."
+    ],
+    "explanation": "Rising bread prices made hardship immediate, especially for urban workers and poorer households. This could intensify existing anger at the government and contribute to collective action, but it did not by itself create one unified political programme.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_04",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Original practice summary (not a historical quotation): The Estates-General met in May 1789. Disagreement over whether voting should occur by order or by individual deputy left the Third Estate fearing that it could be outvoted by the privileged orders. Which action most directly challenged the old political structure?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "The Third Estate declared itself the National Assembly, claiming to represent the nation.",
+      "The king dissolved the seigneurial system before the Estates-General opened.",
+      "The First Estate declared France a republic and called a national election.",
+      "The Third Estate agreed that each order should retain one collective vote."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Look for an action that changed the claimed source of political authority.",
+      "Ask which body claimed to represent the nation as a whole rather than one estate."
+    ],
+    "explanation": "The Third Estate’s declaration of the National Assembly challenged the idea that political authority was organised solely through the three orders. It asserted a national representative claim, although the struggle over power remained unresolved.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_05",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Explain how two different causes contributed to the French Revolution by 1789: one structural cause and one more immediate pressure. Avoid treating either as the sole cause.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Causation is stronger when it distinguishes long-term conditions from short-term pressures.",
+      "Choose one institutional or fiscal condition and one immediate economic or political pressure, then link each to discontent."
+    ],
+    "explanation": "Model answer: The unequal privileges and tax burdens of the Old Regime created a long-term grievance, while the crown’s debt crisis made reform urgent. Resistance to fiscal reform contributed to the Estates-General meeting, where disputes over representation escalated the political crisis. Poor harvests and high bread prices further increased popular hardship. These factors interacted; no single one alone explains the revolution.",
+    "rubric": [
+      "Identifies and explains one structural cause, such as social privilege or fiscal inequality.",
+      "Identifies and explains one immediate pressure, such as the fiscal deadlock, representation dispute, or subsistence crisis.",
+      "Shows a plausible connection to escalating political or popular unrest without claiming one cause was sufficient."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_06",
+    "subject": "History: Revolutions",
+    "topic": "France: Causes, 1780s–1789",
+    "prompt": "Assess the significance of the Estates-General’s voting dispute in the development of revolutionary events in 1789. Include one reason it mattered and one limitation on its explanatory power.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Significance concerns how an event changed later developments; include both impact and limits.",
+      "Explain how the dispute over voting sharpened the representation crisis, then identify a deeper condition it did not create."
+    ],
+    "explanation": "Model answer: The voting dispute was significant because it turned longstanding arguments about representation into an immediate institutional conflict. The Third Estate’s response, declaring itself the National Assembly, challenged the political order and accelerated events in 1789. However, the dispute did not create the crown’s debt crisis or social inequalities; it became explosive in a context already shaped by those pressures.",
+    "rubric": [
+      "Explains how the dispute affected representation or political authority.",
+      "Links it to a subsequent development, such as the National Assembly’s claim to represent the nation.",
+      "Recognises a limitation by relating the dispute to broader prior causes."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_07",
+    "subject": "History: Revolutions",
+    "topic": "France: Consequences, 1789–1795",
+    "prompt": "Original practice summary (not a historical quotation): In August 1789, the National Constituent Assembly adopted measures that dismantled many seigneurial privileges and addressed legal distinctions associated with the old order. Which interpretation best captures the significance of these measures?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "They weakened the legal foundations of privilege, though implementation and social conflict continued.",
+      "They immediately created equal wealth and ended disputes over land.",
+      "They restored the Estates-General as the only source of political authority.",
+      "They established a stable constitutional monarchy that lasted through 1795."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Separate formal legal change from complete social or economic transformation.",
+      "Identify what privileges the measures targeted and what they could not instantly resolve."
+    ],
+    "explanation": "The measures attacked important legal privileges and helped dismantle the Old Regime’s social order. They did not instantly equalise wealth, remove all conflict, or settle the political future of France.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_fr_08",
+    "subject": "History: Revolutions",
+    "topic": "France: Consequences, 1789–1795",
+    "prompt": "Explain one significant change and one continuing tension in France between 1789 and 1795. Use specific developments from the period to support your response.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A strong consequence answer distinguishes change from continuity or instability.",
+      "Select a concrete institutional or social change and pair it with a political or social tension that persisted."
+    ],
+    "explanation": "Model answer: The abolition of many feudal privileges in 1789 weakened the legal hierarchy of the Old Regime. Yet political conflict continued: the monarchy was overthrown, France became a republic in 1792, and the period included intense factional conflict and the Terror. Revolutionary change therefore transformed institutions without producing immediate stability or consensus.",
+    "rubric": [
+      "Identifies a specific institutional or social change between 1789 and 1795.",
+      "Identifies a specific continuing tension or instability from the period.",
+      "Explains the significance of both with accurate chronological context."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_01",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Original practice summary (not a historical quotation): Under Nicholas II, Russia industrialised rapidly in some regions, while most people remained peasants and political power stayed autocratic. Industrial workers often faced difficult living and working conditions. Which explanation best connects these conditions to revolutionary opposition?",
+    "marks": 3,
+    "kind": "CHOICE",
+    "options": [
+      "Rapid social change and harsh conditions contributed to grievances, while autocracy restricted peaceful political influence.",
+      "Industrialisation immediately gave workers control of the Duma and ended political opposition.",
+      "Peasant life became uniformly prosperous, removing demands for land reform.",
+      "The autocracy granted universal suffrage before the 1905 Revolution."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Connect social and economic grievances with the political channels available to address them.",
+      "Explain why discontent could persist when workers and peasants had limited influence over policy."
+    ],
+    "explanation": "Industrialisation created a growing urban workforce exposed to harsh conditions, while many peasants continued to seek land reform. Autocracy limited opportunities to resolve such grievances through representative politics, contributing to opposition.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_02",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Original practice summary (not a historical quotation): Russia’s defeat by Japan in 1904–05 exposed military weaknesses and intensified public criticism of the government. In January 1905, troops fired on demonstrators petitioning the Tsar in St Petersburg; unrest spread. Which statement best explains the role of this event in the 1905 Revolution?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "It became a catalyst that damaged the Tsar’s image and helped broaden protest.",
+      "It immediately ended the monarchy and transferred power to the Soviets.",
+      "It resolved the land question by distributing estates to peasants.",
+      "It began after the February Revolution of 1917."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Distinguish a catalytic event from the deeper causes of a revolution.",
+      "Consider how the violence affected popular trust and the scale of protest."
+    ],
+    "explanation": "“Bloody Sunday” became a catalyst for wider unrest and weakened the image of the Tsar as a benevolent protector. It contributed to the 1905 Revolution but did not itself end the monarchy or resolve underlying grievances.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_03",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Original practice summary (not a historical quotation): The October Manifesto of 1905 promised civil freedoms and a legislative Duma. The Tsar retained substantial authority, and later changes restricted the Duma’s influence and altered electoral arrangements. Which conclusion is best supported?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "The concessions temporarily addressed some demands but left autocratic power substantially intact.",
+      "The manifesto established a fully sovereign parliament and ended the Tsar’s political authority.",
+      "The manifesto gave all Russian peasants immediate ownership of noble land.",
+      "The Duma abolished the army and ended Russia’s participation in war."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Compare promised reforms with the distribution of power that followed.",
+      "Identify what the Duma could do and what authority the Tsar continued to hold."
+    ],
+    "explanation": "The manifesto and Duma represented concessions after the 1905 unrest, but the Tsar retained substantial authority and constrained the parliament. This limited reform left important opposition and grievances unresolved.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_04",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Original practice summary (not a historical quotation): By early 1917, Russia had suffered enormous wartime losses, shortages and transport disruption. In Petrograd, protests over bread and strikes expanded, and soldiers increasingly refused to suppress demonstrators. Which factor most directly undermined the government’s ability to contain the February Revolution?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "The loss of reliable military support as soldiers joined or declined to attack protesters.",
+      "A decisive victory that removed all pressure on the Tsar.",
+      "The Duma’s long-standing control of every military unit.",
+      "The completion of land redistribution before the protests began."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Revolutions often accelerate when state coercive forces stop reliably enforcing authority.",
+      "Trace how soldiers’ response changed the government’s capacity to suppress demonstrations."
+    ],
+    "explanation": "The refusal of soldiers to continue suppressing protests, and their movement toward the demonstrators, weakened a key instrument of state power. Wartime hardship and shortages helped generate unrest; the loss of military support made containment much harder.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_05",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Explain how the First World War intensified pre-existing weaknesses of the Russian autocracy and contributed to the February Revolution of 1917.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "A war can act as a pressure multiplier by worsening existing political or social problems.",
+      "Link a wartime strain such as casualties or shortages to public unrest and then to the state’s loss of support."
+    ],
+    "explanation": "Model answer: Russia entered the war with unresolved grievances about autocracy, land and working conditions. Military defeats, heavy casualties, shortages and disruption deepened public anger and weakened confidence in the government. In February 1917, strikes and demonstrations expanded, and soldiers would not reliably suppress them. The war intensified earlier weaknesses and helped bring down the Tsarist regime.",
+    "rubric": [
+      "Identifies a pre-existing weakness of the autocracy or society.",
+      "Explains how the war intensified hardship or damaged confidence in the regime.",
+      "Links these pressures to protest and the breakdown of Tsarist authority in February 1917."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_06",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Causes, 1896–1917",
+    "prompt": "Assess the role of the 1905 Revolution in causing the revolutions of 1917. Include a specific legacy and a limit to the claim that 1905 made 1917 inevitable.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Historical causation includes legacies, but a sequence of events does not make later outcomes inevitable.",
+      "Identify an institutional or political legacy of 1905, then weigh it against later developments such as war."
+    ],
+    "explanation": "Model answer: The 1905 Revolution exposed the fragility of Tsarist authority and forced concessions, including the Duma, while leaving autocracy largely intact. This limited reform preserved tensions that resurfaced. However, 1905 did not make 1917 inevitable: the First World War created new pressures, and the monarchy’s collapse depended on the particular crisis and loss of support in 1917.",
+    "rubric": [
+      "Identifies a specific legacy of 1905, such as the Duma or continuing opposition.",
+      "Explains how unresolved limits or grievances mattered later.",
+      "Evaluates the claim by recognising contingent later causes, especially wartime crisis."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_07",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Consequences, 1917–1927",
+    "prompt": "Original practice summary (not a historical quotation): After the October Revolution, the Bolshevik government withdrew Russia from the First World War through the Treaty of Brest-Litovsk in 1918. The treaty imposed major territorial losses and provoked opposition. Which interpretation best captures this consequence?",
+    "marks": 2,
+    "kind": "CHOICE",
+    "options": [
+      "It fulfilled the immediate aim of leaving the war while creating serious costs and political opposition.",
+      "It restored the Tsar and returned Russia to the pre-1905 political system.",
+      "It ended the Civil War by reconciling all anti-Bolshevik forces with the government.",
+      "It brought Russia into the war against Germany for the first time."
+    ],
+    "answerIndex": 0,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "Consequences can include both intended outcomes and significant costs.",
+      "Separate the government’s immediate purpose from the territorial and political effects."
+    ],
+    "explanation": "The treaty achieved the Bolsheviks’ immediate aim of ending Russia’s participation in the war. Its severe territorial losses were costly and helped fuel opposition; it did not end the wider political conflict.",
+    "rubric": [],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  },
+  {
+    "id": "rev_ru_08",
+    "subject": "History: Revolutions",
+    "topic": "Russia: Consequences, 1917–1927",
+    "prompt": "Explain how the Civil War and the New Economic Policy (NEP) shaped Bolshevik rule between 1917 and 1927. Your answer should identify one consequence of each.",
+    "marks": 3,
+    "kind": "SELF_REVIEW",
+    "options": [],
+    "answerIndex": -1,
+    "numericAnswer": null,
+    "tolerance": 0,
+    "unit": "",
+    "hints": [
+      "To explain consequences across a period, connect policies or conflicts to changes in state power and society.",
+      "State one effect of the Civil War, then explain why the Bolsheviks introduced the NEP and what it changed."
+    ],
+    "explanation": "Model answer: The Civil War (1918–21) helped the Bolsheviks consolidate power through military victory, but it brought severe disruption and coercive rule. After War Communism and economic crisis, the NEP introduced limited market activity, including small private trade, while the state retained control of major sectors. It eased some economic pressures but represented a tactical retreat from full centralisation.",
+    "rubric": [
+      "Explains one political or social consequence of the Civil War for Bolshevik rule.",
+      "Explains the context for introducing the NEP after War Communism and crisis.",
+      "Describes a specific NEP change and recognises the continued state control of major sectors."
+    ],
+    "source": "Original VCE-style practice; not an official VCAA exam question"
+  }
+]

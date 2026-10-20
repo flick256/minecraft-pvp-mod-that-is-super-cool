@@ -40,11 +40,12 @@ final class MenuButton extends Button {
 		if (tone == Tone.NAV && selected) { g.fill(x, y + 4, x + 2, y + h - 4, accent); }
 		var font = Minecraft.getInstance().font;
 		String message = getMessage().getString();
-		String text = font.plainSubstrByWidth(message.equals("Up") ? "↑" : message.equals("Dn") ? "↓" : message, w - (tone == Tone.NAV && w >= 90 ? 32 : 12));
+		boolean icon = tone == Tone.NAV && w >= 90 && h >= 18;
+		String text = font.plainSubstrByWidth(message.equals("Up") ? "↑" : message.equals("Dn") ? "↓" : message, w - (icon ? 32 : 12));
 		int color = !active ? 0xFF738092 : selected || tone == Tone.PRIMARY || tone == Tone.GOLD ? 0xFFF0F8F5 : 0xFFCAD6E3;
 		if (tone == Tone.DANGER && active) { color = accent; }
-		if (tone == Tone.NAV && w >= 90) { MenuArt.item(g, MenuArt.navigation(message), x + 5, y + (h - 16) / 2); }
-		int textX = tone == Tone.NAV ? x + (w >= 90 ? 26 : 10) : x + (w - font.width(text)) / 2;
+		if (icon) { MenuArt.item(g, MenuArt.navigation(message), x + 5, y + (h - 16) / 2); }
+		int textX = tone == Tone.NAV ? x + (icon ? 26 : 10) : x + (w - font.width(text)) / 2;
 		g.text(font, text, textX, y + (h - 8) / 2, color, false);
 	}
 

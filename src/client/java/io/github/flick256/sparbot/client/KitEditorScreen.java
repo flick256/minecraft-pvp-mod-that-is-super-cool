@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -51,6 +52,69 @@ public final class KitEditorScreen extends Screen {
 
 	public void setStatus(String status) { this.status = status; }
 
+	/** Visible text, control, and painted-cell bounds for client layout checks. */
+	public List<StudyScreen.LayoutRect> layoutSnapshot() {
+		List<StudyScreen.LayoutRect> result = new ArrayList<>();
+		if (page == 0) {
+			addSnapshotText(result, "header-label", "Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), 12, 31);
+			String help = width < 400 ? "Choose a slot. Your inventory stays untouched." : "Choose an inventory or equipment slot. Your live inventory stays untouched.";
+			addSnapshotText(result, "header-label", font.plainSubstrByWidth(help, width - 24), 12, 43);
+			int cell = layoutInventoryCell(), x = layoutInventoryX(cell), y = 56;
+			for (int slot = 0; slot < 36; slot++) {
+				int cx = x + (slot % 9) * cell, cy = y + (slot / 9) * cell;
+				result.add(new StudyScreen.LayoutRect("inventory-cell", Integer.toString(slot), cx, cy, cell - 2, cell - 2));
+				String label = slot < 9 ? "H" + (slot + 1) : Integer.toString(slot);
+				if (cell >= 28 && font.width(label) < cell) addSnapshotText(result, "cell-label", label, cx + (cell - font.width(label)) / 2, cy + cell - 11);
+			}
+			int specialCell = layoutSpecialCell();
+			int sx = equipmentToRight() ? width - 5 * (specialCell + 3) - 8 : (width - 5 * specialCell) / 2;
+			int sy = equipmentToRight() ? (height - specialCell) / 2 : height - specialCell - 22;
+			String[] names = {"Head", "Chest", "Legs", "Feet", "Offhand"};
+			for (int i = 0; i < names.length; i++) {
+				int cx = sx + i * (specialCell + (equipmentToRight() ? 3 : 0));
+				result.add(new StudyScreen.LayoutRect("equipment-cell", names[i], cx, sy, specialCell - 2, specialCell - 2));
+				addSnapshotText(result, "cell-label", names[i], cx + 2, sy + specialCell - 11);
+			}
+			if (equipmentToRight()) addSnapshotText(result, "header-label", "Equipment", sx, sy - 13);
+		} else if (page == 1) {
+			int columns = width < 400 ? 2 : 4, size = pageSize(), gap = 3, cellW = (width - 24 - (columns - 1) * gap) / columns;
+			List<String> matches = paletteMatches();
+			for (int i = 0; i < size && paletteScroll + i < matches.size(); i++) {
+				int x = 12 + (i % columns) * (cellW + gap), y = 62 + (i / columns) * 25;
+				String itemId = matches.get(paletteScroll + i);
+				result.add(new StudyScreen.LayoutRect("palette-cell", itemId, x, y, cellW, 23));
+				String label = paletteLabel(itemId, cellW);
+				addSnapshotText(result, "palette-label", label, x + 21, y + 8);
+			}
+		} else {
+			Kit.KitItem item = selectedItem();
+			addSnapshotText(result, "header-label", "Copy preset into a new custom kit", 12, 29);
+			addSnapshotText(result, "field-label", "New kit ID", 12, 40);
+			addSnapshotText(result, "field-label", "Display name", width < 430 ? 12 : 24 + (width - 36) / 2, width < 430 ? 68 : 40);
+			addSnapshotText(result, "field-label", "Count", 12, width < 430 ? 97 : 70);
+			String enchants = item == null || item.enchantments() == null || item.enchantments().isEmpty()
+				? "Enchantments: none" : "Enchantments: " + item.enchantments();
+			addSnapshotText(result, "field-label", font.plainSubstrByWidth(enchants, width < 430 ? width - 24 : width - 342),
+				width < 430 ? 12 : 330, width < 430 ? 126 : 84);
+			addSnapshotText(result, "field-label", "Enchantment ID", 12, width < 430 ? 136 : 108);
+			addSnapshotText(result, "field-label", "Level", width - 88, width < 430 ? 136 : 108);
+		}
+		String visibleStatus = status == null ? "" : font.plainSubstrByWidth(status.replace('\n', ' '), width - 24);
+		if (!visibleStatus.isBlank()) addSnapshotText(result, "status-label", visibleStatus, 12, height - 10);
+		for (var child : children()) {
+			if (!(child instanceof AbstractWidget widget) || !widget.visible) continue;
+			String kind = slotAccessButtons.containsValue(widget) || paletteAccessButtons.contains(widget) ? "hitbox" : "widget";
+			result.add(new StudyScreen.LayoutRect(kind, widget.getMessage().getString(), widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+		}
+		return List.copyOf(result);
+	}
+
+	private void addSnapshotText(List<StudyScreen.LayoutRect> target, String kind, String text, int x, int y) {
+		int x1 = Math.max(0, x), y1 = Math.max(0, y);
+		int x2 = Math.min(width, x + font.width(text)), y2 = Math.min(height, y + font.lineHeight);
+		if (x2 > x1 && y2 > y1) target.add(new StudyScreen.LayoutRect(kind, text, x1, y1, x2 - x1, y2 - y1));
+	}
+
 	@Override protected void init() { rebuildPage(); }
 
 	private void addButton(Button button) { addRenderableWidget(button); widgets.add(button); }
@@ -75,7 +139,7 @@ public final class KitEditorScreen extends Screen {
 	}
 
 	private void buildLayoutPage() {
-		int cell = layoutInventoryCell(), x = layoutInventoryX(cell), y = height < 300 ? 52 : 50;
+		int cell = layoutInventoryCell(), x = layoutInventoryX(cell), y = 56;
 		for (int slot = 0; slot < 36; slot++) {
 			final int index = slot;
 			Kit.KitItem spec = getInventorySlot(slot);
@@ -86,14 +150,14 @@ public final class KitEditorScreen extends Screen {
 			addButton(access); slotAccessButtons.put("inventory:" + slot, access);
 		}
 		int targetCell = layoutSpecialCell();
-		int sx = width >= 520 ? width - 5 * (targetCell + 3) - 8 : (width - 5 * targetCell) / 2;
-		int sy = width >= 520 ? (height - targetCell) / 2 : height - targetCell - 22;
+		int sx = equipmentToRight() ? width - 5 * (targetCell + 3) - 8 : (width - 5 * targetCell) / 2;
+		int sy = equipmentToRight() ? (height - targetCell) / 2 : height - targetCell - 22;
 		String[] targets = {"armor_head", "armor_chest", "armor_legs", "armor_feet", "offhand"};
 		String[] labels = {"Head armor", "Chest armor", "Leg armor", "Foot armor", "Offhand"};
 		for (int i = 0; i < targets.length; i++) {
 			final String target = targets[i]; Kit.KitItem item = getSpecial(target);
 			String label = labels[i] + ": " + specDescription(item);
-			int targetX = sx + i * (targetCell + (width >= 520 ? 3 : 0));
+			int targetX = sx + i * (targetCell + (equipmentToRight() ? 3 : 0));
 			Button access = Button.builder(Component.literal(label), b -> selectSpecial(target))
 				.bounds(targetX, sy, targetCell - 2, targetCell - 2).build();
 			access.setAlpha(0); access.setTooltip(Tooltip.create(Component.literal(label)));
@@ -102,9 +166,18 @@ public final class KitEditorScreen extends Screen {
 	}
 
 	private int layoutInventoryCell() {
-		return width < 400 ? Math.min(30, Math.max(26, (width - 20) / 9)) : Math.min(38, Math.max(28, (width - 20) / 9));
+		int widthCell = width < 400 ? Math.min(30, Math.max(26, (width - 20) / 9)) : Math.min(38, Math.max(28, (width - 20) / 9));
+		if (equipmentToRight()) return widthCell;
+		// On narrow screens the equipment row shares the lower part of the layout.
+		// Reserve its space before sizing the four inventory rows, so they cannot overlap.
+		int equipmentCell = layoutSpecialCell();
+		int inventoryY = 56;
+		int equipmentY = height - equipmentCell - 22;
+		int heightCell = Math.max(22, (equipmentY - inventoryY - 3) / 4);
+		return Math.min(widthCell, heightCell);
 	}
-	private int layoutInventoryX(int cell) { return width >= 520 ? 10 : Math.max(8, (width - cell * 9) / 2); }
+	private int layoutInventoryX(int cell) { return equipmentToRight() ? 10 : Math.max(8, (width - cell * 9) / 2); }
+	private boolean equipmentToRight() { return width >= 610; }
 	private int layoutSpecialCell() {
 		return width < 400 ? Math.min(44, Math.max(32, (width - 24) / 5)) : Math.min(46, Math.max(36, (width - 24) / 5));
 	}
@@ -119,7 +192,7 @@ public final class KitEditorScreen extends Screen {
 
 	private void drawLayout(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		int cell = layoutInventoryCell();
-		int x = layoutInventoryX(cell), y = height < 300 ? 52 : 50;
+		int x = layoutInventoryX(cell), y = 56;
 		for (int slot = 0; slot < 36; slot++) {
 			int cx = x + (slot % 9) * cell, cy = y + (slot / 9) * cell;
 			Kit.KitItem spec = getInventorySlot(slot);
@@ -128,21 +201,21 @@ public final class KitEditorScreen extends Screen {
 				selectedTarget.equals("inventory") && selectedSlot == slot || access != null && access.isFocused());
 			String label = slot < 9 ? "H" + (slot + 1) : Integer.toString(slot);
 			drawSpecIcon(graphics, spec, cx + (cell - 18) / 2, cy + 1, label + ": " + specDescription(spec), mouseX, mouseY);
-			if (font.width(label) < cell) graphicsText(graphics, label, cx + (cell - font.width(label)) / 2, cy + cell - 10, 0xFFE2EAF0);
+			if (cell >= 28 && font.width(label) < cell) graphicsText(graphics, label, cx + (cell - font.width(label)) / 2, cy + cell - 11, 0xFFE2EAF0);
 		}
 		int specialCell = layoutSpecialCell();
-		int sx = width >= 520 ? width - 5 * (specialCell + 3) - 8 : (width - 5 * specialCell) / 2;
-		int sy = width >= 520 ? (height - specialCell) / 2 : height - specialCell - 22;
+		int sx = equipmentToRight() ? width - 5 * (specialCell + 3) - 8 : (width - 5 * specialCell) / 2;
+		int sy = equipmentToRight() ? (height - specialCell) / 2 : height - specialCell - 22;
 		String[] targets = {"armor_head", "armor_chest", "armor_legs", "armor_feet", "offhand"};
 		String[] labels = {"Head", "Chest", "Legs", "Feet", "Offhand"};
 		for (int i = 0; i < targets.length; i++) {
-			int cx = sx + i * (specialCell + (width >= 520 ? 3 : 0)), cy = sy;
+			int cx = sx + i * (specialCell + (equipmentToRight() ? 3 : 0)), cy = sy;
 			Kit.KitItem item = getSpecial(targets[i]);
 			Button access = slotAccessButtons.get(targets[i]);
 			graphicsCell(graphics, cx, cy, specialCell - 2, specialCell - 2,
 				selectedTarget.equals(targets[i]) || access != null && access.isFocused());
 			drawSpecIcon(graphics, item, cx + (specialCell - 18) / 2, cy + 2, labels[i] + ": " + specDescription(item), mouseX, mouseY);
-			graphicsText(graphics, labels[i], cx + 2, cy + specialCell - 10, 0xFFE2EAF0);
+			graphicsText(graphics, labels[i], cx + 2, cy + specialCell - 11, 0xFFE2EAF0);
 		}
 	}
 
@@ -186,30 +259,31 @@ public final class KitEditorScreen extends Screen {
 	private void buildDetailsPage() {
 		int compact = width < 430 ? 1 : 0;
 		int colWidth = compact == 1 ? width - 24 : (width - 36) / 2;
+		int fieldHeight = compact == 1 ? 18 : 20;
 		int idY = 49;
-		idField = new EditBox(font, 12, idY, colWidth, 20, Component.literal("New kit ID"));
+		idField = new EditBox(font, 12, idY, colWidth, fieldHeight, Component.literal("New kit ID"));
 		idField.setHint(Component.literal("New kit ID")); idField.setTooltip(Tooltip.create(Component.literal("New kit ID")));
 		idField.setMaxLength(48); idField.setValue(idDraft); idField.setResponder(v -> idDraft = v); addRenderableWidget(idField);
-		nameField = new EditBox(font, compact == 1 ? 12 : 24 + colWidth, compact == 1 ? 76 : 49, colWidth, 20, Component.literal("Display name"));
+		nameField = new EditBox(font, compact == 1 ? 12 : 24 + colWidth, compact == 1 ? 78 : 49, colWidth, fieldHeight, Component.literal("Display name"));
 		nameField.setHint(Component.literal("Display name")); nameField.setTooltip(Tooltip.create(Component.literal("Display name")));
 		nameField.setMaxLength(80); nameField.setValue(nameDraft); nameField.setResponder(v -> nameDraft = v); addRenderableWidget(nameField);
-		int y = compact == 1 ? 104 : 80;
-		countField = new EditBox(font, 12, y, 48, 20, Component.literal("Count"));
+		int y = compact == 1 ? 107 : 80;
+		countField = new EditBox(font, 12, y, 48, fieldHeight, Component.literal("Count"));
 		countField.setHint(Component.literal("Count"));
 		countField.setMaxLength(2); countField.setValue(countDraft); countField.setResponder(v -> countDraft = v); addRenderableWidget(countField);
 		int enchantY = compact == 1 ? 146 : 117;
-		enchantField = new EditBox(font, 12, enchantY, Math.max(100, width - 112), 20, Component.literal("Enchantment ID"));
+		enchantField = new EditBox(font, 12, enchantY, Math.max(100, width - 112), fieldHeight, Component.literal("Enchantment ID"));
 		enchantField.setHint(Component.literal("minecraft:sharpness")); enchantField.setMaxLength(100);
 		enchantField.setValue(enchantDraft); enchantField.setResponder(v -> enchantDraft = v); addRenderableWidget(enchantField);
-		enchantLevelField = new EditBox(font, width - 88, enchantY, 42, 20, Component.literal("Level"));
+		enchantLevelField = new EditBox(font, width - 88, enchantY, 42, fieldHeight, Component.literal("Level"));
 		enchantLevelField.setMaxLength(3); enchantLevelField.setValue(enchantLevelDraft); enchantLevelField.setResponder(v -> enchantLevelDraft = v); addRenderableWidget(enchantLevelField);
-		addButton(Button.builder(Component.literal("Apply count"), b -> applyCount()).bounds(68, y, 90, 20).build());
-		int enchantButtonsY = compact == 1 ? 172 : 144;
+		addButton(Button.builder(Component.literal("Apply count"), b -> applyCount()).bounds(68, y, 90, fieldHeight).build());
+		int enchantButtonsY = compact == 1 ? 167 : 144;
 		addButton(Button.builder(Component.literal("Add / update enchant"), b -> changeEnchantment(false)).bounds(12, enchantButtonsY, Math.min(width - 24, 164), 20).build());
 		addButton(Button.builder(Component.literal("Remove enchant"), b -> changeEnchantment(true)).bounds(Math.min(width - 108, 184), enchantButtonsY, Math.min(104, width - 24), 20).build());
 		int clearX = compact == 1 ? 166 : 174;
 		addButton(Button.builder(Component.literal("Clear selected slot"), b -> { removeSelected(); status = "Slot cleared in draft."; })
-			.bounds(clearX, y, compact == 1 ? width - clearX - 12 : Math.min(150, width - clearX - 12), 20).build());
+			.bounds(clearX, y, compact == 1 ? width - clearX - 12 : Math.min(150, width - clearX - 12), fieldHeight).build());
 		addButton(Button.builder(Component.literal("Save new custom kit"), b -> save()).bounds(12, height - 34, Math.min(160, width - 24), 20).build());
 		addButton(Button.builder(Component.literal("Done"), b -> onClose()).bounds(width - 72, height - 34, 60, 20).build());
 	}
@@ -327,6 +401,13 @@ public final class KitEditorScreen extends Screen {
 			case "armor_chest" -> "chest armor"; case "armor_legs" -> "leg armor"; case "armor_feet" -> "foot armor"; default -> "offhand"; };
 	}
 	private static String shortId(String id) { int colon = id.indexOf(':'); return colon < 0 ? id : id.substring(colon + 1); }
+	private String paletteLabel(String itemId, int cellWidth) {
+		String label = shortId(itemId);
+		int available = Math.max(0, cellWidth - 25);
+		return font.width(label) <= available ? label
+			: font.plainSubstrByWidth(label, Math.max(0, available - font.width("…"))) + "…";
+	}
+
 	private static String specDescription(Kit.KitItem item) {
 		if (item == null) return "empty";
 		String enchantments = item.enchantments() == null || item.enchantments().isEmpty() ? "" : " · Enchantments: " + item.enchantments();
@@ -347,34 +428,35 @@ public final class KitEditorScreen extends Screen {
 
 	private void graphicsCell(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean selected) {
 		graphics.fill(x, y, x + w, y + h, selected ? SELECTED : CELL);
-		graphics.outline(x, y, x + w, y + h, selected ? 0xFF8DE7D6 : 0xFF536473);
+		graphics.outline(x, y, w, h, selected ? 0xFF8DE7D6 : 0xFF536473);
 	}
 	private void graphicsText(GuiGraphicsExtractor graphics, String text, int x, int y, int color) { graphics.text(font, text, x, y, color); }
 
 	@Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
 		graphics.fill(0, 0, width, height, PANEL);
 		if (page == 0) {
-			graphics.text(font, "Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), 12, 31, 0xFFF2F5F7);
+			graphics.text(font, font.plainSubstrByWidth("Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), width - 24), 12, 31, 0xFFF2F5F7);
 			String help = width < 400 ? "Choose a slot. Your inventory stays untouched." : "Choose an inventory or equipment slot. Your live inventory stays untouched.";
 			graphics.text(font, font.plainSubstrByWidth(help, width - 24), 12, 43, 0xFFB5C4D0);
 			drawLayout(graphics, mouseX, mouseY);
-			if (width >= 520) graphics.text(font, "Equipment", width - 5 * 49 - 8, 36, 0xFFE7EEF6);
+			if (equipmentToRight()) graphics.text(font, "Equipment", width - 5 * (layoutSpecialCell() + 3) - 8,
+				(height - layoutSpecialCell()) / 2 - 13, 0xFFE7EEF6);
 		} else if (page == 1) {
 			drawPalette(graphics, mouseX, mouseY);
 		} else {
 			Kit.KitItem item = selectedItem();
-			graphics.text(font, "Copy preset into a new custom kit", 12, 32, 0xFFE7EEF6);
-			graphics.text(font, "New kit ID", 12, 43, 0xFFB5C4D0);
-			graphics.text(font, "Display name", width < 430 ? 12 : 24 + (width - 36) / 2, width < 430 ? 70 : 43, 0xFFB5C4D0);
-			graphics.text(font, "Count", 12, width < 430 ? 97 : 73, 0xFFB5C4D0);
+			graphics.text(font, "Copy preset into a new custom kit", 12, 29, 0xFFE7EEF6);
+			graphics.text(font, "New kit ID", 12, 40, 0xFFB5C4D0);
+			graphics.text(font, "Display name", width < 430 ? 12 : 24 + (width - 36) / 2, width < 430 ? 68 : 40, 0xFFB5C4D0);
+			graphics.text(font, "Count", 12, width < 430 ? 97 : 70, 0xFFB5C4D0);
 			String enchants = item == null || item.enchantments() == null || item.enchantments().isEmpty()
 				? "Enchantments: none" : "Enchantments: " + item.enchantments();
 			graphics.text(font, font.plainSubstrByWidth(enchants, width < 430 ? width - 24 : width - 342), width < 430 ? 12 : 330, width < 430 ? 126 : 84, 0xFFB5C4D0);
-			graphics.text(font, "Enchantment ID", 12, width < 430 ? 137 : 110, 0xFFB5C4D0);
-			graphics.text(font, "Level", width - 88, width < 430 ? 137 : 110, 0xFFB5C4D0);
+			graphics.text(font, "Enchantment ID", 12, width < 430 ? 136 : 108, 0xFFB5C4D0);
+			graphics.text(font, "Level", width - 88, width < 430 ? 136 : 108, 0xFFB5C4D0);
 		}
 		String visibleStatus = status == null ? "" : font.plainSubstrByWidth(status.replace('\n', ' '), width - 24);
-		graphics.text(font, visibleStatus, 12, height - 13, 0xFFFFD277);
+		graphics.text(font, visibleStatus, 12, height - 10, 0xFFFFD277);
 		super.extractRenderState(graphics, mouseX, mouseY, delta);
 	}
 
@@ -392,7 +474,7 @@ public final class KitEditorScreen extends Screen {
 			graphicsCell(graphics, x, y, cellW, 23, itemId.equals(selectedPaletteId) || access != null && access.isFocused());
 			Identifier itemKey = Identifier.tryParse(itemId);
 			if (itemKey != null) BuiltInRegistries.ITEM.get(itemKey).ifPresent(holder -> graphics.item(new ItemStack(holder.value()), x + 2, y + 3));
-			String label = shortId(itemId); if (font.width(label) > cellW - 24) label = font.plainSubstrByWidth(label, cellW - 26) + "…";
+			String label = paletteLabel(itemId, cellW);
 			graphics.text(font, label, x + 21, y + 8, 0xFFE7EEF6);
 			if (mouseX >= x && mouseY >= y && mouseX < x + cellW && mouseY < y + 23)
 				graphics.setTooltipForNextFrame(Component.literal(itemId), mouseX, mouseY);
