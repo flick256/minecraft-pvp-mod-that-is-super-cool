@@ -55,9 +55,18 @@ public class SwightGameTests {
 		var web = new net.minecraft.core.BlockPos(5, 2, 3);
 		helper.setBlock(web, net.minecraft.world.level.block.Blocks.COBWEB);
 		swight.setAssignedTarget(TestSupport.body(target).getUUID());
+		// The hit has to land while the web is still there: breaking the web afterwards (an aim point that drifts up
+		// onto it, as a player's does) doesn't undo a hit through the gap below it.
+		java.util.concurrent.atomic.AtomicBoolean hitPastWeb = new java.util.concurrent.atomic.AtomicBoolean();
+		java.util.concurrent.atomic.AtomicBoolean webGoneFirst = new java.util.concurrent.atomic.AtomicBoolean();
+		helper.onEachTick(() -> {
+			boolean webThere = helper.getBlockState(web).is(net.minecraft.world.level.block.Blocks.COBWEB);
+			if (!webThere && !hitPastWeb.get()) { webGoneFirst.set(true); }
+			if (webThere && !webGoneFirst.get() && swight.stats().hits() > 0) { hitPastWeb.set(true); }
+		});
 		helper.succeedWhen(() -> {
 			helper.assertTrue(swight.stats().hits() > 0, "Swight found an exposed part of the real hitbox through normal aim and clicks");
-			helper.assertTrue(helper.getBlockState(web).is(net.minecraft.world.level.block.Blocks.COBWEB), "the obstructing web was not removed to pass the test");
+			helper.assertTrue(hitPastWeb.get(), "the obstructing web was not removed to pass the test");
 			TestSupport.remove(swight, target);
 		});
 	}
