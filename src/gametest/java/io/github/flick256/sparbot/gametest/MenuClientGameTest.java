@@ -77,6 +77,11 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			world.getServer().waitFor(server -> SparBot.practice().colosseumReady(), 12000);
 			int cx = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_X;
 			int cz = io.github.flick256.sparbot.core.practice.PracticeLayout.GRAND_Z;
+			if (Boolean.getBoolean("sparbot.stadiumsOnly")) {
+				context.runOnClient(client -> client.options.renderDistance().set(10));
+				stadiums(context, world, cx, cz);
+				return;
+			}
 			if (Boolean.getBoolean("sparbot.deepOnly")) {
 				context.runOnClient(client -> client.options.renderDistance().set(10));
 				for (ColosseumSurvey.View v : io.github.flick256.sparbot.practice.colosseum.DeepSurvey.views()) {
@@ -1371,6 +1376,31 @@ public class MenuClientGameTest implements FabricClientGameTest {
 	}
 
 	/** Puts the player (in spectator, so nothing is in the way) at a viewpoint and takes a screenshot once the chunks show. */
+	/**
+	 * The four satellite stadiums, each from above, from its field, from its stands and from outside its gate
+	 * (the gate faces the Grand Bowl).
+	 */
+	private static void stadiums(ClientGameTestContext context, TestSingleplayerContext world, int cx, int cz) {
+		String[] names = {"fire", "frost", "grove", "void"};
+		int floor = io.github.flick256.sparbot.core.practice.PracticeLayout.FLOOR;
+		for (int i = 0; i < 4; i++) {
+			double[] c = io.github.flick256.sparbot.practice.colosseum.CelestialColosseum.satelliteCentre(i);
+			double sx = cx + c[0] + 0.5, sz = cz + c[1] + 0.5;
+			// Unit vector from the stadium's centre to its gate (towards the bowl's centre), and the way out behind it.
+			double len = Math.hypot(c[0], c[1]);
+			double gx = -c[0] / len, gz = -c[1] / len;
+			view(context, world, "stadium-" + names[i] + "-aerial", sx - gx * 75, floor + 70, sz - gz * 75, yaw(gx, gz), 38);
+			view(context, world, "stadium-" + names[i] + "-field", sx - gx * 12, floor + 1.6, sz - gz * 12, yaw(gx, gz), -12);
+			view(context, world, "stadium-" + names[i] + "-stands", sx - gx * 36, floor + 24, sz - gz * 36, yaw(gx, gz), 22);
+			view(context, world, "stadium-" + names[i] + "-gate", sx + gx * 66, floor + 4, sz + gz * 66, yaw(-gx, -gz), -4);
+		}
+	}
+
+	/** The yaw that looks along (dx, dz). */
+	private static float yaw(double dx, double dz) {
+		return (float) Math.toDegrees(Math.atan2(-dx, dz));
+	}
+
 	private static void view(ClientGameTestContext context, TestSingleplayerContext world, String name, double x, double y, double z, float yaw, float pitch) {
 		world.getServer().runOnServer(server -> {
 			var player = human(server);

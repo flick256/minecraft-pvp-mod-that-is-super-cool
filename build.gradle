@@ -81,6 +81,12 @@ if (project.hasProperty('deepOnly')) {
 }
 
 // The client test's drills alone (a few minutes): ./gradlew runClientGameTest -PdrillsOnly
+// The four satellite stadiums photographed (a few minutes): ./gradlew runClientGameTest -PstadiumsOnly
+if (project.hasProperty('stadiumsOnly')) {
+	tasks.named('runClientGameTest') {
+		jvmArgs "-Dsparbot.stadiumsOnly=true"
+	}
+}
 if (project.hasProperty('drillsOnly')) {
 	tasks.named('runClientGameTest') {
 		jvmArgs "-Dsparbot.drillsOnly=true", "-Dsparbot.debugJumps=true"

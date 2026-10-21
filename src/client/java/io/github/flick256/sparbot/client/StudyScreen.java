@@ -21,8 +21,7 @@ import net.minecraft.network.chat.Component;
 
 /** A one-question study session with explicit, learner-owned self-review. */
 public final class StudyScreen extends Screen {
-	private static final int PANEL = 0xFF1C2937, PANEL_ALT = 0xFF202F3E;
-	private static final int TEXT = 0xFFE7EEF6, MUTED = 0xFF9BAEC3, ACCENT = 0xFF73DDCA, GOLD = 0xFFE8BC73;
+	private static final int TEXT = ForestTheme.TEXT, MUTED = ForestTheme.MUTED, ACCENT = ForestTheme.ACCENT, GOLD = ForestTheme.GOLD;
 	private static final Pattern NUMBER = Pattern.compile("^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$");
 	private enum Page { QUESTION, SUBJECTS, FEEDBACK }
 	private enum ReviewKind { NONE, MARKED, SELF_REVIEW }
@@ -138,7 +137,7 @@ public final class StudyScreen extends Screen {
 		if (failedAttempt) {
 			int msgHeight = wrappedHeight("That response does not match the expected answer. Try again, reveal another hint, or view the worked explanation.", bodyWidth - 20);
 			int y = card(msgHeight + 18, false, true);
-			wrap("That response does not match the expected answer. Try again, reveal another hint, or view the worked explanation.", 10, y + 9, bodyWidth - 20, 0xFFEEA09A);
+			wrap("That response does not match the expected answer. Try again, reveal another hint, or view the worked explanation.", 10, y + 9, bodyWidth - 20, ForestTheme.DANGER);
 			cursorY += 8;
 		}
 		for (int i = 0; i < shownHints; i++) {
@@ -465,20 +464,17 @@ public final class StudyScreen extends Screen {
 	}
 
 	@Override public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-		graphics.fillGradient(0, 0, width, height, 0xF6101B2A, 0xF5080E19);
-		graphics.fill(0, 0, width, 42, 0xFF182C38);
-		graphics.fill(12, 13, 14, 30, ACCENT);
+		ForestTheme.backdrop(graphics, width, height);
+		ForestTheme.header(graphics, 0, 0, width, 43);
+		MenuArt.item(graphics, net.minecraft.world.item.Items.BOOKSHELF, 4, 11);
 		String heading = page == Page.SUBJECTS ? "STUDY / SUBJECTS" : page == Page.FEEDBACK ? "STUDY / REVIEW" : "STUDY / PRACTICE";
-		graphics.text(font, heading, 22, 12, TEXT, false);
+		graphics.text(font, heading, 22, 12, TEXT, true);
 		String sub = shownQuestion == null ? "Choose a subject to begin" : shownQuestion.subject() + " · " + shownQuestion.topic() + " · " + shownQuestion.marks() + " marks";
 		graphics.text(font, font.plainSubstrByWidth(sub, width - 34), 22, 26, MUTED, false);
-		graphics.fill(bodyLeft - 2, bodyTop - 8, bodyLeft + bodyWidth + 2, bodyBottom + 2, 0xDD111A28);
+		ForestTheme.surface(graphics, bodyLeft - 2, bodyTop - 8, bodyLeft + bodyWidth + 2, bodyBottom + 2);
 		graphics.enableScissor(bodyLeft - 1, bodyTop, bodyLeft + bodyWidth + 1, bodyBottom);
 		for (Card card : cards) {
-			int fill = card.featured() ? 0xFF373027 : card.selected() ? 0xFF263F43 : PANEL;
-			graphics.fillGradient(bodyLeft, card.y(), bodyLeft + bodyWidth, card.y() + card.height(), fill, card.featured() ? 0xFF252421 : PANEL_ALT);
-			graphics.outline(bodyLeft, card.y(), bodyWidth, card.height(), card.featured() ? GOLD : card.selected() ? ACCENT : 0xFF34485A);
-			if (card.featured()) graphics.fill(bodyLeft, card.y() + 1, bodyLeft + 2, card.y() + card.height() - 1, GOLD);
+			ForestTheme.card(graphics, bodyLeft, card.y(), bodyWidth, card.height(), card.featured(), card.selected());
 		}
 		for (Button option : optionButtons) {
 			if (option.isFocused()) graphics.outline(option.getX(), option.getY(), option.getWidth(), option.getHeight(), ACCENT);
@@ -489,13 +485,14 @@ public final class StudyScreen extends Screen {
 			int track = bodyBottom - bodyTop;
 			int thumb = Math.max(18, track * track / Math.max(1, totalHeight));
 			int thumbY = bodyTop + (track - thumb) * scroll / maxScroll();
-			graphics.fill(width - 6, bodyTop, width - 4, bodyBottom, 0xFF253344);
-			graphics.fill(width - 6, thumbY, width - 4, thumbY + thumb, ACCENT);
+			graphics.fill(width - 7, bodyTop, width - 3, bodyBottom, ForestTheme.SLOT);
+			graphics.fill(width - 7, thumbY, width - 3, thumbY + thumb, 0xFF8A6A42);
+			graphics.fill(width - 7, thumbY, width - 5, thumbY + thumb, 0xFFB08A58);
 		}
 		String status = !notice.isBlank() ? notice : StudyClient.status();
 		if (status != null && !status.isBlank()) graphics.text(font, font.plainSubstrByWidth(status, width - 24), 12, footerY - 15, GOLD, false);
-		graphics.fill(0, footerY - 4, width, height, 0xFF111A28);
-		graphics.horizontalLine(0, width, footerY - 4, 0xFF34485A);
+		ForestTheme.sidebar(graphics, 0, footerY - 4, width, height);
+		graphics.horizontalLine(0, width, footerY - 4, ForestTheme.GRASS);
 	}
 
 	@Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {

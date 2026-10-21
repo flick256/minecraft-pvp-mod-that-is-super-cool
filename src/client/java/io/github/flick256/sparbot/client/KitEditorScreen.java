@@ -28,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
 
 /** Draft-only kit editor laid out for both normal and compact Minecraft GUI scales. */
 public final class KitEditorScreen extends Screen {
-	private static final int PANEL = 0xEE17212B, CELL = 0xFF263442, SELECTED = 0xFF356D68;
+
 	private Kit draft;
 	private String status, search = "", selectedTarget = "inventory";
 	private String idDraft = "", nameDraft = "", countDraft = "1", enchantDraft = "", enchantLevelDraft = "1";
@@ -201,7 +201,7 @@ public final class KitEditorScreen extends Screen {
 				selectedTarget.equals("inventory") && selectedSlot == slot || access != null && access.isFocused());
 			String label = slot < 9 ? "H" + (slot + 1) : Integer.toString(slot);
 			drawSpecIcon(graphics, spec, cx + (cell - 18) / 2, cy + 1, label + ": " + specDescription(spec), mouseX, mouseY);
-			if (cell >= 28 && font.width(label) < cell) graphicsText(graphics, label, cx + (cell - font.width(label)) / 2, cy + cell - 11, 0xFFE2EAF0);
+			if (cell >= 28 && font.width(label) < cell) graphicsText(graphics, label, cx + (cell - font.width(label)) / 2, cy + cell - 11, ForestTheme.TEXT);
 		}
 		int specialCell = layoutSpecialCell();
 		int sx = equipmentToRight() ? width - 5 * (specialCell + 3) - 8 : (width - 5 * specialCell) / 2;
@@ -215,7 +215,7 @@ public final class KitEditorScreen extends Screen {
 			graphicsCell(graphics, cx, cy, specialCell - 2, specialCell - 2,
 				selectedTarget.equals(targets[i]) || access != null && access.isFocused());
 			drawSpecIcon(graphics, item, cx + (specialCell - 18) / 2, cy + 2, labels[i] + ": " + specDescription(item), mouseX, mouseY);
-			graphicsText(graphics, labels[i], cx + 2, cy + specialCell - 11, 0xFFE2EAF0);
+			graphicsText(graphics, labels[i], cx + 2, cy + specialCell - 11, ForestTheme.TEXT);
 		}
 	}
 
@@ -427,36 +427,38 @@ public final class KitEditorScreen extends Screen {
 	}
 
 	private void graphicsCell(GuiGraphicsExtractor graphics, int x, int y, int w, int h, boolean selected) {
-		graphics.fill(x, y, x + w, y + h, selected ? SELECTED : CELL);
-		graphics.outline(x, y, w, h, selected ? 0xFF8DE7D6 : 0xFF536473);
+		// An inventory cell: dark and inset, leaf-green when chosen.
+		ForestTheme.slot(graphics, x, y, w, h, selected);
+		if (selected) { graphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0x403E7A22); graphics.outline(x, y, w, h, ForestTheme.ACCENT); }
 	}
 	private void graphicsText(GuiGraphicsExtractor graphics, String text, int x, int y, int color) { graphics.text(font, text, x, y, color); }
 
 	@Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-		graphics.fill(0, 0, width, height, PANEL);
+		ForestTheme.backdrop(graphics, width, height);
+		ForestTheme.header(graphics, 0, 0, width, 31);
 		if (page == 0) {
-			graphics.text(font, font.plainSubstrByWidth("Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), width - 24), 12, 31, 0xFFF2F5F7);
+			graphics.text(font, font.plainSubstrByWidth("Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), width - 24), 12, 31, ForestTheme.TEXT);
 			String help = width < 400 ? "Choose a slot. Your inventory stays untouched." : "Choose an inventory or equipment slot. Your live inventory stays untouched.";
-			graphics.text(font, font.plainSubstrByWidth(help, width - 24), 12, 43, 0xFFB5C4D0);
+			graphics.text(font, font.plainSubstrByWidth(help, width - 24), 12, 43, ForestTheme.MUTED);
 			drawLayout(graphics, mouseX, mouseY);
 			if (equipmentToRight()) graphics.text(font, "Equipment", width - 5 * (layoutSpecialCell() + 3) - 8,
-				(height - layoutSpecialCell()) / 2 - 13, 0xFFE7EEF6);
+				(height - layoutSpecialCell()) / 2 - 13, ForestTheme.TEXT);
 		} else if (page == 1) {
 			drawPalette(graphics, mouseX, mouseY);
 		} else {
 			Kit.KitItem item = selectedItem();
-			graphics.text(font, "Copy preset into a new custom kit", 12, 29, 0xFFE7EEF6);
-			graphics.text(font, "New kit ID", 12, 40, 0xFFB5C4D0);
-			graphics.text(font, "Display name", width < 430 ? 12 : 24 + (width - 36) / 2, width < 430 ? 68 : 40, 0xFFB5C4D0);
-			graphics.text(font, "Count", 12, width < 430 ? 97 : 70, 0xFFB5C4D0);
+			graphics.text(font, "Copy preset into a new custom kit", 12, 29, ForestTheme.TEXT);
+			graphics.text(font, "New kit ID", 12, 40, ForestTheme.MUTED);
+			graphics.text(font, "Display name", width < 430 ? 12 : 24 + (width - 36) / 2, width < 430 ? 68 : 40, ForestTheme.MUTED);
+			graphics.text(font, "Count", 12, width < 430 ? 97 : 70, ForestTheme.MUTED);
 			String enchants = item == null || item.enchantments() == null || item.enchantments().isEmpty()
 				? "Enchantments: none" : "Enchantments: " + item.enchantments();
-			graphics.text(font, font.plainSubstrByWidth(enchants, width < 430 ? width - 24 : width - 342), width < 430 ? 12 : 330, width < 430 ? 126 : 84, 0xFFB5C4D0);
-			graphics.text(font, "Enchantment ID", 12, width < 430 ? 136 : 108, 0xFFB5C4D0);
-			graphics.text(font, "Level", width - 88, width < 430 ? 136 : 108, 0xFFB5C4D0);
+			graphics.text(font, font.plainSubstrByWidth(enchants, width < 430 ? width - 24 : width - 342), width < 430 ? 12 : 330, width < 430 ? 126 : 84, ForestTheme.MUTED);
+			graphics.text(font, "Enchantment ID", 12, width < 430 ? 136 : 108, ForestTheme.MUTED);
+			graphics.text(font, "Level", width - 88, width < 430 ? 136 : 108, ForestTheme.MUTED);
 		}
 		String visibleStatus = status == null ? "" : font.plainSubstrByWidth(status.replace('\n', ' '), width - 24);
-		graphics.text(font, visibleStatus, 12, height - 10, 0xFFFFD277);
+		graphics.text(font, visibleStatus, 12, height - 10, ForestTheme.WARN);
 		super.extractRenderState(graphics, mouseX, mouseY, delta);
 	}
 
@@ -475,7 +477,7 @@ public final class KitEditorScreen extends Screen {
 			Identifier itemKey = Identifier.tryParse(itemId);
 			if (itemKey != null) BuiltInRegistries.ITEM.get(itemKey).ifPresent(holder -> graphics.item(new ItemStack(holder.value()), x + 2, y + 3));
 			String label = paletteLabel(itemId, cellW);
-			graphics.text(font, label, x + 21, y + 8, 0xFFE7EEF6);
+			graphics.text(font, label, x + 21, y + 8, ForestTheme.TEXT);
 			if (mouseX >= x && mouseY >= y && mouseX < x + cellW && mouseY < y + 23)
 				graphics.setTooltipForNextFrame(Component.literal(itemId), mouseX, mouseY);
 		}

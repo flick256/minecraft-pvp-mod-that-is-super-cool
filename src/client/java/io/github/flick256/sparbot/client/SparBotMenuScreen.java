@@ -24,7 +24,7 @@ import net.minecraft.network.chat.Component;
 
 /** A scrollable practice workspace. Actions use the same server permission checks as chat commands. */
 public final class SparBotMenuScreen extends Screen {
-	private static final int TEXT = 0xFFE7EEF6, MUTED = 0xFF9BAEC3, ACCENT = 0xFF73DDCA, GOLD = 0xFFE8BC73;
+	private static final int TEXT = ForestTheme.TEXT, MUTED = ForestTheme.MUTED, ACCENT = ForestTheme.ACCENT, GOLD = ForestTheme.GOLD;
 	private enum Tab {
 		HOME("Overview", "Your next session", "Choose a fight, build a bot, or sharpen a skill."),
 		PRACTICE("Practice", "Make every fight count", "Choose a mode and an opponent, then step into the arena."),
@@ -85,8 +85,8 @@ public final class SparBotMenuScreen extends Screen {
 	/** Read-only text and control bounds for compact-layout checks. Content text is clipped to its actual scissor. */
 	public List<StudyScreen.LayoutRect> layoutSnapshot() {
 		List<StudyScreen.LayoutRect> result = new ArrayList<>();
-		addSnapshotText(result, "sidebar-label", "SPARBOT", left + 18, top + 13, left, top, left + sidebar, top + panelHeight);
-		addSnapshotText(result, "sidebar-label", "PRACTICE", left + 18, top + 26, left, top, left + sidebar, top + panelHeight);
+		addSnapshotText(result, "sidebar-label", "SPARBOT", left + 27, top + 13, left, top, left + sidebar, top + panelHeight);
+		addSnapshotText(result, "sidebar-label", "PRACTICE", left + 27, top + 26, left, top, left + sidebar, top + panelHeight);
 		if (panelHeight > 250) addSnapshotText(result, "sidebar-label", "v" + version, left + 18, top + panelHeight - 18,
 			left, top, left + sidebar, top + panelHeight);
 		int navigationBottom = top + (panelHeight < 320 ? 42 : 44) + 10 * (panelHeight < 320 ? 14 : 22) + (panelHeight < 320 ? 12 : 20);
@@ -282,7 +282,7 @@ public final class SparBotMenuScreen extends Screen {
 			int y = card(74, "swight".equals(bot.profile()));
 			text(bot.name(), 12, y + 10, TEXT);
 			String hp = bot.alive() ? String.format(Locale.ROOT, "%.1f hp", bot.health()) : "Defeated";
-			text(pretty(bot.profile()) + " / " + hp, 12, y + 26, bot.alive() ? MUTED : 0xFFEE8A89);
+			text(pretty(bot.profile()) + " / " + hp, 12, y + 26, bot.alive() ? MUTED : ForestTheme.DANGER);
 			int bw = Math.min(82, (contentWidth - 36) / 3);
 			button(bot.alive() ? "Fight" : "Respawn", 12, y + 47, bw, MenuButton.Tone.PRIMARY,
 				() -> { if (bot.alive() && me != null) { runAndClose(MenuCommands.fight(bot.name(), me)); } else if (!bot.alive()) { run(MenuCommands.respawn(bot.name())); } }).active = !bot.alive() || me != null && MenuCommands.validName(me);
@@ -300,7 +300,7 @@ public final class SparBotMenuScreen extends Screen {
 		cursorY += 34;
 		if (!MenuCommands.validName(spawnName) || state.bots().stream().anyMatch(b -> b.name().equalsIgnoreCase(spawnName))) {
 			String error = MenuCommands.validName(spawnName) ? "That name is already in use." : "Use 1-16 letters, numbers or underscores.";
-			wrap(error, 0, cursorY, contentWidth, 0xFFEE8A89);
+			wrap(error, 0, cursorY, contentWidth, ForestTheme.DANGER);
 			cursorY += 28;
 		}
 		section("SKILL LEVEL");
@@ -319,7 +319,7 @@ public final class SparBotMenuScreen extends Screen {
 		button("Choose kit", 12, y + 42, Math.min(140, contentWidth - 24), MenuButton.Tone.NORMAL, () -> { choosingKit = true; show(Tab.KITS); });
 		section("PLAYSTYLE");
 		choices(state.styles(), spawnStyle, v -> { spawnStyle = v; rebuildKeepingFocus(); });
-		wrap(validSpawn() ? "Ready when you are." : "Use a unique name: 1-16 letters, numbers or underscores.", 0, cursorY, contentWidth, validSpawn() ? MUTED : 0xFFEE8A89);
+		wrap(validSpawn() ? "Ready when you are." : "Use a unique name: 1-16 letters, numbers or underscores.", 0, cursorY, contentWidth, validSpawn() ? MUTED : ForestTheme.DANGER);
 		cursorY += 32;
 	}
 
@@ -695,47 +695,30 @@ public final class SparBotMenuScreen extends Screen {
 
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		g.fillGradient(0, 0, width, height, 0xEF101B2A, 0xF5080E19);
-		// The quiet grid belongs to the backdrop; content remains a solid, readable surface.
-		for (int x = 12; x < width; x += 24) {
-			for (int y = 12; y < height; y += 24) { g.fill(x, y, x + 1, y + 1, 0x303D7083); }
-		}
-		g.fill(left + 3, top + 4, left + panelWidth + 3, top + panelHeight + 4, 0x70000000);
-		g.fill(left, top, left + panelWidth, top + panelHeight, 0xFF111A28);
-		g.outline(left, top, panelWidth, panelHeight, 0xFF314153);
-		g.fillGradient(left + 1, top + 1, left + sidebar, top + panelHeight - 1, 0xFF1B2835, 0xFF141C29);
-		MenuArt.corners(g, left, top, panelWidth, panelHeight, 0xFF53747E);
-		g.fillGradient(contentX, top + 1, left + panelWidth - 1, top + 49, 0xFF182C38, 0xFF111A28);
+		ForestTheme.backdrop(g, width, height);
+		ForestTheme.frame(g, left, top, panelWidth, panelHeight);
+		ForestTheme.surface(g, left, top, left + panelWidth, top + panelHeight);
+		ForestTheme.sidebar(g, left, top, left + sidebar, top + panelHeight);
+		ForestTheme.header(g, left + sidebar, top, left + panelWidth, top + 52);
 		int navigationBottom = top + (panelHeight < 320 ? 42 : 44) + 10 * (panelHeight < 320 ? 14 : 22) + (panelHeight < 320 ? 12 : 20);
 		if (panelHeight > 330 && sidebar >= 110 && top + panelHeight - 105 >= navigationBottom + 8) {
 			int cy = top + panelHeight - 91;
-			g.horizontalLine(left + 18, left + sidebar - 18, cy - 14, 0xFF293D4B);
-			MenuArt.item(g, net.minecraft.world.item.Items.DIAMOND_SWORD, left + 31, cy);
-			MenuArt.item(g, net.minecraft.world.item.Items.SHIELD, left + 56, cy);
-			g.text(font, "TRAIN. ADAPT.", left + 18, cy + 27, MUTED, false);
-			g.text(font, "GO AGAIN.", left + 18, cy + 40, ACCENT, false);
+			g.horizontalLine(left + 18, left + sidebar - 18, cy - 14, 0xFF5A4A34);
+			MenuArt.item(g, net.minecraft.world.item.Items.DIAMOND_SWORD, left + 22, cy);
+			MenuArt.item(g, net.minecraft.world.item.Items.OAK_SAPLING, left + 44, cy);
+			MenuArt.item(g, net.minecraft.world.item.Items.SHIELD, left + 66, cy);
+			g.text(font, "TRAIN. ADAPT.", left + 18, cy + 27, MUTED, true);
+			g.text(font, "GO AGAIN.", left + 18, cy + 40, ACCENT, true);
 		}
-		g.fill(left + 10, top + 14, left + 12, top + 30, ACCENT);
-		g.text(font, "SPARBOT", left + 18, top + 13, TEXT, false);
-		g.text(font, "PRACTICE", left + 18, top + 26, MUTED, false);
-		if (panelHeight > 250) { g.text(font, "v" + version, left + 18, top + panelHeight - 18, MUTED, false); }
-		g.text(font, font.plainSubstrByWidth(tab.heading, contentWidth), contentX, top + 16, TEXT, false);
+		MenuArt.item(g, net.minecraft.world.item.Items.GRASS_BLOCK, left + 7, top + 12);
+		g.text(font, "SPARBOT", left + 27, top + 13, TEXT, true);
+		g.text(font, "PRACTICE", left + 27, top + 26, ACCENT, true);
+		if (panelHeight > 250) { g.text(font, "v" + version, left + 18, top + panelHeight - 18, MUTED, true); }
+		g.text(font, font.plainSubstrByWidth(tab.heading, contentWidth), contentX, top + 16, TEXT, true);
 		g.text(font, font.plainSubstrByWidth(tab.description, contentWidth), contentX, top + 34, MUTED, false);
-		g.horizontalLine(contentX, contentX + contentWidth, top + 51, 0xFF293747);
 		g.enableScissor(contentX, contentTop, contentX + contentWidth, contentBottom);
 		for (Card card : cards) {
-			g.fillGradient(contentX, card.y(), contentX + contentWidth, card.y() + card.height(), card.featured() ? 0xFF373027 : 0xFF20313F, card.featured() ? 0xFF252421 : 0xFF192331);
-			g.outline(contentX, card.y(), contentWidth, card.height(), card.featured() ? 0xFF6C5639 : 0xFF2B3A4D);
-			if (card.featured()) {
-				g.fill(contentX, card.y() + 1, contentX + 2, card.y() + card.height() - 1, GOLD);
-				MenuArt.corners(g, contentX, card.y(), contentWidth, card.height(), GOLD);
-			}
-			if (card.height() > 60) {
-				for (int i = 0; i < 6; i++) {
-					int x = contentX + contentWidth - 12 - i * 6;
-					g.fill(x, card.y() + 7, x + 2, card.y() + 9, card.featured() ? 0xFF655036 : 0xFF354D5E);
-				}
-			}
+			ForestTheme.card(g, contentX, card.y(), contentWidth, card.height(), card.featured(), false);
 		}
 		for (Illustration art : illustrations) { MenuArt.loadout(g, contentX + contentWidth - 12, art.y(), art.uhc()); }
 		for (Label label : labels) { g.text(font, label.text(), label.x(), label.y(), label.color(), false); }
@@ -744,8 +727,9 @@ public final class SparBotMenuScreen extends Screen {
 			int track = contentBottom - contentTop;
 			int thumb = Math.max(18, track * track / Math.max(1, totalHeight));
 			int y = contentTop + (track - thumb) * scroll / maxScroll();
-			g.fill(contentX + contentWidth + 4, contentTop, contentX + contentWidth + 6, contentBottom, 0xFF253344);
-			g.fill(contentX + contentWidth + 4, y, contentX + contentWidth + 6, y + thumb, ACCENT);
+			g.fill(contentX + contentWidth + 3, contentTop, contentX + contentWidth + 7, contentBottom, ForestTheme.SLOT);
+			g.fill(contentX + contentWidth + 3, y, contentX + contentWidth + 7, y + thumb, 0xFF8A6A42);
+			g.fill(contentX + contentWidth + 3, y, contentX + contentWidth + 5, y + thumb, 0xFFB08A58);
 		}
 		if (contentWidth > 370) { g.text(font, status, contentX, top + panelHeight - 20, MUTED, false); }
 	}

@@ -7,7 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Small ornaments drawn with native items and pixels; no textures or animation workers to load. */
+/** Small ornaments drawn with the game's own items in inventory-style slots. */
 final class MenuArt {
 	private static final Map<Item, ItemStack> ITEMS = new HashMap<>();
 
@@ -25,11 +25,12 @@ final class MenuArt {
 			case "Spawn" -> Items.TOTEM_OF_UNDYING;
 			case "Kits" -> Items.CHEST;
 			case "Drills" -> Items.TARGET;
+			case "Study" -> Items.BOOKSHELF;
 			case "You" -> Items.WRITABLE_BOOK;
 			case "Rivals" -> Items.IRON_SWORD;
 			case "Career" -> Items.NETHER_STAR;
 			case "Replay" -> Items.CLOCK;
-			default -> Items.REDSTONE;
+			default -> Items.COMPARATOR;
 		};
 	}
 
@@ -46,12 +47,12 @@ final class MenuArt {
 	static void loadout(GuiGraphicsExtractor g, int right, int y, boolean uhc) {
 		Item[] items = uhc ? new Item[] {Items.COBWEB, Items.LAVA_BUCKET, Items.GOLDEN_APPLE}
 			: new Item[] {Items.DIAMOND_SWORD, Items.SHIELD, Items.TARGET};
-		int border = uhc ? 0xFF725B3B : 0xFF38505D;
 		for (int i = 0; i < items.length; i++) {
 			int x = right - 82 + i * 28;
-			g.fillGradient(x, y, x + 24, y + 26, uhc ? 0xFF3F3529 : 0xFF243B43, 0xFF17212E);
-			corners(g, x, y, 24, 26, border);
-			item(g, items[i], x + 4, y + 4);
+			// Inventory cells: the items sit in slots, as in a chest.
+			ForestTheme.slot(g, x, y, 24, 26, false);
+			if (uhc) { g.outline(x - 1, y - 1, 26, 28, 0x80F2C14E); }
+			item(g, items[i], x + 4, y + 5);
 		}
 	}
 }
