@@ -9,7 +9,7 @@ import java.util.List;
  */
 public final class PracticeLayout {
 	/** Bump when the hub or an arena changes: worlds built with an older version are rebuilt. */
-	public static final int VERSION = 5;
+	public static final int VERSION = 6;
 	/** The top block of the flat desert (sand). */
 	public static final int SURFACE = 63;
 	/** Where players stand on it. */

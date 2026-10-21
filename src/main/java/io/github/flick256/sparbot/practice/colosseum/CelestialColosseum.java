@@ -6,6 +6,7 @@ import java.util.Map;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.StairBlock;
@@ -786,25 +787,33 @@ public final class CelestialColosseum {
 
 	// --- Satellite stadiums ---
 
-	/** A satellite stadium's look. */
+	/**
+	 * A satellite stadium's look. The fighting floor ({@code floor}, {@code floor2}, {@code fieldAccent},
+	 * {@code fieldGlow}) is made only of full, solid, ordinary blocks: no magma (it burns), no ice (knockback
+	 * slides), no end rods (a hole to fall in). Windows glow in the theme's own colours.
+	 */
 	record Theme(String name, BlockState floor, BlockState floor2, BlockState accent, BlockState wall, Block seat, Block aisle, BlockState glow,
-		BlockState spire, BlockState trim) {
+		BlockState spire, BlockState trim, BlockState fieldAccent, BlockState fieldGlow, BlockState windowGlow, BlockState windowGlass) {
 	}
 
 	static final Theme[] THEMES = {
 		new Theme("Fire", Blocks.POLISHED_BLACKSTONE.defaultBlockState(), Blocks.BLACKSTONE.defaultBlockState(), Blocks.MAGMA_BLOCK.defaultBlockState(),
 			Blocks.NETHER_BRICKS.defaultBlockState(), Blocks.NETHER_BRICK_STAIRS, Blocks.RED_NETHER_BRICK_STAIRS, Blocks.SHROOMLIGHT.defaultBlockState(),
-			Blocks.RED_NETHER_BRICKS.defaultBlockState(), Blocks.GILDED_BLACKSTONE.defaultBlockState()),
-		new Theme("Frost", Blocks.PACKED_ICE.defaultBlockState(), Blocks.SNOW_BLOCK.defaultBlockState(), Blocks.BLUE_ICE.defaultBlockState(),
+			Blocks.RED_NETHER_BRICKS.defaultBlockState(), Blocks.GILDED_BLACKSTONE.defaultBlockState(), Blocks.RED_NETHER_BRICKS.defaultBlockState(),
+			Blocks.SHROOMLIGHT.defaultBlockState(), Blocks.SHROOMLIGHT.defaultBlockState(), Blocks.STAINED_GLASS.orange().defaultBlockState()),
+		new Theme("Frost", Blocks.SNOW_BLOCK.defaultBlockState(), Blocks.CALCITE.defaultBlockState(), Blocks.BLUE_ICE.defaultBlockState(),
 			Blocks.CALCITE.defaultBlockState(), Blocks.QUARTZ_STAIRS, Blocks.PRISMARINE_BRICK_STAIRS, Blocks.SEA_LANTERN.defaultBlockState(),
-			Blocks.PACKED_ICE.defaultBlockState(), Blocks.PRISMARINE_BRICKS.defaultBlockState()),
+			Blocks.PACKED_ICE.defaultBlockState(), Blocks.PRISMARINE_BRICKS.defaultBlockState(), Blocks.CONCRETE.lightBlue().defaultBlockState(),
+			Blocks.SEA_LANTERN.defaultBlockState(), Blocks.SEA_LANTERN.defaultBlockState(), Blocks.STAINED_GLASS.lightBlue().defaultBlockState()),
 		new Theme("Grove", Blocks.MOSS_BLOCK.defaultBlockState(), Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.MOSSY_STONE_BRICKS.defaultBlockState(),
 			Blocks.MOSSY_STONE_BRICKS.defaultBlockState(), Blocks.MOSSY_STONE_BRICK_STAIRS, Blocks.STONE_BRICK_STAIRS,
 			Blocks.OCHRE_FROGLIGHT.defaultBlockState(), Blocks.AZALEA_LEAVES.defaultBlockState().setValue(LeavesBlock.PERSISTENT, true),
-			Blocks.STONE_BRICKS.defaultBlockState()),
+			Blocks.STONE_BRICKS.defaultBlockState(), Blocks.MOSSY_STONE_BRICKS.defaultBlockState(), Blocks.OCHRE_FROGLIGHT.defaultBlockState(),
+			Blocks.VERDANT_FROGLIGHT.defaultBlockState(), Blocks.STAINED_GLASS.lime().defaultBlockState()),
 		new Theme("Void", Blocks.END_STONE_BRICKS.defaultBlockState(), Blocks.OBSIDIAN.defaultBlockState(), Blocks.CRYING_OBSIDIAN.defaultBlockState(),
 			Blocks.END_STONE_BRICKS.defaultBlockState(), Blocks.END_STONE_BRICK_STAIRS, Blocks.PURPUR_STAIRS, Blocks.END_ROD.defaultBlockState(),
-			Blocks.PURPUR_BLOCK.defaultBlockState(), Blocks.OBSIDIAN.defaultBlockState())};
+			Blocks.PURPUR_BLOCK.defaultBlockState(), Blocks.OBSIDIAN.defaultBlockState(), Blocks.CRYING_OBSIDIAN.defaultBlockState(),
+			Blocks.PEARLESCENT_FROGLIGHT.defaultBlockState(), Blocks.PEARLESCENT_FROGLIGHT.defaultBlockState(), Blocks.STAINED_GLASS.purple().defaultBlockState())};
 
 	/** Where a column is in a satellite stadium. */
 	record Sat(int index, double lx, double lz, double d, double deg) {
@@ -852,9 +861,14 @@ public final class CelestialColosseum {
 			fill(c, Y0, S - 1, STONE);
 			int rings = (int) Math.floor(d / 2.5);
 			boolean starPoint = offStep(s.deg(), 45, d) < 1.2 + (8 - Math.min(8, d)) * 0.4 && d < 9;
-			put(c, S, d < 1.5 ? th.glow() : starPoint ? th.accent() : rings % 2 == 0 ? th.floor() : th.floor2());
+			put(c, S, d < 1.5 ? th.fieldGlow() : starPoint ? th.fieldAccent() : rings % 2 == 0 ? th.floor() : th.floor2());
 			if (Math.abs(d - 19) < 0.5 && offStep(s.deg(), 15, d) < 0.6) {
-				put(c, S, th.glow());
+				put(c, S, th.fieldGlow());
+			}
+			// Ladders up the podium wall on the four sides away from the gate: the way from the field to the seats.
+			if (onAxis(s, 20) && !gate) {
+				BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, satOutward(s).getOpposite());
+				fill(c, F, F + 6, ladder);
 			}
 		} else if (d <= 23.5) {
 			fill(c, Y0, F + 6, th.wall());
@@ -862,12 +876,15 @@ public final class CelestialColosseum {
 			if (offStep(s.deg(), 12, d) < 0.6) {
 				put(c, F + 2, th.accent());
 			}
-			if (Math.floorMod(Math.round(arc), 2) == 0) {
+			if (Math.floorMod(Math.round(arc), 2) == 0 && !onAxis(s, 21, 22, 23)) {
 				put(c, F + 7, th.trim());
 			}
 			if (gate) {
 				fill(c, F, F + 4, AIR);
 				put(c, S, th.floor());
+				if (perp < 0.6) {
+					put(c, F + 5, th.fieldGlow());
+				}
 			}
 		} else if (d <= 43.5) {
 			int k = (int) Math.floor(d) - 24;
@@ -882,11 +899,16 @@ public final class CelestialColosseum {
 			boolean aisle = Math.floorMod(Math.round(arc), 12) == 0;
 			put(c, seat, (aisle ? th.aisle() : th.seat()).defaultBlockState().setValue(StairBlock.FACING, satOutward(s)));
 			if (aisle && k % 3 == 1) {
-				put(c, seat, th.glow().is(Blocks.END_ROD) ? SEA_LANTERN : th.glow());
+				put(c, seat, th.fieldGlow());
 			}
 			if (gate) {
-				fill(c, F, Math.min(F + 5, seat - 4), AIR);
+				int roof = Math.min(F + 5, seat - 4);
+				fill(c, F, roof, AIR);
 				put(c, S, th.floor());
+				// The tunnel under the stands is lit, not a black hole.
+				if (perp < 0.6 && Math.floorMod((int) Math.round(d), 4) == 0) {
+					put(c, roof + 1, th.fieldGlow());
+				}
 			}
 		} else if (d <= 47.5) {
 			int top = F + 40;
@@ -899,7 +921,7 @@ public final class CelestialColosseum {
 			int phase = Math.floorMod(Math.round(arc), 9);
 			if (phase >= 3 && phase <= 5) {
 				for (int[] t : new int[][] {{F + 3, F + 14}, {F + 24, F + 35}}) {
-					fill(c, t[0], t[1], d > 46.5 ? AIR : d > 45.5 ? PURPLE_GLASS : SEA_LANTERN);
+					fill(c, t[0], t[1], d > 46.5 ? AIR : d > 45.5 ? th.windowGlass() : th.windowGlow());
 				}
 			}
 			if (gate) {
@@ -925,10 +947,10 @@ public final class CelestialColosseum {
 			if (t <= 2.6) {
 				fill(c, F + 46, F + 51, AIR);
 				if (t < 0.5) {
-					put(c, F + 48, th.glow().is(Blocks.END_ROD) ? SEA_LANTERN : th.glow());
+					put(c, F + 48, th.windowGlow());
 				}
 			} else if (t > 3.6 && (Math.abs(ox) < 1.2 || Math.abs(oz) < 1.2)) {
-				fill(c, F + 46, F + 51, PURPLE_GLASS);
+				fill(c, F + 46, F + 51, th.windowGlass());
 			}
 			for (int y = body + 1; y <= body + 22; y++) {
 				double rr = 4.6 * (1 - (y - body - 1) / 22.0) - 0.3;
@@ -937,7 +959,7 @@ public final class CelestialColosseum {
 				}
 			}
 			if (t < 0.5) {
-				put(c, body + 23, SEA_LANTERN);
+				put(c, body + 23, th.windowGlow());
 				put(c, body + 24, END_ROD);
 			}
 		}
@@ -945,6 +967,18 @@ public final class CelestialColosseum {
 
 	private static Direction satOutward(Sat s) {
 		return outward(s.lx(), s.lz());
+	}
+
+	/** Whether a column lies on one of the stadium's four axes (N, E, S, W of its centre) at one of these distances. */
+	private static boolean onAxis(Sat s, int... distances) {
+		long lx = Math.round(s.lx());
+		long lz = Math.round(s.lz());
+		for (int r : distances) {
+			if (lz == 0 && Math.abs(lx) == r || lx == 0 && Math.abs(lz) == r) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// --- The sky ---

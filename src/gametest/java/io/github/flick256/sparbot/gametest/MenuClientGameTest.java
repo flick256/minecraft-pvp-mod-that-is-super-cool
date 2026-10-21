@@ -1393,6 +1393,8 @@ public class MenuClientGameTest implements FabricClientGameTest {
 			view(context, world, "stadium-" + names[i] + "-field", sx - gx * 12, floor + 1.6, sz - gz * 12, yaw(gx, gz), -12);
 			view(context, world, "stadium-" + names[i] + "-stands", sx - gx * 36, floor + 24, sz - gz * 36, yaw(gx, gz), 22);
 			view(context, world, "stadium-" + names[i] + "-gate", sx + gx * 66, floor + 4, sz + gz * 66, yaw(-gx, -gz), -4);
+			// The east ladder up the podium wall to the seats.
+			view(context, world, "stadium-" + names[i] + "-ladder", sx + 13, floor + 3, sz + 4, yaw(1, -0.5), 5);
 		}
 	}
 

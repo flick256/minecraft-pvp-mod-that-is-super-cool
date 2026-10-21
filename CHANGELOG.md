@@ -2,6 +2,45 @@
 
 The version is in the jar's name, the menu sidebar and the server log.
 
+## 5.0.0
+
+A forest look for every screen, stadiums you can actually fight in, and the meadow kept.
+
+- **The menu, study and kit editor, rebuilt as a forest clearing** from the game's own textures: dark mossy dirt
+  behind everything; panels framed in spruce planks, with oak leaves along the top and vines hanging from the
+  corners; dark-oak boards for the navigation with the chosen entry lit in leaf green; cards that read like grass
+  blocks (a strip of turf over dark soil, gold-rimmed when featured); items shown in inventory-style slots; and the
+  game's own bevelled buttons, tinted grass green for the main action, gold for Swight and red for danger. Text keeps
+  its solid, dark background and drop shadow, so it stays readable with any resource pack.
+- **The four satellite stadiums (Fire, Frost, Grove and Void), fixed:**
+  - Fighting floors are safe: Fire's star was magma (it burned you), Frost's floor was packed and blue ice (knockback
+    slid you across it) and Void's centre was end rods set into the floor (a hole). They are now red nether bricks
+    and shroomlight, snow, calcite and light-blue concrete with sea lanterns, and crying obsidian with pearlescent
+    froglights.
+  - There was no way from the field up to the seats: each stadium now has four ladders up its podium wall, on the
+    sides away from the gate, with a gap in the battlements at the top.
+  - The gate tunnels under the stands are lit.
+  - Windows glow in each stadium's own colours (orange, light blue, lime, purple) instead of the same purple glass and
+    sea lanterns everywhere.
+  - Worlds with the old stadiums rebuild them (colosseum blueprint version 6).
+- **Fixed (4.0): the UHC meadow was paved over.** 4.0's terrain picker treated the meadow as a plain arena, so the
+  first UHC practice fight laid a sandstone slab over its grass, pond and oaks, for good. "Flat" on the meadow now means
+  the meadow as built (put back if it was changed); rebuilt floors of round arenas stop inside their walls instead of
+  cutting into them; and the meadow's spawns stay a block up its slope. Practice worlds are rebuilt once (layout
+  version 6), which repairs a meadow 4.x already paved.
+- New: `./gradlew runClientGameTest -PstadiumsOnly` photographs each stadium from above, its field, its stands, its
+  gate and a ladder.
+
+## 4.1.0
+
+- A personal study routine (VCE Units 3/4) with its own screen, spaced review and an exam timetable; see
+  [docs/study-4.1.md](docs/study-4.1.md). Compact-screen fixes for the menu and kit editor.
+
+## 4.0.0
+
+- Named rivals and career circuits, practice terrain (flat, uneven, obstacles) and rematches, a draft-only kit editor
+  and replay review controls; see [docs/guide-4.0.md](docs/guide-4.0.md).
+
 ## 3.2.0
 
 - Rebuilt the menu around persistent sidebar navigation, readable cards and a guided mode/opponent
