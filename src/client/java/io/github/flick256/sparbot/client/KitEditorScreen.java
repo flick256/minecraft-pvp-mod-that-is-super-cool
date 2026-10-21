@@ -435,7 +435,7 @@ public final class KitEditorScreen extends Screen {
 
 	@Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
 		ForestTheme.backdrop(graphics, width, height);
-		ForestTheme.header(graphics, 0, 0, width, 31);
+		ForestTheme.header(graphics, 0, 0, width, 28);
 		if (page == 0) {
 			graphics.text(font, font.plainSubstrByWidth("Kit editor · " + (draft == null ? "invalid draft" : draft.displayName()), width - 24), 12, 31, ForestTheme.TEXT);
 			String help = width < 400 ? "Choose a slot. Your inventory stays untouched." : "Choose an inventory or equipment slot. Your live inventory stays untouched.";
