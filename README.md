@@ -10,7 +10,10 @@ It works in singleplayer (the integrated server), on LAN and on dedicated server
 and a boss of its own (Vaelor and his rewards, under the Celestial Colosseum), so **players need SparBot on
 their client too** to join a server that has it.
 
-> Status: 4.1.0 fixes overlapping menu layouts and adds an offline VCE-style study routine, enabled by default.
+> Status: 5.0.0 gives every screen a forest look made from the game's own textures (plank frames, leaves and vines,
+> grass-block cards, the game's own buttons), makes the four satellite stadiums fit to fight in (safe floors, ladders
+> to the seats, lit gates) and stops a UHC practice fight paving over the meadow. See the [changelog](CHANGELOG.md).
+> 4.1.0 fixed overlapping menu layouts and adds an offline VCE-style study routine, enabled by default.
 > One question on world entry counts toward your first fight; later SparBot fights require another. Its 72 original
 > questions cover English, Mathematical Methods, Chemistry, French and History Revolutions; staged hints, feedback
 > and self-review support practice without claiming to cover the full official VCE curriculum. Subjects and exam
@@ -140,6 +143,10 @@ With SparBot installed on your client too, press **B** (rebindable in Controls) 
 - **You:** heal, change natural regeneration, and review your last fight and coach feedback.
 - **Drills:** browse lessons and medals, visit the training hall, or stop your current drill.
 - **Settings:** search server settings. Unfinished edits, text selection and keyboard focus survive refreshes.
+
+It looks like a forest clearing built from the game's own textures: spruce-plank frames under oak leaves and
+vines, dark-oak boards for the navigation, grass-block cards, items in inventory slots and the game's own bevelled
+buttons (grass green for the main action, gold for Swight). The study screen and kit editor share the look.
 
 The menu remembers where you were in each section. Scroll with the mouse wheel or the arrow buttons;
 compact GUI sizes retain the same actions. Starting a fight or drill closes the menu so you can play.

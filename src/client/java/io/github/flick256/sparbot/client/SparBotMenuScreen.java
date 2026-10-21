@@ -43,7 +43,9 @@ public final class SparBotMenuScreen extends Screen {
 	}
 
 	private record Label(String text, int x, int y, int color) { }
-	private record Card(int y, int height, boolean featured) { }
+	private record Card(int y, int height, boolean featured, boolean field) {
+		Card(int y, int height, boolean featured) { this(y, height, featured, false); }
+	}
 	private record Illustration(int y, boolean uhc) { }
 	private final List<Label> labels = new ArrayList<>();
 	private final List<Card> cards = new ArrayList<>();
@@ -644,8 +646,8 @@ public final class SparBotMenuScreen extends Screen {
 		field.setResponder(responder);
 		fields.put(id, field);
 		addContent(field);
-		// Keep fields visually distinct from action buttons.
-		cards.add(new Card(y, 26, false));
+		// A text field is an inset slot, distinct from cards and buttons.
+		cards.add(new Card(y, 26, false, true));
 		return field;
 	}
 
@@ -718,7 +720,11 @@ public final class SparBotMenuScreen extends Screen {
 		g.text(font, font.plainSubstrByWidth(tab.description, contentWidth), contentX, top + 34, MUTED, false);
 		g.enableScissor(contentX, contentTop, contentX + contentWidth, contentBottom);
 		for (Card card : cards) {
-			ForestTheme.card(g, contentX, card.y(), contentWidth, card.height(), card.featured(), false);
+			if (card.field()) {
+				ForestTheme.slot(g, contentX, card.y(), contentWidth, card.height(), false);
+			} else {
+				ForestTheme.card(g, contentX, card.y(), contentWidth, card.height(), card.featured(), false);
+			}
 		}
 		for (Illustration art : illustrations) { MenuArt.loadout(g, contentX + contentWidth - 12, art.y(), art.uhc()); }
 		for (Label label : labels) { g.text(font, label.text(), label.x(), label.y(), label.color(), false); }
