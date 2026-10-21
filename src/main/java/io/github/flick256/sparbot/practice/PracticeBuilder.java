@@ -57,19 +57,32 @@ final class PracticeBuilder {
 		set(0, S - 2, PracticeLayout.VERSION, Blocks.LODESTONE.defaultBlockState());
 	}
 
-	/** Rebuilds just the fighting floor. The two spawn pads stay level and free of obstacles. */
+	/**
+	 * Rebuilds just the fighting floor. The two spawn pads stay level and free of obstacles. The UHC meadow's
+	 * flat layout is the meadow itself (rolling grass, pond, oaks): asking for it puts the meadow back rather than
+	 * laying a sandstone slab over it, which 4.0 did on the first UHC practice fight. A round site's floor stops
+	 * inside its wall, so the wall is never cut into.
+	 */
 	void buildCombatTerrain(Site site, PracticeTerrain terrain) {
+		if (site == PracticeLayout.UHC && terrain == PracticeTerrain.FLAT) {
+			restoreMeadow(site);
+			return;
+		}
 		load(site.minX(), site.minZ(), site.maxX(), site.maxZ());
 		int radius = site.radius();
-		fill(site.centerX() - radius, F - 4, site.centerZ() - radius, site.centerX() + radius, F + site.height(),
-			site.centerZ() + radius, Blocks.AIR.defaultBlockState());
+		double inside = (radius + 0.5) * (radius + 0.5);
 		for (int dx = -radius; dx <= radius; dx++) {
 			for (int dz = -radius; dz <= radius; dz++) {
+				if (site.round() && dx * dx + dz * dz > inside) {
+					continue;
+				}
+				int x = site.centerX() + dx, z = site.centerZ() + dz;
+				fill(x, F - 4, z, x, F + site.height(), z, Blocks.AIR.defaultBlockState());
 				int height = terrain == PracticeTerrain.UNEVEN ? terrainHeight(site, dx, dz) : 0;
 				for (int y = -4; y < height - 1; y++) {
-					set(site.centerX() + dx, F + y, site.centerZ() + dz, Blocks.DIRT.defaultBlockState());
+					set(x, F + y, z, Blocks.DIRT.defaultBlockState());
 				}
-				set(site.centerX() + dx, F + height - 1, site.centerZ() + dz, terrain == PracticeTerrain.FLAT
+				set(x, F + height - 1, z, terrain == PracticeTerrain.FLAT
 					? Blocks.SANDSTONE.defaultBlockState() : Blocks.GRASS_BLOCK.defaultBlockState());
 			}
 		}
@@ -84,6 +97,15 @@ final class PracticeBuilder {
 				fill(x - 1, ground, z - 1, x + 1, ground + 2, z + 1, Blocks.COBBLESTONE.defaultBlockState());
 			}
 		}
+	}
+
+	/** The UHC meadow as first built: ground, pond, oaks and boulders, then its stands, box and signs again. */
+	private void restoreMeadow(Site site) {
+		uhc(site);
+		biome(site, net.minecraft.world.level.biome.Biomes.PLAINS);
+		stands(site, palette(site));
+		viewingBox(site, palette(site));
+		labels(site);
 	}
 
 	static int terrainHeight(Site site, int dx, int dz) {

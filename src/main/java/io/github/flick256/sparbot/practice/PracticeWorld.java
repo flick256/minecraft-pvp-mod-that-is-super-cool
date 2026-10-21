@@ -122,7 +122,8 @@ public final class PracticeWorld {
 					new Arena.Spawn(site.centerX() + 0.5, y, site.centerZ() - site.spawnOffset() + 0.5, 0));
 				SparBot.matches().arenas().setSpawn(site.arenaId(), false,
 					new Arena.Spawn(site.centerX() + 0.5, y, site.centerZ() + site.spawnOffset() + 0.5, 180));
-				if (fresh && site != PracticeLayout.UHC) currentTerrains.put(site.arenaId(), PracticeTerrain.FLAT);
+				// Freshly built, every site is in its flat layout (for the UHC meadow, the meadow itself).
+				if (fresh) currentTerrains.put(site.arenaId(), PracticeTerrain.FLAT);
 			}
 		}
 		colosseum(level).start();
@@ -212,10 +213,12 @@ public final class PracticeWorld {
 			new PracticeBuilder(level).buildCombatTerrain(site, terrain);
 			arena = SparBot.matches().arenas().create(site.arenaId(), level, new BlockPos(site.minX(), site.minY(), site.minZ()),
 				new BlockPos(site.maxX(), site.maxY(), site.maxZ()));
+			// The meadow's spawns stand a block up its slope; a rebuilt floor's are on the floor.
+			double spawnY = PracticeLayout.FLOOR + (site == PracticeLayout.UHC && terrain == PracticeTerrain.FLAT ? PracticeLayout.spawnHeight() : 0);
 			SparBot.matches().arenas().setSpawn(site.arenaId(), true,
-				new Arena.Spawn(site.centerX() + 0.5, PracticeLayout.FLOOR, site.centerZ() - site.spawnOffset() + 0.5, 0));
+				new Arena.Spawn(site.centerX() + 0.5, spawnY, site.centerZ() - site.spawnOffset() + 0.5, 0));
 			SparBot.matches().arenas().setSpawn(site.arenaId(), false,
-				new Arena.Spawn(site.centerX() + 0.5, PracticeLayout.FLOOR, site.centerZ() + site.spawnOffset() + 0.5, 180));
+				new Arena.Spawn(site.centerX() + 0.5, spawnY, site.centerZ() + site.spawnOffset() + 0.5, 180));
 			arena = SparBot.matches().arenas().get(site.arenaId()).orElseThrow();
 			currentTerrains.put(site.arenaId(), terrain);
 		}
